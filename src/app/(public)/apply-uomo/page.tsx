@@ -306,7 +306,7 @@ export default function ApplyPage() {
                         <div className="grid md:grid-cols-2 gap-6">
                             <div className="space-y-2">
                                 <label className="text-sm font-semibold text-text-main">Nome *</label>
-                                <input {...register("first_name")} className="w-full border border-gray-300 rounded-xl px-4 py-3 focus:outline-none focus:ring-2 focus:ring-blue-600" placeholder="Es. Laura" />
+                                <input {...register("first_name")} className="w-full border border-gray-300 rounded-xl px-4 py-3 focus:outline-none focus:ring-2 focus:ring-blue-600" placeholder="Es. Marco" />
                                 {errors.first_name && <span className="text-error text-xs">{errors.first_name.message}</span>}
                             </div>
                             <div className="space-y-2">
@@ -318,7 +318,7 @@ export default function ApplyPage() {
 
                         <div className="space-y-2">
                             <label className="text-sm font-semibold text-text-main">Email *</label>
-                            <input type="email" {...register("email")} className="w-full border border-gray-300 rounded-xl px-4 py-3 focus:outline-none focus:ring-2 focus:ring-blue-600" placeholder="laura.rossi@email.com" />
+                            <input type="email" {...register("email")} className="w-full border border-gray-300 rounded-xl px-4 py-3 focus:outline-none focus:ring-2 focus:ring-blue-600" placeholder="marco.rossi@email.com" />
                             {errors.email && <span className="text-error text-xs">{errors.email.message}</span>}
                         </div>
 
