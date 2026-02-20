@@ -244,6 +244,25 @@ export default function ApplyPage() {
                 return
             }
 
+            // 4.5. Invia notifica via Email (Resend webhook interno)
+            try {
+                await fetch('/api/send-notification', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        first_name: data.first_name,
+                        last_name: data.last_name,
+                        email: data.email,
+                        whatsapp: data.whatsapp,
+                        score_total: score,
+                        priority: priority,
+                        isKO: isKO
+                    })
+                })
+            } catch (err) {
+                console.error("Errore notifica email:", err)
+            }
+
             // 5. Redirect based on KO
             if (isKO) {
                 router.push('/not-eligible')
@@ -272,7 +291,7 @@ export default function ApplyPage() {
                             { id: 'pq_italian', label: 'Parlo italiano in modo fluido, naturale e comprensibile (clientela 100% ITA).' }
                         ].map((q) => (
                             <label key={q.id} className="flex items-start gap-3 p-4 border border-gray-200 rounded-xl hover:bg-gray-50 cursor-pointer">
-                                <input type="checkbox" {...register(q.id as keyof CandidateFormData)} className="mt-1 w-5 h-5 text-primary-main rounded accent-primary-main" />
+                                <input type="checkbox" {...register(q.id as keyof CandidateFormData)} className="mt-1 w-5 h-5 text-blue-600 rounded accent-blue-600" />
                                 <span className="text-text-main font-medium">{q.label}</span>
                             </label>
                         ))}
@@ -287,45 +306,46 @@ export default function ApplyPage() {
                         <div className="grid md:grid-cols-2 gap-6">
                             <div className="space-y-2">
                                 <label className="text-sm font-semibold text-text-main">Nome *</label>
-                                <input {...register("first_name")} className="w-full border border-gray-300 rounded-xl px-4 py-3 focus:outline-none focus:ring-2 focus:ring-primary-main" placeholder="Es. Laura" />
+                                <input {...register("first_name")} className="w-full border border-gray-300 rounded-xl px-4 py-3 focus:outline-none focus:ring-2 focus:ring-blue-600" placeholder="Es. Laura" />
                                 {errors.first_name && <span className="text-error text-xs">{errors.first_name.message}</span>}
                             </div>
                             <div className="space-y-2">
                                 <label className="text-sm font-semibold text-text-main">Cognome *</label>
-                                <input {...register("last_name")} className="w-full border border-gray-300 rounded-xl px-4 py-3 focus:outline-none focus:ring-2 focus:ring-primary-main" placeholder="Es. Rossi" />
+                                <input {...register("last_name")} className="w-full border border-gray-300 rounded-xl px-4 py-3 focus:outline-none focus:ring-2 focus:ring-blue-600" placeholder="Es. Rossi" />
                                 {errors.last_name && <span className="text-error text-xs">{errors.last_name.message}</span>}
                             </div>
                         </div>
 
                         <div className="space-y-2">
                             <label className="text-sm font-semibold text-text-main">Email *</label>
-                            <input type="email" {...register("email")} className="w-full border border-gray-300 rounded-xl px-4 py-3 focus:outline-none focus:ring-2 focus:ring-primary-main" placeholder="laura.rossi@email.com" />
+                            <input type="email" {...register("email")} className="w-full border border-gray-300 rounded-xl px-4 py-3 focus:outline-none focus:ring-2 focus:ring-blue-600" placeholder="laura.rossi@email.com" />
                             {errors.email && <span className="text-error text-xs">{errors.email.message}</span>}
                         </div>
 
                         <div className="space-y-2">
                             <label className="text-sm font-semibold text-text-main">Numero WhatsApp * <span className="font-normal text-text-muted">(usato per le comunicazioni)</span></label>
-                            <input type="tel" {...register("whatsapp")} className="w-full border border-gray-300 rounded-xl px-4 py-3 focus:outline-none focus:ring-2 focus:ring-primary-main" placeholder="+39 333 000 0000" />
+                            <input type="tel" {...register("whatsapp")} className="w-full border border-gray-300 rounded-xl px-4 py-3 focus:outline-none focus:ring-2 focus:ring-blue-600" placeholder="+39 333 000 0000" />
                             {errors.whatsapp && <span className="text-error text-xs">{errors.whatsapp.message}</span>}
                         </div>
 
                         <div className="grid md:grid-cols-2 gap-6">
                             <div className="space-y-2">
                                 <label className="text-sm font-semibold text-text-main">Paese di residenza *</label>
-                                <input {...register("country")} className="w-full border border-gray-300 rounded-xl px-4 py-3 focus:outline-none focus:ring-2 focus:ring-primary-main" placeholder="Es. Italia" />
+                                <input {...register("country")} className="w-full border border-gray-300 rounded-xl px-4 py-3 focus:outline-none focus:ring-2 focus:ring-blue-600" placeholder="Es. Italia" />
                                 {errors.country && <span className="text-error text-xs">{errors.country.message}</span>}
                             </div>
                             <div className="space-y-2">
                                 <label className="text-sm font-semibold text-text-main">Città *</label>
-                                <input {...register("city")} className="w-full border border-gray-300 rounded-xl px-4 py-3 focus:outline-none focus:ring-2 focus:ring-primary-main" placeholder="Es. Milano" />
+                                <input {...register("city")} className="w-full border border-gray-300 rounded-xl px-4 py-3 focus:outline-none focus:ring-2 focus:ring-blue-600" placeholder="Es. Milano" />
                                 {errors.city && <span className="text-error text-xs">{errors.city.message}</span>}
                             </div>
                         </div>
 
                         <div className="space-y-2">
                             <label className="text-sm font-semibold text-text-main">Fascia d'età *</label>
-                            <select {...register("age_range")} className="w-full border border-gray-300 rounded-xl px-4 py-3 bg-white focus:outline-none focus:ring-2 focus:ring-primary-main appearance-none">
+                            <select {...register("age_range")} className="w-full border border-gray-300 rounded-xl px-4 py-3 bg-white focus:outline-none focus:ring-2 focus:ring-blue-600 appearance-none">
                                 <option value="">Seleziona...</option>
+                                <option value="25-29">25-29</option>
                                 <option value="30-35">30-35</option>
                                 <option value="36-40">36-40</option>
                                 <option value="41-45">41-45</option>
@@ -342,19 +362,19 @@ export default function ApplyPage() {
                         <div className="grid md:grid-cols-2 gap-6">
                             <div className="space-y-2">
                                 <label className="text-sm font-semibold text-text-main">Nazionalità *</label>
-                                <input {...register("nationality")} className="w-full border border-gray-300 rounded-xl px-4 py-3 focus:outline-none focus:ring-2 focus:ring-primary-main" />
+                                <input {...register("nationality")} className="w-full border border-gray-300 rounded-xl px-4 py-3 focus:outline-none focus:ring-2 focus:ring-blue-600" />
                                 {errors.nationality && <span className="text-error text-xs">{errors.nationality.message}</span>}
                             </div>
                             <div className="space-y-2">
                                 <label className="text-sm font-semibold text-text-main">Lingua madre *</label>
-                                <input {...register("native_language")} className="w-full border border-gray-300 rounded-xl px-4 py-3 focus:outline-none focus:ring-2 focus:ring-primary-main" />
+                                <input {...register("native_language")} className="w-full border border-gray-300 rounded-xl px-4 py-3 focus:outline-none focus:ring-2 focus:ring-blue-600" />
                                 {errors.native_language && <span className="text-error text-xs">{errors.native_language.message}</span>}
                             </div>
                         </div>
 
                         <div className="space-y-2">
                             <label className="text-sm font-semibold text-text-main">Livello di italiano parlato *</label>
-                            <select {...register("italian_level")} className="w-full border border-gray-300 rounded-xl px-4 py-3 bg-white focus:outline-none focus:ring-2 focus:ring-primary-main appearance-none">
+                            <select {...register("italian_level")} className="w-full border border-gray-300 rounded-xl px-4 py-3 bg-white focus:outline-none focus:ring-2 focus:ring-blue-600 appearance-none">
                                 <option value="">Seleziona...</option>
                                 <option value="high">Madrelingua / Bilingue</option>
                                 <option value="medium">Avanzato / Fluente con piccolo accento</option>
@@ -364,13 +384,13 @@ export default function ApplyPage() {
                         </div>
 
                         <label className="flex items-center gap-3 p-4 border border-gray-200 rounded-xl cursor-pointer hover:bg-gray-50">
-                            <input type="checkbox" {...register("strong_accent")} className="w-5 h-5 accent-primary-main rounded" />
+                            <input type="checkbox" {...register("strong_accent")} className="w-5 h-5 accent-blue-600 rounded" />
                             <span className="text-sm font-medium">Ho un forte accento dialettale (regionale o straniero) molto marcato.</span>
                         </label>
 
                         <div className="space-y-2">
                             <label className="text-sm font-semibold text-text-main">Presentati in 2 righe (Breve Bio) *</label>
-                            <textarea {...register("bio_short")} rows={3} className="w-full border border-gray-300 rounded-xl px-4 py-3 focus:outline-none focus:ring-2 focus:ring-primary-main resize-none" placeholder="Chi sei? Cosa fai di bello nella vita? (max 300 caratteri)"></textarea>
+                            <textarea {...register("bio_short")} rows={3} className="w-full border border-gray-300 rounded-xl px-4 py-3 focus:outline-none focus:ring-2 focus:ring-blue-600 resize-none" placeholder="Chi sei? Cosa fai di bello nella vita? (max 300 caratteri)"></textarea>
                             <p className="text-xs text-text-muted text-right">Minimo 20 caratteri</p>
                             {errors.bio_short && <span className="text-error text-xs">{errors.bio_short.message}</span>}
                         </div>
@@ -382,34 +402,34 @@ export default function ApplyPage() {
                         <div className="grid md:grid-cols-2 gap-6">
                             <div className="space-y-2">
                                 <label className="text-sm font-semibold text-text-main">Ore medie disponibili al giorno *</label>
-                                <input type="number" {...register("hours_per_day")} className="w-full border border-gray-300 rounded-xl px-4 py-3 focus:outline-none focus:ring-2 focus:ring-primary-main" placeholder="Es. 4" />
+                                <input type="number" {...register("hours_per_day")} className="w-full border border-gray-300 rounded-xl px-4 py-3 focus:outline-none focus:ring-2 focus:ring-blue-600" placeholder="Es. 4" />
                                 {errors.hours_per_day && <span className="text-error text-xs">{errors.hours_per_day.message}</span>}
                             </div>
                             <div className="space-y-2">
                                 <label className="text-sm font-semibold text-text-main">Giorni disponibili a settimana *</label>
-                                <input type="number" {...register("days_per_week")} className="w-full border border-gray-300 rounded-xl px-4 py-3 focus:outline-none focus:ring-2 focus:ring-primary-main" placeholder="Es. 5" />
+                                <input type="number" {...register("days_per_week")} className="w-full border border-gray-300 rounded-xl px-4 py-3 focus:outline-none focus:ring-2 focus:ring-blue-600" placeholder="Es. 5" />
                                 {errors.days_per_week && <span className="text-error text-xs">{errors.days_per_week.message}</span>}
                             </div>
                         </div>
 
                         <div className="space-y-2">
                             <label className="text-sm font-semibold text-text-main">Quali sono le tue fasce orarie ideali? *</label>
-                            <input {...register("time_slots")} className="w-full border border-gray-300 rounded-xl px-4 py-3 focus:outline-none focus:ring-2 focus:ring-primary-main" placeholder="Es. Mattina 10-12 e Sera 17-20" />
+                            <input {...register("time_slots")} className="w-full border border-gray-300 rounded-xl px-4 py-3 focus:outline-none focus:ring-2 focus:ring-blue-600" placeholder="Es. Mattina 10-12 e Sera 17-20" />
                             {errors.time_slots && <span className="text-error text-xs">{errors.time_slots.message}</span>}
                         </div>
 
                         <div className="space-y-2">
                             <label className="text-sm font-semibold text-text-main">Da quando saresti operativo? *</label>
-                            <input {...register("start_date")} className="w-full border border-gray-300 rounded-xl px-4 py-3 focus:outline-none focus:ring-2 focus:ring-primary-main" placeholder="Es. Da subito, dal 1° Settembre, ecc." />
+                            <input {...register("start_date")} className="w-full border border-gray-300 rounded-xl px-4 py-3 focus:outline-none focus:ring-2 focus:ring-blue-600" placeholder="Es. Da subito, dal 1° Settembre, ecc." />
                             {errors.start_date && <span className="text-error text-xs">{errors.start_date.message}</span>}
                         </div>
 
                         <div className="pt-4 space-y-3">
                             <p className="text-sm font-semibold text-text-main">Extra: Lavori anche nei fine settimana/festivi? (Opzionale ma apprezzato)</p>
                             <div className="flex flex-col gap-2">
-                                <label className="flex items-center gap-3"><input type="checkbox" {...register("weekend_sat")} className="w-4 h-4 accent-primary-main" /> Qualche Sabato mattina/pomeriggio</label>
-                                <label className="flex items-center gap-3"><input type="checkbox" {...register("weekend_sun")} className="w-4 h-4 accent-primary-main" /> Qualche Domenica</label>
-                                <label className="flex items-center gap-3"><input type="checkbox" {...register("holidays")} className="w-4 h-4 accent-primary-main" /> Festivi generali (rossi sul calendario)</label>
+                                <label className="flex items-center gap-3"><input type="checkbox" {...register("weekend_sat")} className="w-4 h-4 accent-blue-600" /> Qualche Sabato mattina/pomeriggio</label>
+                                <label className="flex items-center gap-3"><input type="checkbox" {...register("weekend_sun")} className="w-4 h-4 accent-blue-600" /> Qualche Domenica</label>
+                                <label className="flex items-center gap-3"><input type="checkbox" {...register("holidays")} className="w-4 h-4 accent-blue-600" /> Festivi generali (rossi sul calendario)</label>
                             </div>
                         </div>
                     </div>
@@ -420,12 +440,12 @@ export default function ApplyPage() {
                         <div className="grid md:grid-cols-2 gap-6">
                             <div className="space-y-2">
                                 <label className="text-sm font-semibold text-text-main">Anni di esperienza nella vendita *</label>
-                                <input type="number" {...register("sales_years")} className="w-full border border-gray-300 rounded-xl px-4 py-3 focus:outline-none focus:ring-2 focus:ring-primary-main" placeholder="Metti 0 se non l'hai mai fatto" />
+                                <input type="number" {...register("sales_years")} className="w-full border border-gray-300 rounded-xl px-4 py-3 focus:outline-none focus:ring-2 focus:ring-blue-600" placeholder="Metti 0 se non l'hai mai fatto" />
                                 {errors.sales_years && <span className="text-error text-xs">{errors.sales_years.message}</span>}
                             </div>
                             <div className="space-y-2">
                                 <label className="text-sm font-semibold text-text-main">Tipologia chiamate *</label>
-                                <select {...register("inbound_outbound")} className="w-full border border-gray-300 rounded-xl px-4 py-3 bg-white focus:outline-none focus:ring-2 focus:ring-primary-main appearance-none">
+                                <select {...register("inbound_outbound")} className="w-full border border-gray-300 rounded-xl px-4 py-3 bg-white focus:outline-none focus:ring-2 focus:ring-blue-600 appearance-none">
                                     <option value="">Seleziona...</option>
                                     <option value="inbound">Solo Inbound (contatti caldi)</option>
                                     <option value="outbound">Solo Outbound (liste a freddo)</option>
@@ -438,12 +458,12 @@ export default function ApplyPage() {
 
                         <div className="space-y-2">
                             <label className="text-sm font-semibold text-text-main">In quali settori hai venduto? <span className="font-normal text-text-muted">(Se hai esperienza)</span></label>
-                            <input {...register("sectors")} className="w-full border border-gray-300 rounded-xl px-4 py-3 focus:outline-none focus:ring-2 focus:ring-primary-main" placeholder="Es. Energia, Fitness, Assicurazioni, ecc." />
+                            <input {...register("sectors")} className="w-full border border-gray-300 rounded-xl px-4 py-3 focus:outline-none focus:ring-2 focus:ring-blue-600" placeholder="Es. Energia, Fitness, Assicurazioni, ecc." />
                         </div>
 
                         <div className="space-y-2">
                             <label className="text-sm font-semibold text-text-main">Qual è stato il tuo Close Rate (Tasso di chiusura) finora? *</label>
-                            <select {...register("close_rate_range")} className="w-full border border-gray-300 rounded-xl px-4 py-3 bg-white focus:outline-none focus:ring-2 focus:ring-primary-main appearance-none">
+                            <select {...register("close_rate_range")} className="w-full border border-gray-300 rounded-xl px-4 py-3 bg-white focus:outline-none focus:ring-2 focus:ring-blue-600 appearance-none">
                                 <option value="">Seleziona...</option>
                                 <option value="0-10%">0-10% (o Nessuna Esperienza)</option>
                                 <option value="10-20%">10-20%</option>
@@ -455,7 +475,7 @@ export default function ApplyPage() {
 
                         <div className="space-y-2">
                             <label className="text-sm font-semibold text-text-main">Perché vorresti questo ruolo? *</label>
-                            <textarea {...register("motivation")} rows={4} className="w-full border border-gray-300 rounded-xl px-4 py-3 focus:outline-none focus:ring-2 focus:ring-primary-main resize-none" placeholder="Cosa ti spinge a candidarti per questa posizione in Forever Slim?"></textarea>
+                            <textarea {...register("motivation")} rows={4} className="w-full border border-gray-300 rounded-xl px-4 py-3 focus:outline-none focus:ring-2 focus:ring-blue-600 resize-none" placeholder="Cosa ti spinge a candidarti per questa posizione in Forever Slim?"></textarea>
                             <p className="text-xs text-text-muted text-right">Minimo 30 caratteri</p>
                             {errors.motivation && <span className="text-error text-xs">{errors.motivation.message}</span>}
                         </div>
@@ -466,23 +486,23 @@ export default function ApplyPage() {
                     <div className="space-y-8">
                         <p className="text-text-muted">Questa è la parte più importante per noi. Vogliamo capire come ragioni e come guidi le persone verso la scelta migliore. Non usare l'intelligenza artificiale, apprezziamo la genuinità.</p>
 
-                        <div className="space-y-4 bg-primary-light/30 p-6 rounded-2xl border border-primary-light">
+                        <div className="space-y-4 bg-blue-100/30 p-6 rounded-2xl border border-blue-100">
                             <h4 className="font-bold text-lg">Scenario 1: L'Obiezione</h4>
                             <p className="text-sm italic">"Il prodotto mi piace molto e ne ho sicuramente bisogno visti i chili da scalare, ma per me sono soldi, ci devo pensare..."</p>
                             <div className="space-y-2 mt-4">
-                                <label className="text-sm font-semibold text-text-main">Ascolti queste parole dalla cliente. Cosa dici esattamente per risponderle e provare a chiuderla senza sembrare aggressivo? *</label>
-                                <textarea {...register("roleplay_think_about_it")} rows={6} className="w-full border border-gray-300 rounded-xl px-4 py-3 bg-white focus:outline-none focus:ring-2 focus:ring-primary-main resize-none" placeholder="Scrivi parola per parola cosa diresti..."></textarea>
+                                <label className="text-sm font-semibold text-text-main">Ascolti queste parole dal cliente. Cosa dici esattamente per rispondergli e provare a chiuderlo senza sembrare aggressivo? *</label>
+                                <textarea {...register("roleplay_think_about_it")} rows={6} className="w-full border border-gray-300 rounded-xl px-4 py-3 bg-white focus:outline-none focus:ring-2 focus:ring-blue-600 resize-none" placeholder="Scrivi parola per parola cosa diresti..."></textarea>
                                 <p className="text-xs text-text-muted text-right">Minimo 200 caratteri. Valutiamo l'empatia e la tecnica.</p>
                                 {errors.roleplay_think_about_it && <span className="text-error text-xs">{errors.roleplay_think_about_it.message}</span>}
                             </div>
                         </div>
 
-                        <div className="space-y-4 bg-primary-light/30 p-6 rounded-2xl border border-primary-light">
+                        <div className="space-y-4 bg-blue-100/30 p-6 rounded-2xl border border-blue-100">
                             <h4 className="font-bold text-lg">Scenario 2: L'Upsell Protettivo</h4>
-                            <p className="text-sm italic">La cliente vuole acquistare solo 1 scatola per "provare". Tu sai che per avere risultati visibili le servono almeno 3 mesi, e offrite un kit da 3 scatole con forte sconto.</p>
+                            <p className="text-sm italic">Il cliente vuole acquistare solo 1 scatola per "provare". Tu sai che per avere risultati visibili gli servono almeno 3 mesi, e offrite un kit da 3 scatole con forte sconto.</p>
                             <div className="space-y-2 mt-4">
-                                <label className="text-sm font-semibold text-text-main">Cosa e come glielo dici per convincerla a prendere il kit da 3 scatole (che conviene sia a lei che al tuo portafoglio) invece di quello da 1 scatola? *</label>
-                                <textarea {...register("roleplay_bundle3")} rows={6} className="w-full border border-gray-300 rounded-xl px-4 py-3 bg-white focus:outline-none focus:ring-2 focus:ring-primary-main resize-none" placeholder="Scrivi la tua spiegazione/presentazione della proposta..."></textarea>
+                                <label className="text-sm font-semibold text-text-main">Cosa e come glielo dici per convincerlo a prendere il kit da 3 scatole (che conviene sia a lui che al tuo portafoglio) invece di quello da 1 scatola? *</label>
+                                <textarea {...register("roleplay_bundle3")} rows={6} className="w-full border border-gray-300 rounded-xl px-4 py-3 bg-white focus:outline-none focus:ring-2 focus:ring-blue-600 resize-none" placeholder="Scrivi la tua spiegazione/presentazione della proposta..."></textarea>
                                 <p className="text-xs text-text-muted text-right">Minimo 200 caratteri</p>
                                 {errors.roleplay_bundle3 && <span className="text-error text-xs">{errors.roleplay_bundle3.message}</span>}
                             </div>
@@ -501,7 +521,7 @@ export default function ApplyPage() {
                         </p>
 
                         <div className="w-full max-w-md mt-6">
-                            <label className="w-full flex justify-center items-center px-4 py-6 bg-white border-2 border-dashed border-gray-300 rounded-2xl cursor-pointer hover:bg-gray-50 hover:border-primary-main transition-colors">
+                            <label className="w-full flex justify-center items-center px-4 py-6 bg-white border-2 border-dashed border-gray-300 rounded-2xl cursor-pointer hover:bg-gray-50 hover:border-blue-600 transition-colors">
                                 <input type="file" accept="audio/*" className="hidden" onChange={handleAudioChange} />
                                 <div className="flex flex-col items-center gap-2">
                                     <Upload className="w-6 h-6 text-gray-400" />
@@ -523,19 +543,19 @@ export default function ApplyPage() {
 
                         <div className="space-y-4">
                             <label className="flex items-start gap-3 p-4 border border-gray-200 rounded-xl hover:bg-gray-50 cursor-pointer">
-                                <input type="checkbox" {...register("consent_truth")} className="mt-1 w-5 h-5 text-primary-main rounded accent-primary-main" />
+                                <input type="checkbox" {...register("consent_truth")} className="mt-1 w-5 h-5 text-blue-600 rounded accent-blue-600" />
                                 <span className="text-text-main text-sm">Dichiaro formalmente che tutte le informazioni fornite (incluse le prove pratiche) sono state redatte in completa autonomia, senza l'uso di Intelligenza Artificiale, e riflettono la realtà.</span>
                             </label>
                             {errors.consent_truth && <span className="text-error text-xs font-semibold">{errors.consent_truth.message}</span>}
 
                             <label className="flex items-start gap-3 p-4 border border-gray-200 rounded-xl hover:bg-gray-50 cursor-pointer">
-                                <input type="checkbox" {...register("consent_privacy")} className="mt-1 w-5 h-5 text-primary-main rounded accent-primary-main" />
+                                <input type="checkbox" {...register("consent_privacy")} className="mt-1 w-5 h-5 text-blue-600 rounded accent-blue-600" />
                                 <span className="text-text-main text-sm">Acconsento al trattamento dei miei dati personali ai fini del processo di selezione e dichiaro di aver letto la Privacy Policy.</span>
                             </label>
                             {errors.consent_privacy && <span className="text-error text-xs font-semibold">{errors.consent_privacy.message}</span>}
 
                             <label className="flex items-start gap-3 p-4 border border-gray-200 rounded-xl hover:bg-gray-50 cursor-pointer">
-                                <input type="checkbox" {...register("consent_whatsapp")} className="mt-1 w-5 h-5 text-primary-main rounded accent-primary-main" />
+                                <input type="checkbox" {...register("consent_whatsapp")} className="mt-1 w-5 h-5 text-blue-600 rounded accent-blue-600" />
                                 <span className="text-text-main text-sm">Acconsento a ricevere comunicazioni via WhatsApp sul numero inserito relative all'esito della selezione ed eventuale onboarding.</span>
                             </label>
                         </div>
@@ -553,7 +573,7 @@ export default function ApplyPage() {
                         <div className="col-span-2 lg:col-span-4 flex items-center">
                             <div className="w-full bg-gray-100 h-2 rounded-full overflow-hidden">
                                 <div
-                                    className="bg-primary-main h-full transition-all duration-500 ease-in-out"
+                                    className="bg-blue-600 h-full transition-all duration-500 ease-in-out"
                                     style={{ width: `${((step + 1) / schemas.length) * 100}%` }}
                                 />
                             </div>
@@ -584,7 +604,7 @@ export default function ApplyPage() {
                                     type="button"
                                     onClick={handleSubmit(onSubmit as any)}
                                     disabled={isSubmitting}
-                                    className="flex-1 px-6 py-3 rounded-xl bg-primary-main hover:bg-primary-hover text-white font-semibold transition-colors flex items-center justify-center gap-2 disabled:opacity-50"
+                                    className="flex-1 px-6 py-3 rounded-xl bg-blue-600 hover:bg-blue-700 text-white font-semibold transition-colors flex items-center justify-center gap-2 disabled:opacity-50"
                                 >
                                     {isSubmitting ? (
                                         <><Loader2 className="w-5 h-5 animate-spin" /> Elaborazione...</>

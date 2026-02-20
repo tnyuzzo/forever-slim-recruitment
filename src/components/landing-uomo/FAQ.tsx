@@ -17,11 +17,11 @@ export default function FAQ() {
     },
     {
       q: '3. Si lavora nel weekend?',
-      a: 'Non è strettamente obbligatorio, ma essere operativi o disponibili a sbloccare slot appuntamenti per le clienti anche il Sabato o Domenica aumenta esponenzialmente la chiusura e i guadagni.'
+      a: 'Non è strettamente obbligatorio, ma essere operativi o disponibili a sbloccare slot appuntamenti per i clienti anche il Sabato o Domenica aumenta esponenzialmente la chiusura e i guadagni.'
     },
     {
       q: '4. Quali sono gli orari?',
-      a: 'Scegli tu blocchi orari secondo la tua disponibilità, minimo 4 ore/giorno per 3 giorni/settimana. Ma attenzione: una volta aperto lo slot e prenotato dalla cliente, la puntualità è imperativa e non scusabile.'
+      a: 'Scegli tu blocchi orari secondo la tua disponibilità, minimo 4 ore/giorno per 3 giorni/settimana. Ma attenzione: una volta aperto lo slot e prenotato dal cliente, la puntualità è imperativa e non scusabile.'
     },
     {
       q: '5. Mi serve aprire la Partita IVA?',
@@ -29,15 +29,15 @@ export default function FAQ() {
     },
     {
       q: '6. Che prodotti venderò?',
-      a: 'Integratori premium e protocolli di controllo del peso per il target femminile. Prodotti di altissima efficacia con recensioni fortissime; il tuo fine è aiutare le clienti ad arrivarci senza finte promesse mediche.'
+      a: 'Integratori premium e protocolli di controllo del peso per il target maschile. Prodotti di altissima efficacia con recensioni fortissime; il tuo fine è aiutare i clienti ad arrivarci senza finte promesse mediche.'
     },
     {
-      q: '7. Cosa accade se la cliente non vuole comprare?',
+      q: '7. Cosa accade se il cliente non vuole comprare?',
       a: 'Ci saluti. Nessuna pressione, nessun imbarazzo, zero manipolazione. Un NO veloce è molto meglio di un compromesso a forza. Il nostro standard etico è altissimo.'
     },
     {
       q: '8. Posso candidarmi se vivo all\'estero?',
-      a: 'Assolutamente sì. Dubai, Canarie, Asia, basta avere una fibra potente, fuso orario gestibile e un italiano ineccepibile (le clienti sono tutte In Italia).'
+      a: 'Assolutamente sì. Dubai, Canarie, Asia, basta avere una fibra potente, fuso orario gestibile e un italiano ineccepibile (i clienti sono tutti in Italia).'
     }
   ]
 

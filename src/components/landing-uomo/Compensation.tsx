@@ -22,7 +22,7 @@ export default function Compensation() {
           <div className="bg-slate-800/50 backdrop-blur-sm border border-slate-700 p-8 rounded-3xl flex flex-col items-center justify-center text-center">
             <h3 className="text-slate-400 font-bold mb-2 uppercase tracking-widest text-sm">Kit Singolo (1 Mese)</h3>
             <div className="text-3xl font-black text-white mb-1">€19,70 <span className="text-base font-medium text-slate-500">/ vendita</span></div>
-            <p className="text-sm font-medium text-slate-500 mt-2">(Su prezzo cliente €197)</p>
+            <p className="text-sm font-medium text-slate-500 mt-2">(Su prezzo al cliente €197)</p>
           </div>
           <div className="bg-gradient-to-br from-blue-600 to-blue-800 p-8 rounded-3xl flex flex-col items-center justify-center text-center shadow-xl shadow-blue-900/50 border border-blue-500">
             <div className="inline-flex items-center gap-1.5 bg-blue-500/30 text-blue-100 px-3 py-1 rounded-full text-xs font-bold uppercase tracking-wider mb-4">
@@ -30,7 +30,7 @@ export default function Compensation() {
             </div>
             <h3 className="text-blue-200 font-bold mb-2 uppercase tracking-widest text-sm">Kit Completo (3 Mesi)</h3>
             <div className="text-3xl lg:text-4xl font-black text-white mb-1">€39,90 <span className="text-base font-medium text-blue-300">/ vendita</span></div>
-            <p className="text-sm font-medium text-blue-300 mt-2">(Su prezzo cliente €399)</p>
+            <p className="text-sm font-medium text-blue-300 mt-2">(Su prezzo al cliente €399)</p>
           </div>
         </div>
 

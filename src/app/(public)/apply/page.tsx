@@ -244,6 +244,25 @@ export default function ApplyPage() {
                 return
             }
 
+            // 4.5. Invia notifica via Email (Resend webhook interno)
+            try {
+                await fetch('/api/send-notification', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        first_name: data.first_name,
+                        last_name: data.last_name,
+                        email: data.email,
+                        whatsapp: data.whatsapp,
+                        score_total: score,
+                        priority: priority,
+                        isKO: isKO
+                    })
+                })
+            } catch (err) {
+                console.error("Errore notifica email:", err)
+            }
+
             // 5. Redirect based on KO
             if (isKO) {
                 router.push('/not-eligible')
@@ -326,6 +345,7 @@ export default function ApplyPage() {
                             <label className="text-sm font-semibold text-text-main">Fascia d'età *</label>
                             <select {...register("age_range")} className="w-full border border-gray-300 rounded-xl px-4 py-3 bg-white focus:outline-none focus:ring-2 focus:ring-primary-main appearance-none">
                                 <option value="">Seleziona...</option>
+                                <option value="25-29">25-29</option>
                                 <option value="30-35">30-35</option>
                                 <option value="36-40">36-40</option>
                                 <option value="41-45">41-45</option>

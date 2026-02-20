@@ -5,8 +5,8 @@ import { CheckCircle2, XOctagon } from 'lucide-react'
 export default function WhatYouDo() {
   const doItems = [
     'Ricevi un\'agenda con appuntamenti già confermati ogni giorno',
-    'Parli con donne che hanno già mostrato interesse e scelto un orario',
-    'Ascolti la cliente, capisci la sua situazione, e la guidi verso la soluzione',
+    'Parli con uomini che hanno già mostrato interesse e scelto un orario',
+    'Ascolti il cliente, capisci la sua situazione, e lo guidi verso la soluzione',
     'Scegli tu il canale: telefono, WhatsApp o Zoom',
     'Offri una consulenza mirata, non "spingi" un prodotto a caso',
   ]
@@ -14,7 +14,7 @@ export default function WhatYouDo() {
   const dontItems = [
     { text: 'Chiamate a freddo', desc: 'Zero. Nessuna lista di contatti non richiesti da chiamare.' },
     { text: 'Target da cercare', desc: 'Non devi fare prospecting né usare i tuoi social personali.' },
-    { text: 'Pressione o manipolazione', desc: 'Se la cliente non è adatta, la saluti con enorme rispetto.' },
+    { text: 'Pressione o manipolazione', desc: 'Se il cliente non è adatto, lo saluti con enorme rispetto.' },
     { text: 'Gestione logistica', desc: 'Tu fai la consulenza. Il resto (ordini, spedizione) lo gestiamo noi.' },
     { text: 'Burocrazia interna', desc: 'CRM precompilato, massima chiarezza e procedure agili.' },
   ]
@@ -57,7 +57,7 @@ export default function WhatYouDo() {
 
             <div className="mt-10 p-6 bg-slate-50 rounded-2xl border border-slate-100">
               <p className="text-slate-700 text-sm leading-relaxed font-medium">
-                <span className="font-bold text-slate-900">In sintesi:</span> Non vendi a freddo. Offri consulenza. Parli con donne che hanno un problema reale legato al controllo del peso e tu proponi loro la soluzione aziendale. Quando il prodotto è valido, la conversazione scorre liscia e naturale.
+                <span className="font-bold text-slate-900">In sintesi:</span> Non vendi a freddo. Offri consulenza. Parli con uomini che hanno un problema reale legato al controllo del peso e tu proponi loro la soluzione aziendale. Quando il prodotto è valido, la conversazione scorre liscia e naturale.
               </p>
             </div>
           </div>

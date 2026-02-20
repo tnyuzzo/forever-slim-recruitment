@@ -53,7 +53,7 @@ export default function Hero() {
                   <Check className="w-4 h-4 text-blue-700" />
                 </div>
                 <p className="text-slate-700">
-                  <strong>Prodotto che si vende da solo:</strong> settore in esplosione, domanda altissima, clienti già informate e motivate
+                  <strong>Prodotto che si vende da solo:</strong> settore in esplosione, domanda altissima, clienti già informati e motivati
                 </p>
               </div>
             </div>
@@ -63,7 +63,7 @@ export default function Hero() {
               <p className="text-sm font-bold text-slate-900 mb-3">Requisiti essenziali:</p>
               <p className="text-sm text-slate-700 font-medium">• Italiano impeccabile e naturale — è il tuo strumento di lavoro</p>
               <p className="text-sm text-slate-700 font-medium">• Puntualità assoluta sugli appuntamenti — nessuna eccezione</p>
-              <p className="text-sm text-slate-700 font-medium">• Empatia reale con le clienti — qui si fa consulenza, non pressione</p>
+              <p className="text-sm text-slate-700 font-medium">• Empatia reale con i clienti — qui si fa consulenza, non pressione</p>
             </div>
 
             {/* CTA */}
@@ -82,12 +82,13 @@ export default function Hero() {
           </div>
 
           {/* Image */}
-          <div className="relative lg:pl-8 mt-8 lg:mt-0 opacity-0 animate-fade-in-up" style={{ animationDelay: '0.2s' }}>
+          <div className="relative lg:pl-8 mt-8 lg:mt-0" style={{ animationDelay: '0.2s' }}>
             <div className="relative aspect-[4/5] rounded-[2rem] overflow-hidden shadow-2xl shadow-blue-900/10 border-4 border-white">
               <Image
-                src="/images/hero_professional_man.png"
+                src="/images/hero_professional_man.jpg"
                 alt="Consulente telefonico al lavoro da casa"
                 fill
+                unoptimized
                 className="object-cover"
                 priority
                 sizes="(max-width: 768px) 100vw, 50vw"

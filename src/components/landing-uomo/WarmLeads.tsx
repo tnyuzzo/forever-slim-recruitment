@@ -28,7 +28,7 @@ export default function WarmLeads() {
 
             <div className="space-y-6">
               <p className="text-slate-600 leading-relaxed font-medium">
-                Le nostre potenziali clienti arrivano da campagne pubblicitarie mirate e massicce. Prima di parlare con te, una donna ha già:
+                I nostri potenziali clienti arrivano da campagne pubblicitarie mirate e massicce. Prima di parlare con te, un uomo ha già:
               </p>
 
               <ul className="space-y-4">
@@ -48,7 +48,7 @@ export default function WarmLeads() {
 
               <div className="p-6 bg-blue-600 rounded-2xl text-white shadow-xl shadow-blue-600/20 mt-8">
                 <p className="font-medium text-lg leading-relaxed">
-                  Tu non devi convincere a restare al telefono nessuno. Tu aiuti chi <strong className="font-black text-white decoration-white underline underline-offset-4 decoration-2">ha già deciso</strong> di informarsi.
+                  Tu non devi convincere a restare al telefono nessuno. Tu aiuti chi <strong className="font-black text-white decoration-white underline underline-offset-4 decoration-2">ha già deciso</strong> di informarsi e farsi consigliare.
                 </p>
               </div>
             </div>
@@ -68,7 +68,7 @@ export default function WarmLeads() {
                     <Target className="w-6 h-6" />
                   </div>
                   <div className="w-[calc(100%-5rem)] md:w-[calc(50%-3rem)] bg-white p-5 rounded-2xl shadow-sm border border-slate-100">
-                    <h4 className="font-bold text-slate-900">La cliente vede l'annuncio</h4>
+                    <h4 className="font-bold text-slate-900">Il cliente vede l'annuncio</h4>
                     <p className="text-sm text-slate-500 font-medium mt-1">Clicca e compila il questionario di idoneità</p>
                   </div>
                 </div>
@@ -90,7 +90,7 @@ export default function WarmLeads() {
                     <ThumbsUp className="w-6 h-6" />
                   </div>
                   <div className="w-[calc(100%-5rem)] md:w-[calc(50%-3rem)] bg-blue-50 p-5 rounded-2xl border border-blue-100">
-                    <h4 className="font-bold text-blue-900">Tu la chiami</h4>
+                    <h4 className="font-bold text-blue-900">Tu lo chiami</h4>
                     <p className="text-sm text-blue-700 font-medium mt-1">Esegui la consulenza e chiudi la proposta in totale comfort</p>
                   </div>
                 </div>

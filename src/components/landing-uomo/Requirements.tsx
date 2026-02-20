@@ -4,10 +4,10 @@ import { CheckCircle, XCircle } from 'lucide-react'
 
 export default function Requirements() {
   const goodFit = [
-    { title: 'Parli italiano in modo impeccabile.', desc: 'Nessun accento marcato straniero o dialettale troppo forte. Le nostre clienti sono italiane.' },
-    { title: 'Sei puntuale. Punto.', desc: 'Nessun ritardo alle consulenze, nessuna scusa. La cliente ha prenotato il TUO tempo.' },
+    { title: 'Parli italiano in modo impeccabile.', desc: 'Nessun accento marcato straniero o dialettale troppo forte. I nostri clienti sono italiani.' },
+    { title: 'Sei puntuale. Punto.', desc: 'Nessun ritardo alle consulenze, nessuna scusa. Il cliente ha prenotato il TUO tempo.' },
     { title: 'Sai ascoltare prima di parlare.', desc: 'La vendita consulenziale parte dall\'ascolto e comprensione del bisogno reale.' },
-    { title: 'Hai empatia autentica.', desc: 'Parli con donne che spesso si portano dietro frustrazione per il loro peso. Serve rispetto, fermezza e zero giudizio.' },
+    { title: 'Hai empatia autentica.', desc: 'Parli con uomini che spesso si portano dietro frustrazione per il loro peso e la forma fisica. Serve rispetto, fermezza e zero giudizio.' },
     { title: 'Hai almeno 4 ore/giorno e 3 gg/settimana.', desc: 'Questo è il minimo indispensabile per avere un flusso di clienti continuativo.' },
     { title: 'Sei autonomo e affidabile.', desc: 'Nessun capo col fiato sul collo. C\'è un sistema che ti supporta, ma la responsabilità e la costanza sono tue.' },
   ]

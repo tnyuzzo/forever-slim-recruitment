@@ -31,8 +31,9 @@ export async function middleware(request: NextRequest) {
   const { data: { user } } = await supabase.auth.getUser()
 
   const isProtectedRoute = request.nextUrl.pathname.startsWith('/admin') && request.nextUrl.pathname !== '/admin/login'
+  const devBypass = process.env.DEV_BYPASS_AUTH === 'true'
 
-  if (isProtectedRoute && !user) {
+  if (isProtectedRoute && !user && !devBypass) {
     const url = request.nextUrl.clone()
     url.pathname = '/admin/login'
     return NextResponse.redirect(url)

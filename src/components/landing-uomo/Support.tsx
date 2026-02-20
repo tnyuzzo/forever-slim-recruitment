@@ -23,7 +23,7 @@ export default function Support() {
     {
       icon: <MonitorSmartphone className="w-6 h-6 text-blue-600" />,
       title: 'Supporto continuo del team',
-      desc: 'Hai un dubbio? Una cliente difficile? Noi ci siamo sempre. Canale diretto e risposte immediate dal team di supervisione e dai top performer internazionali.'
+      desc: 'Hai un dubbio? Un cliente difficile? Noi ci siamo sempre. Canale diretto e risposte immediate dal team di supervisione e dai top performer internazionali.'
     }
   ]
 
