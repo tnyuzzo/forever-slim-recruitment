@@ -399,7 +399,7 @@ export default function ApplyPage() {
                         </div>
 
                         <div className="space-y-2">
-                            <label className="text-sm font-semibold text-text-main">Da quando saresti operativa? *</label>
+                            <label className="text-sm font-semibold text-text-main">Da quando saresti operativo? *</label>
                             <input {...register("start_date")} className="w-full border border-gray-300 rounded-xl px-4 py-3 focus:outline-none focus:ring-2 focus:ring-primary-main" placeholder="Es. Da subito, dal 1° Settembre, ecc." />
                             {errors.start_date && <span className="text-error text-xs">{errors.start_date.message}</span>}
                         </div>
@@ -407,7 +407,7 @@ export default function ApplyPage() {
                         <div className="pt-4 space-y-3">
                             <p className="text-sm font-semibold text-text-main">Extra: Lavori anche nei fine settimana/festivi? (Opzionale ma apprezzato)</p>
                             <div className="flex flex-col gap-2">
-                                <label className="flex items-center gap-3"><input type="checkbox" {...register("weekend_sat")} className="w-4 h-4 accent-primary-main" /> Quache Sabato mattina/pome</label>
+                                <label className="flex items-center gap-3"><input type="checkbox" {...register("weekend_sat")} className="w-4 h-4 accent-primary-main" /> Qualche Sabato mattina/pomeriggio</label>
                                 <label className="flex items-center gap-3"><input type="checkbox" {...register("weekend_sun")} className="w-4 h-4 accent-primary-main" /> Qualche Domenica</label>
                                 <label className="flex items-center gap-3"><input type="checkbox" {...register("holidays")} className="w-4 h-4 accent-primary-main" /> Festivi generali (rossi sul calendario)</label>
                             </div>
@@ -470,7 +470,7 @@ export default function ApplyPage() {
                             <h4 className="font-bold text-lg">Scenario 1: L'Obiezione</h4>
                             <p className="text-sm italic">"Il prodotto mi piace molto e ne ho sicuramente bisogno visti i chili da scalare, ma per me sono soldi, ci devo pensare..."</p>
                             <div className="space-y-2 mt-4">
-                                <label className="text-sm font-semibold text-text-main">Ascolti queste parole dalla cliente. Cosa dici esattamente per risponderle e provare a chiuderla senza sembrare aggressiva? *</label>
+                                <label className="text-sm font-semibold text-text-main">Ascolti queste parole dalla cliente. Cosa dici esattamente per risponderle e provare a chiuderla senza sembrare aggressivo? *</label>
                                 <textarea {...register("roleplay_think_about_it")} rows={6} className="w-full border border-gray-300 rounded-xl px-4 py-3 bg-white focus:outline-none focus:ring-2 focus:ring-primary-main resize-none" placeholder="Scrivi parola per parola cosa diresti..."></textarea>
                                 <p className="text-xs text-text-muted text-right">Minimo 200 caratteri. Valutiamo l'empatia e la tecnica.</p>
                                 {errors.roleplay_think_about_it && <span className="text-error text-xs">{errors.roleplay_think_about_it.message}</span>}

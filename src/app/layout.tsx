@@ -19,9 +19,11 @@ export default function RootLayout({
   children: React.ReactNode
 }>) {
   return (
-    <html lang="it">
-      <body className={`${inter.variable} font-sans antialiased`}>
-        {children}
+    <html lang="it" className="scroll-smooth">
+      <body className={`${inter.variable} font-sans antialiased bg-[#FFFFFF] text-[#1A1A1A] min-h-screen flex flex-col`}>
+        <main className="flex-1 flex flex-col">
+          {children}
+        </main>
       </body>
     </html>
   )

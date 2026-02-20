@@ -1,317 +1,192 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useEffect, useState } from 'react'
 import Link from 'next/link'
 import { createClient } from '@/lib/supabase/client'
-import type { Candidate, CandidateStatus, CandidatePriority } from '@/types/database'
-import {
-  Users,
-  UserCheck,
-  UserX,
-  Calendar,
-  TrendingUp,
-  Search,
-  Filter,
-  ChevronDown,
-  Eye,
-  Download,
-} from 'lucide-react'
-import Button from '@/components/ui/Button'
-import Input from '@/components/ui/Input'
+import { format } from 'date-fns'
+import { Filter, Search, ChevronRight } from 'lucide-react'
 
-const statusColors: Record<CandidateStatus, string> = {
-  new: 'bg-gray-100 text-gray-700',
-  qualified: 'bg-blue-100 text-blue-700',
-  interview_booked: 'bg-yellow-100 text-yellow-700',
-  hired: 'bg-green-100 text-green-700',
-  rejected: 'bg-red-100 text-red-700',
+type Candidate = {
+  id: string
+  created_at: string
+  first_name: string
+  last_name: string
+  email: string
+  whatsapp: string
+  score_total: number
+  priority: 'low' | 'medium' | 'high'
+  status: 'new' | 'qualified' | 'interview_booked' | 'hired' | 'rejected'
+  italian_level: string
+  hours_per_day: number
 }
 
-const statusLabels: Record<CandidateStatus, string> = {
+const statusColors = {
+  new: 'bg-blue-100 text-blue-700',
+  qualified: 'bg-amber-100 text-amber-700',
+  interview_booked: 'bg-purple-100 text-purple-700',
+  hired: 'bg-green-100 text-green-700',
+  rejected: 'bg-red-100 text-red-700'
+}
+
+const statusLabels = {
   new: 'Nuovo',
   qualified: 'Qualificato',
-  interview_booked: 'Colloquio',
+  interview_booked: 'Colloquio Fissato',
   hired: 'Assunto',
-  rejected: 'Rifiutato',
+  rejected: 'Rifiutato'
 }
 
-const priorityColors: Record<CandidatePriority, string> = {
-  high: 'bg-pink-100 text-pink-700',
-  medium: 'bg-amber-100 text-amber-700',
-  low: 'bg-gray-100 text-gray-500',
+const priorityColors = {
+  high: 'bg-red-100 text-red-700 border-red-200',
+  medium: 'bg-orange-100 text-orange-700 border-orange-200',
+  low: 'bg-gray-100 text-gray-700 border-gray-200'
 }
 
-export default function AdminDashboardPage() {
+export default function CandidatesPage() {
   const [candidates, setCandidates] = useState<Candidate[]>([])
-  const [isLoading, setIsLoading] = useState(true)
-  const [searchQuery, setSearchQuery] = useState('')
-  const [statusFilter, setStatusFilter] = useState<CandidateStatus | 'all'>('all')
-  const [priorityFilter, setPriorityFilter] = useState<CandidatePriority | 'all'>('all')
+  const [loading, setLoading] = useState(true)
+  const [searchTerm, setSearchTerm] = useState('')
+  const [statusFilter, setStatusFilter] = useState<string>('all')
+  const supabase = createClient()
 
   useEffect(() => {
-    loadCandidates()
+    fetchCandidates()
   }, [])
 
-  const loadCandidates = async () => {
-    setIsLoading(true)
-    const supabase = createClient()
-    const { data, error } = await supabase
-      .from('candidates')
-      .select('*')
-      .order('created_at', { ascending: false })
+  async function fetchCandidates() {
+    try {
+      setLoading(true)
+      const { data, error } = await supabase
+        .from('candidates')
+        .select('*')
+        .order('created_at', { ascending: false })
 
-    if (error) {
-      console.error('Error loading candidates:', error)
-    } else {
-      setCandidates(data || [])
+      if (error) throw error
+      if (data) setCandidates(data)
+    } catch (error) {
+      console.error('Error fetching candidates:', error)
+    } finally {
+      setLoading(false)
     }
-    setIsLoading(false)
   }
 
-  const filteredCandidates = candidates.filter((c) => {
+  const filteredCandidates = candidates.filter(c => {
     const matchesSearch =
-      searchQuery === '' ||
-      `${c.first_name} ${c.last_name}`.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      c.email.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      c.whatsapp.includes(searchQuery)
+      `${c.first_name} ${c.last_name}`.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      c.email.toLowerCase().includes(searchTerm.toLowerCase())
 
     const matchesStatus = statusFilter === 'all' || c.status === statusFilter
-    const matchesPriority = priorityFilter === 'all' || c.priority === priorityFilter
 
-    return matchesSearch && matchesStatus && matchesPriority
+    return matchesSearch && matchesStatus
   })
 
-  // Calculate KPIs
-  const totalCandidates = candidates.length
-  const qualifiedCount = candidates.filter((c) => c.status !== 'rejected').length
-  const rejectedCount = candidates.filter((c) => c.status === 'rejected').length
-  const interviewBookedCount = candidates.filter((c) => c.status === 'interview_booked').length
-  const hiredCount = candidates.filter((c) => c.status === 'hired').length
-  const qualifiedPercent = totalCandidates > 0 ? Math.round((qualifiedCount / totalCandidates) * 100) : 0
-  const rejectedPercent = totalCandidates > 0 ? Math.round((rejectedCount / totalCandidates) * 100) : 0
-
-  const exportCSV = () => {
-    const headers = ['Nome', 'Cognome', 'Email', 'WhatsApp', 'Score', 'Priorità', 'Status', 'Data']
-    const rows = filteredCandidates.map((c) => [
-      c.first_name,
-      c.last_name,
-      c.email,
-      c.whatsapp,
-      c.score_total,
-      c.priority,
-      c.status,
-      new Date(c.created_at).toLocaleDateString('it-IT'),
-    ])
-
-    const csv = [headers.join(','), ...rows.map((r) => r.join(','))].join('\n')
-    const blob = new Blob([csv], { type: 'text/csv' })
-    const url = URL.createObjectURL(blob)
-    const a = document.createElement('a')
-    a.href = url
-    a.download = `candidature_${new Date().toISOString().split('T')[0]}.csv`
-    a.click()
-    URL.revokeObjectURL(url)
-  }
-
   return (
-    <div className="p-6 lg:p-8">
-      <div className="mb-8">
-        <h1 className="text-2xl font-bold text-gray-900">Dashboard</h1>
-        <p className="text-gray-500">Panoramica candidature e gestione</p>
-      </div>
-
-      {/* KPI Cards */}
-      <div className="grid grid-cols-2 lg:grid-cols-6 gap-4 mb-8">
-        <div className="bg-white rounded-xl p-5 border border-gray-200">
-          <div className="flex items-center gap-3">
-            <div className="w-10 h-10 bg-gray-100 rounded-lg flex items-center justify-center">
-              <Users className="w-5 h-5 text-gray-600" />
-            </div>
-            <div>
-              <p className="text-2xl font-bold text-gray-900">{totalCandidates}</p>
-              <p className="text-xs text-gray-500">Totali</p>
-            </div>
-          </div>
-        </div>
-        <div className="bg-white rounded-xl p-5 border border-gray-200">
-          <div className="flex items-center gap-3">
-            <div className="w-10 h-10 bg-blue-100 rounded-lg flex items-center justify-center">
-              <UserCheck className="w-5 h-5 text-blue-600" />
-            </div>
-            <div>
-              <p className="text-2xl font-bold text-gray-900">{qualifiedPercent}%</p>
-              <p className="text-xs text-gray-500">Qualificati</p>
-            </div>
-          </div>
-        </div>
-        <div className="bg-white rounded-xl p-5 border border-gray-200">
-          <div className="flex items-center gap-3">
-            <div className="w-10 h-10 bg-red-100 rounded-lg flex items-center justify-center">
-              <UserX className="w-5 h-5 text-red-600" />
-            </div>
-            <div>
-              <p className="text-2xl font-bold text-gray-900">{rejectedPercent}%</p>
-              <p className="text-xs text-gray-500">Rifiutati</p>
-            </div>
-          </div>
-        </div>
-        <div className="bg-white rounded-xl p-5 border border-gray-200">
-          <div className="flex items-center gap-3">
-            <div className="w-10 h-10 bg-yellow-100 rounded-lg flex items-center justify-center">
-              <Calendar className="w-5 h-5 text-yellow-600" />
-            </div>
-            <div>
-              <p className="text-2xl font-bold text-gray-900">{interviewBookedCount}</p>
-              <p className="text-xs text-gray-500">Colloqui</p>
-            </div>
-          </div>
-        </div>
-        <div className="bg-white rounded-xl p-5 border border-gray-200">
-          <div className="flex items-center gap-3">
-            <div className="w-10 h-10 bg-green-100 rounded-lg flex items-center justify-center">
-              <TrendingUp className="w-5 h-5 text-green-600" />
-            </div>
-            <div>
-              <p className="text-2xl font-bold text-gray-900">{hiredCount}</p>
-              <p className="text-xs text-gray-500">Assunti</p>
-            </div>
-          </div>
-        </div>
-        <div className="bg-white rounded-xl p-5 border border-gray-200">
-          <div className="flex items-center gap-3">
-            <div className="w-10 h-10 bg-[#FDF2F8] rounded-lg flex items-center justify-center">
-              <TrendingUp className="w-5 h-5 text-[#D946A8]" />
-            </div>
-            <div>
-              <p className="text-2xl font-bold text-gray-900">
-                {candidates.filter((c) => c.priority === 'high').length}
-              </p>
-              <p className="text-xs text-gray-500">Alta priorità</p>
-            </div>
-          </div>
+    <div className="space-y-6">
+      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
+        <div>
+          <h1 className="text-2xl font-bold text-text-main">Candidati</h1>
+          <p className="text-text-muted text-sm mt-1">Gestisci e valuta le candidature ricevute.</p>
         </div>
       </div>
 
-      {/* Filters & Search */}
-      <div className="bg-white rounded-xl border border-gray-200 p-4 mb-6">
-        <div className="flex flex-col lg:flex-row gap-4">
-          <div className="flex-1 relative">
-            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
-            <input
-              type="text"
-              placeholder="Cerca per nome, email o telefono..."
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-              className="w-full pl-10 pr-4 py-2.5 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#D946A8] focus:border-transparent"
-            />
-          </div>
-          <div className="flex gap-3">
-            <select
-              value={statusFilter}
-              onChange={(e) => setStatusFilter(e.target.value as CandidateStatus | 'all')}
-              className="px-4 py-2.5 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#D946A8]"
-            >
-              <option value="all">Tutti gli stati</option>
-              <option value="new">Nuovo</option>
-              <option value="qualified">Qualificato</option>
-              <option value="interview_booked">Colloquio</option>
-              <option value="hired">Assunto</option>
-              <option value="rejected">Rifiutato</option>
-            </select>
-            <select
-              value={priorityFilter}
-              onChange={(e) => setPriorityFilter(e.target.value as CandidatePriority | 'all')}
-              className="px-4 py-2.5 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#D946A8]"
-            >
-              <option value="all">Tutte le priorità</option>
-              <option value="high">Alta</option>
-              <option value="medium">Media</option>
-              <option value="low">Bassa</option>
-            </select>
-            <Button variant="outline" onClick={exportCSV} className="flex items-center gap-2">
-              <Download className="w-4 h-4" />
-              CSV
-            </Button>
-          </div>
+      <div className="bg-white p-4 rounded-2xl shadow-sm border border-gray-100 flex flex-col md:flex-row gap-4 items-center">
+        <div className="relative w-full md:w-96">
+          <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
+          <input
+            type="text"
+            placeholder="Cerca per nome o email..."
+            value={searchTerm}
+            onChange={(e) => setSearchTerm(e.target.value)}
+            className="w-full pl-10 pr-4 py-2 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-primary-main"
+          />
+        </div>
+
+        <div className="flex items-center gap-2 w-full md:w-auto">
+          <Filter className="w-5 h-5 text-gray-400" />
+          <select
+            className="w-full md:w-auto p-2 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-primary-main bg-white"
+            value={statusFilter}
+            onChange={(e) => setStatusFilter(e.target.value)}
+          >
+            <option value="all">Tutti gli stati</option>
+            <option value="new">Nuovi</option>
+            <option value="qualified">Qualificati</option>
+            <option value="interview_booked">Colloquio Fissato</option>
+            <option value="hired">Assunti</option>
+            <option value="rejected">Rifiutati KO</option>
+          </select>
         </div>
       </div>
 
-      {/* Candidates Table */}
-      <div className="bg-white rounded-xl border border-gray-200 overflow-hidden">
-        {isLoading ? (
-          <div className="p-8 text-center text-gray-500">Caricamento...</div>
-        ) : filteredCandidates.length === 0 ? (
-          <div className="p-8 text-center text-gray-500">Nessun candidato trovato</div>
-        ) : (
-          <div className="overflow-x-auto">
-            <table className="w-full">
-              <thead className="bg-gray-50 border-b border-gray-200">
+      <div className="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden">
+        <div className="overflow-x-auto">
+          <table className="w-full text-left border-collapse">
+            <thead>
+              <tr className="bg-gray-50 border-b border-gray-100 text-sm font-semibold text-text-muted">
+                <th className="p-4 whitespace-nowrap">Nome</th>
+                <th className="p-4 whitespace-nowrap">Contatti</th>
+                <th className="p-4 whitespace-nowrap">Score</th>
+                <th className="p-4 whitespace-nowrap">Priorità</th>
+                <th className="p-4 whitespace-nowrap">Status</th>
+                <th className="p-4 whitespace-nowrap">Italiano / Ore</th>
+                <th className="p-4 whitespace-nowrap text-right">Azione</th>
+              </tr>
+            </thead>
+            <tbody className="divide-y divide-gray-100 text-sm">
+              {loading ? (
                 <tr>
-                  <th className="text-left px-4 py-3 text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    Nome
-                  </th>
-                  <th className="text-left px-4 py-3 text-xs font-medium text-gray-500 uppercase tracking-wider hidden md:table-cell">
-                    Contatto
-                  </th>
-                  <th className="text-left px-4 py-3 text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    Score
-                  </th>
-                  <th className="text-left px-4 py-3 text-xs font-medium text-gray-500 uppercase tracking-wider hidden lg:table-cell">
-                    Priorità
-                  </th>
-                  <th className="text-left px-4 py-3 text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    Status
-                  </th>
-                  <th className="text-left px-4 py-3 text-xs font-medium text-gray-500 uppercase tracking-wider hidden lg:table-cell">
-                    Data
-                  </th>
-                  <th className="px-4 py-3"></th>
+                  <td colSpan={7} className="p-8 text-center text-text-muted">
+                    Caricamento candidati...
+                  </td>
                 </tr>
-              </thead>
-              <tbody className="divide-y divide-gray-200">
-                {filteredCandidates.map((candidate) => (
-                  <tr key={candidate.id} className="hover:bg-gray-50">
-                    <td className="px-4 py-4">
-                      <p className="font-medium text-gray-900">
-                        {candidate.first_name} {candidate.last_name}
-                      </p>
+              ) : filteredCandidates.length === 0 ? (
+                <tr>
+                  <td colSpan={7} className="p-8 text-center text-text-muted">
+                    Nessun candidato trovato.
+                  </td>
+                </tr>
+              ) : (
+                filteredCandidates.map((candidate) => (
+                  <tr key={candidate.id} className="hover:bg-gray-50 transition-colors">
+                    <td className="p-4">
+                      <div className="font-semibold text-text-main">{candidate.first_name} {candidate.last_name}</div>
+                      <div className="text-xs text-text-muted">{format(new Date(candidate.created_at), 'dd MMM yyyy')}</div>
                     </td>
-                    <td className="px-4 py-4 hidden md:table-cell">
-                      <p className="text-sm text-gray-600">{candidate.email}</p>
-                      <p className="text-sm text-gray-400">{candidate.whatsapp}</p>
+                    <td className="p-4">
+                      <div className="text-text-main">{candidate.email}</div>
+                      <div className="text-xs text-text-muted">{candidate.whatsapp}</div>
                     </td>
-                    <td className="px-4 py-4">
-                      <span className="inline-flex items-center justify-center w-10 h-10 rounded-full bg-gray-100 font-semibold text-gray-900">
-                        {candidate.score_total}
+                    <td className="p-4">
+                      <div className="font-bold text-lg text-primary-main">{candidate.score_total || 0}</div>
+                    </td>
+                    <td className="p-4">
+                      <span className={`px-2.5 py-1 rounded-md text-xs font-bold border ${priorityColors[candidate.priority] || priorityColors.low}`}>
+                        {candidate.priority?.toUpperCase() || 'LOW'}
                       </span>
                     </td>
-                    <td className="px-4 py-4 hidden lg:table-cell">
-                      <span className={`px-3 py-1 rounded-full text-xs font-medium ${priorityColors[candidate.priority]}`}>
-                        {candidate.priority === 'high' ? 'Alta' : candidate.priority === 'medium' ? 'Media' : 'Bassa'}
-                      </span>
-                    </td>
-                    <td className="px-4 py-4">
-                      <span className={`px-3 py-1 rounded-full text-xs font-medium ${statusColors[candidate.status]}`}>
+                    <td className="p-4">
+                      <span className={`px-2.5 py-1 rounded-full text-xs font-bold ${statusColors[candidate.status]}`}>
                         {statusLabels[candidate.status]}
                       </span>
                     </td>
-                    <td className="px-4 py-4 hidden lg:table-cell text-sm text-gray-500">
-                      {new Date(candidate.created_at).toLocaleDateString('it-IT')}
+                    <td className="p-4">
+                      <div className="capitalize">{candidate.italian_level}</div>
+                      <div className="text-xs text-text-muted">{candidate.hours_per_day}h/gg</div>
                     </td>
-                    <td className="px-4 py-4">
+                    <td className="p-4 text-right">
                       <Link
                         href={`/admin/candidates/${candidate.id}`}
-                        className="p-2 text-gray-400 hover:text-[#D946A8] transition-colors"
+                        className="inline-flex items-center justify-center w-8 h-8 rounded-full bg-gray-100 hover:bg-primary-main hover:text-white transition-colors text-gray-500"
                       >
-                        <Eye className="w-5 h-5" />
+                        <ChevronRight className="w-5 h-5" />
                       </Link>
                     </td>
                   </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
-        )}
+                ))
+              )}
+            </tbody>
+          </table>
+        </div>
       </div>
     </div>
   )
