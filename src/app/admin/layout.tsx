@@ -1,23 +1,47 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import Link from 'next/link'
 import { usePathname, useRouter } from 'next/navigation'
-import { Users, KanbanSquare, Calendar, Settings, LogOut, Menu, X } from 'lucide-react'
+import { Users, KanbanSquare, Calendar, Settings, LogOut, Menu, X, UsersRound, ShieldCheck, Shield } from 'lucide-react'
 import { createClient } from '@/lib/supabase/client'
 
 export default function AdminLayout({ children }: { children: React.ReactNode }) {
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false)
+  const [userRole, setUserRole] = useState<'superadmin' | 'recruiter' | null>(null)
+  const [userEmail, setUserEmail] = useState<string | null>(null)
   const pathname = usePathname()
   const router = useRouter()
   const supabase = createClient()
 
+  useEffect(() => {
+    const fetchUserInfo = async () => {
+      const { data: { user } } = await supabase.auth.getUser()
+      if (user) {
+        setUserEmail(user.email || null)
+        // Fetch user role
+        const { data } = await supabase
+          .from('user_roles')
+          .select('role')
+          .eq('user_id', user.id)
+          .single()
+        if (data) setUserRole(data.role as 'superadmin' | 'recruiter')
+      }
+    }
+    fetchUserInfo()
+  }, [])
+
   const navigation = [
-    { name: 'Candidati', href: '/admin', icon: Users },
-    { name: 'Pipeline', href: '/admin/pipeline', icon: KanbanSquare },
-    { name: 'Calendario', href: '/admin/calendar', icon: Calendar },
-    { name: 'Impostazioni', href: '/admin/settings', icon: Settings },
+    { name: 'Candidati', href: '/admin', icon: Users, roles: ['superadmin', 'recruiter'] },
+    { name: 'Pipeline', href: '/admin/pipeline', icon: KanbanSquare, roles: ['superadmin', 'recruiter'] },
+    { name: 'Calendario', href: '/admin/calendar', icon: Calendar, roles: ['superadmin', 'recruiter'] },
+    { name: 'Impostazioni', href: '/admin/settings', icon: Settings, roles: ['superadmin'] },
+    { name: 'Team', href: '/admin/team', icon: UsersRound, roles: ['superadmin'] },
   ]
+
+  const visibleNavigation = navigation.filter(item =>
+    !userRole || item.roles.includes(userRole)
+  )
 
   const handleLogout = async () => {
     await supabase.auth.signOut()
@@ -26,7 +50,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
 
   const NavLinks = () => (
     <>
-      {navigation.map((item) => {
+      {visibleNavigation.map((item) => {
         const isActive = pathname === item.href
         return (
           <Link
@@ -34,8 +58,8 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
             href={item.href}
             onClick={() => setIsMobileMenuOpen(false)}
             className={`flex items-center gap-3 px-4 py-3 rounded-xl transition-colors font-medium ${isActive
-                ? 'bg-primary-light text-primary-hover'
-                : 'text-text-muted hover:bg-gray-50 hover:text-text-main'
+              ? 'bg-primary-light text-primary-hover'
+              : 'text-text-muted hover:bg-gray-50 hover:text-text-main'
               }`}
           >
             <item.icon className="w-5 h-5" />
@@ -73,7 +97,28 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
           <NavLinks />
         </div>
 
-        <div className="p-4 border-t border-gray-100">
+        {/* User Info & Logout */}
+        <div className="p-4 border-t border-gray-100 space-y-3">
+          {userEmail && (
+            <div className="flex items-center gap-3 px-4 py-2">
+              <div className={`w-8 h-8 rounded-full flex items-center justify-center text-xs ${userRole === 'superadmin'
+                  ? 'bg-amber-100 text-amber-600'
+                  : 'bg-blue-100 text-blue-600'
+                }`}>
+                {userRole === 'superadmin'
+                  ? <ShieldCheck className="w-4 h-4" />
+                  : <Shield className="w-4 h-4" />
+                }
+              </div>
+              <div className="min-w-0">
+                <div className="text-sm font-medium text-text-main truncate">{userEmail}</div>
+                <div className={`text-xs font-medium ${userRole === 'superadmin' ? 'text-amber-600' : 'text-blue-600'
+                  }`}>
+                  {userRole === 'superadmin' ? 'Super Admin' : 'Recruiter'}
+                </div>
+              </div>
+            </div>
+          )}
           <button
             onClick={handleLogout}
             className="flex items-center gap-3 w-full px-4 py-3 rounded-xl text-error hover:bg-red-50 transition-colors font-medium"
