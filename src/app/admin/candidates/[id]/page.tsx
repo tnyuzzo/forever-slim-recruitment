@@ -4,7 +4,7 @@ import { useEffect, useState, use } from 'react'
 import Link from 'next/link'
 import { createClient } from '@/lib/supabase/client'
 import { format } from 'date-fns'
-import { ChevronLeft, CheckCircle2, XCircle, Calendar, Play, Mail, Phone, MessageCircle, Send, Globe, Clock, Briefcase, Headphones, Shield, FileText, Save, Loader2, Video, X } from 'lucide-react'
+import { ChevronLeft, CheckCircle2, XCircle, Play, Mail, Phone, MessageCircle, Send, Globe, Clock, Briefcase, Headphones, Shield, FileText, Save, Loader2, Video, X, AlertTriangle, BarChart3 } from 'lucide-react'
 import { notFound } from 'next/navigation'
 
 const OUTCOME_STYLES: Record<string, string> = {
@@ -21,6 +21,34 @@ const INTERVIEW_STATUS_LABELS: Record<string, string> = {
   no_show: 'No Show',
   rescheduled: 'Riprogrammato',
   cancelled: 'Annullato',
+}
+
+const STATUS_COLORS: Record<string, string> = {
+  new: 'bg-blue-100 text-blue-700 border-blue-200',
+  qualified: 'bg-amber-100 text-amber-700 border-amber-200',
+  invited: 'bg-indigo-100 text-indigo-700 border-indigo-200',
+  interview_booked: 'bg-purple-100 text-purple-700 border-purple-200',
+  hired: 'bg-green-100 text-green-700 border-green-200',
+  rejected: 'bg-red-100 text-red-700 border-red-200',
+}
+
+const STATUS_LABELS: Record<string, string> = {
+  new: 'Nuovo',
+  qualified: 'Qualificato',
+  invited: 'Invitato',
+  interview_booked: 'Colloquio Fissato',
+  hired: 'Assunto',
+  rejected: 'Rifiutato',
+}
+
+const SCORE_LABELS: Record<string, { label: string; max: number }> = {
+  italian: { label: 'Italiano', max: 20 },
+  experience: { label: 'Esperienza', max: 15 },
+  close_rate: { label: 'Close Rate', max: 10 },
+  availability: { label: 'Disponibilità', max: 10 },
+  weekend: { label: 'Weekend', max: 5 },
+  roleplay: { label: 'Roleplay', max: 20 },
+  audio: { label: 'Audio', max: 5 },
 }
 
 export default function CandidateDetailPage({ params }: { params: Promise<{ id: string }> }) {
@@ -41,6 +69,12 @@ export default function CandidateDetailPage({ params }: { params: Promise<{ id: 
   // Interviews
   const [interviews, setInterviews] = useState<any[]>([])
 
+  // Toast
+  const [toast, setToast] = useState<{ message: string; type: 'success' | 'error' } | null>(null)
+
+  // Confirm dialog
+  const [confirmDialog, setConfirmDialog] = useState<{ title: string; message: string; onConfirm: () => void } | null>(null)
+
   // Outcome modal
   const [showOutcomeModal, setShowOutcomeModal] = useState(false)
   const [outcomeData, setOutcomeData] = useState({
@@ -49,6 +83,11 @@ export default function CandidateDetailPage({ params }: { params: Promise<{ id: 
     admin_notes: '',
     status: 'completed',
   })
+
+  function showToast(message: string, type: 'success' | 'error' = 'success') {
+    setToast({ message, type })
+    setTimeout(() => setToast(null), 3000)
+  }
 
   const supabase = createClient()
 
@@ -98,9 +137,10 @@ export default function CandidateDetailPage({ params }: { params: Promise<{ id: 
 
       if (error) throw error
       setCandidate({ ...candidate, status: newStatus })
+      showToast(`Status aggiornato: ${STATUS_LABELS[newStatus] || newStatus}`)
     } catch (error) {
       console.error('Error updating status:', error)
-      alert("Errore nell'aggiornamento dello stato")
+      showToast("Errore nell'aggiornamento dello stato", 'error')
     }
   }
 
@@ -124,6 +164,14 @@ export default function CandidateDetailPage({ params }: { params: Promise<{ id: 
     }
   }
 
+  function handleReject() {
+    setConfirmDialog({
+      title: 'Conferma Rifiuto',
+      message: `Sei sicuro di voler rifiutare ${candidate?.first_name} ${candidate?.last_name}? Questa azione è difficile da annullare.`,
+      onConfirm: rejectWithReason,
+    })
+  }
+
   async function rejectWithReason() {
     try {
       const updateData: any = { status: 'rejected' }
@@ -138,10 +186,23 @@ export default function CandidateDetailPage({ params }: { params: Promise<{ id: 
 
       if (error) throw error
       setCandidate({ ...candidate, ...updateData })
+      setConfirmDialog(null)
+      showToast('Candidato rifiutato')
     } catch (error) {
       console.error('Error rejecting candidate:', error)
-      alert("Errore nell'aggiornamento")
+      showToast("Errore nell'aggiornamento", 'error')
     }
+  }
+
+  function handleHire() {
+    setConfirmDialog({
+      title: 'Conferma Assunzione',
+      message: `Confermi di voler segnare ${candidate?.first_name} ${candidate?.last_name} come assunto?`,
+      onConfirm: async () => {
+        await updateStatus('hired')
+        setConfirmDialog(null)
+      },
+    })
   }
 
   async function recordOutcome() {
@@ -160,6 +221,7 @@ export default function CandidateDetailPage({ params }: { params: Promise<{ id: 
 
       setShowOutcomeModal(false)
       fetchInterviews()
+      showToast('Esito colloquio salvato')
 
       // Auto-advance candidate status based on outcome
       if (outcomeData.outcome === 'pass') {
@@ -169,7 +231,7 @@ export default function CandidateDetailPage({ params }: { params: Promise<{ id: 
       }
     } catch (error) {
       console.error('Error recording outcome:', error)
-      alert("Errore nel salvataggio dell'esito")
+      showToast("Errore nel salvataggio dell'esito", 'error')
     }
   }
 
@@ -184,7 +246,7 @@ export default function CandidateDetailPage({ params }: { params: Promise<{ id: 
       const data = await res.json()
       if (res.ok) {
         setInviteSent(true)
-        updateStatus('interview_booked')
+        setCandidate({ ...candidate, status: 'invited' })
         fetchInterviews()
       } else {
         alert("Errore nell'invio: " + (data.error || 'Sconosciuto'))
@@ -231,7 +293,12 @@ export default function CandidateDetailPage({ params }: { params: Promise<{ id: 
               </div>
             </div>
 
-            <h1 className="text-3xl font-black text-text-main mb-2">{candidate.first_name} {candidate.last_name}</h1>
+            <div className="flex items-center gap-3 mb-2">
+              <h1 className="text-3xl font-black text-text-main">{candidate.first_name} {candidate.last_name}</h1>
+              <span className={`px-3 py-1 rounded-full text-xs font-bold border ${STATUS_COLORS[candidate.status] || 'bg-gray-100 text-gray-600 border-gray-200'}`}>
+                {STATUS_LABELS[candidate.status] || candidate.status}
+              </span>
+            </div>
             <p className="text-text-muted font-medium mb-6">Inviato il {format(new Date(candidate.created_at), 'dd MMM yyyy, HH:mm')}</p>
 
             {/* Contatti Rapidi */}
@@ -289,6 +356,35 @@ export default function CandidateDetailPage({ params }: { params: Promise<{ id: 
               ))}
             </div>
           </div>
+
+          {/* Score Breakdown */}
+          {candidate.score_breakdown && Object.keys(candidate.score_breakdown).length > 0 && (
+            <div className="bg-white p-6 md:p-8 rounded-3xl shadow-sm border border-gray-100">
+              <h3 className="text-lg font-bold border-b border-gray-100 pb-2 mb-4 flex items-center gap-2">
+                <BarChart3 className="w-5 h-5 text-primary-main" /> Score Breakdown
+              </h3>
+              <div className="space-y-3">
+                {Object.entries(SCORE_LABELS).map(([key, { label, max }]) => {
+                  const value = (candidate.score_breakdown as Record<string, number>)?.[key] || 0
+                  const pct = max > 0 ? (value / max) * 100 : 0
+                  return (
+                    <div key={key}>
+                      <div className="flex items-center justify-between text-sm mb-1">
+                        <span className="font-medium text-text-main">{label}</span>
+                        <span className="font-bold text-text-main">{value}/{max}</span>
+                      </div>
+                      <div className="w-full bg-gray-100 rounded-full h-2">
+                        <div
+                          className={`h-2 rounded-full transition-all ${pct >= 80 ? 'bg-green-500' : pct >= 50 ? 'bg-amber-500' : pct > 0 ? 'bg-red-400' : 'bg-gray-200'}`}
+                          style={{ width: `${pct}%` }}
+                        />
+                      </div>
+                    </div>
+                  )
+                })}
+              </div>
+            </div>
+          )}
 
           {/* Audio del candidato */}
           {candidate.audio_url && (
@@ -508,16 +604,7 @@ export default function CandidateDetailPage({ params }: { params: Promise<{ id: 
               </button>
 
               <button
-                onClick={() => updateStatus('interview_booked')}
-                className={`w-full flex items-center justify-between p-4 rounded-xl border transition-all ${candidate.status === 'interview_booked' ? 'bg-purple-50 border-purple-200 text-purple-700 shadow-sm' : 'border-gray-200 hover:bg-gray-50'
-                  }`}
-              >
-                <span className="font-semibold">Prenota Colloquio</span>
-                <Calendar className="w-5 h-5 opacity-50" />
-              </button>
-
-              <button
-                onClick={() => updateStatus('hired')}
+                onClick={handleHire}
                 className={`w-full flex items-center justify-between p-4 rounded-xl border transition-all ${candidate.status === 'hired' ? 'bg-green-50 border-green-200 text-green-700 shadow-sm' : 'border-gray-200 hover:bg-gray-50'
                   }`}
               >
@@ -534,7 +621,7 @@ export default function CandidateDetailPage({ params }: { params: Promise<{ id: 
                   className="w-full border border-gray-200 rounded-xl px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-red-300"
                 />
                 <button
-                  onClick={rejectWithReason}
+                  onClick={handleReject}
                   className={`w-full flex items-center justify-between p-4 rounded-xl border transition-all ${candidate.status === 'rejected' ? 'bg-red-50 border-red-200 text-red-700 shadow-sm' : 'border-gray-200 text-red-600 hover:bg-red-50'
                     }`}
                 >
@@ -689,6 +776,45 @@ export default function CandidateDetailPage({ params }: { params: Promise<{ id: 
               </button>
             </div>
           </div>
+        </div>
+      )}
+
+      {/* Confirm Dialog */}
+      {confirmDialog && (
+        <div className="fixed inset-0 bg-black/30 z-50 flex items-center justify-center p-4">
+          <div className="bg-white rounded-2xl p-6 max-w-sm w-full shadow-xl space-y-4">
+            <div className="flex items-center gap-3">
+              <div className="w-10 h-10 bg-amber-100 rounded-full flex items-center justify-center shrink-0">
+                <AlertTriangle className="w-5 h-5 text-amber-600" />
+              </div>
+              <h3 className="text-lg font-bold">{confirmDialog.title}</h3>
+            </div>
+            <p className="text-sm text-text-muted">{confirmDialog.message}</p>
+            <div className="flex gap-3 pt-2">
+              <button
+                onClick={() => setConfirmDialog(null)}
+                className="flex-1 px-4 py-3 border border-gray-200 rounded-xl text-sm font-semibold hover:bg-gray-50 transition-colors"
+              >
+                Annulla
+              </button>
+              <button
+                onClick={confirmDialog.onConfirm}
+                className="flex-1 px-4 py-3 bg-red-600 text-white rounded-xl text-sm font-bold hover:bg-red-700 transition-colors"
+              >
+                Conferma
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Toast Notification */}
+      {toast && (
+        <div className={`fixed bottom-6 right-6 z-50 px-5 py-3 rounded-xl shadow-lg font-semibold text-sm flex items-center gap-2 animate-in slide-in-from-bottom-2 ${
+          toast.type === 'success' ? 'bg-green-600 text-white' : 'bg-red-600 text-white'
+        }`}>
+          {toast.type === 'success' ? <CheckCircle2 className="w-4 h-4" /> : <XCircle className="w-4 h-4" />}
+          {toast.message}
         </div>
       )}
     </div>

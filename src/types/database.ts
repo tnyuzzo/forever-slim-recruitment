@@ -1,4 +1,4 @@
-export type CandidateStatus = 'new' | 'qualified' | 'interview_booked' | 'hired' | 'rejected'
+export type CandidateStatus = 'new' | 'qualified' | 'invited' | 'interview_booked' | 'hired' | 'rejected'
 export type CandidatePriority = 'low' | 'medium' | 'high'
 export type ItalianLevel = 'low' | 'medium' | 'high'
 export type InterviewStatus = 'pending' | 'confirmed' | 'scheduled' | 'completed' | 'no_show' | 'rescheduled' | 'cancelled'
@@ -54,10 +54,17 @@ export interface Candidate {
   score_breakdown: ScoreBreakdown
   priority: CandidatePriority
 
+  // Pre-qualifica
+  pq_hours: boolean
+  pq_days: boolean
+  pq_punctuality: boolean
+  pq_italian: boolean
+
   // Status & admin
   status: CandidateStatus
   ko_reason: string | null
   notes: string | null
+  interview_link: string | null
 
   // UTM tracking
   utm_source: string | null

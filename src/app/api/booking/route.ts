@@ -86,6 +86,14 @@ export async function POST(request: Request) {
             return NextResponse.json({ error: 'Errore nella conferma. Slot già prenotato?' }, { status: 400 });
         }
 
+        // Update candidate status to 'interview_booked' now that they've actually booked
+        if (data.candidate_id) {
+            await supabase
+                .from('candidates')
+                .update({ status: 'interview_booked' })
+                .eq('id', data.candidate_id);
+        }
+
         // Send notification to admin
         try {
             const adminPhone = process.env.ADMIN_PHONE;

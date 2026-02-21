@@ -124,10 +124,10 @@ export async function POST(request: Request) {
             }
         }
 
-        // 7. Update candidate status
+        // 7. Update candidate status to 'invited' (not 'interview_booked' — that happens when they actually book)
         await supabase
             .from('candidates')
-            .update({ status: 'interview_booked', interview_link: bookingLink })
+            .update({ status: 'invited', interview_link: bookingLink })
             .eq('id', candidate_id);
 
         return NextResponse.json({ success: true, bookingLink, results });

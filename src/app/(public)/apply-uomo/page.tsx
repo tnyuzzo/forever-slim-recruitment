@@ -201,7 +201,26 @@ export default function ApplyPage() {
                 else if (score >= 55) priority = 'medium'
             }
 
-            // 4. Save to DB
+            // 4. Build score breakdown
+            const scoreBreakdown = isKO ? {} : {
+                italian: data.italian_level === 'high' ? 20 : (data.italian_level === 'medium' ? 10 : 0),
+                experience: (data.inbound_outbound === "inbound" || data.inbound_outbound === "entrambi") ? 15 : 0,
+                close_rate: data.close_rate_range === "30%+" ? 10 : 0,
+                availability: data.hours_per_day >= 6 ? 10 : 0,
+                weekend: (data.weekend_sat || data.weekend_sun) ? 5 : 0,
+                roleplay: Math.min(
+                    ((data.roleplay_think_about_it?.length || 0) >= 200 ? 5 : 0) +
+                    ((data.roleplay_think_about_it?.length || 0) >= 350 ? 3 : 0) +
+                    ((data.roleplay_think_about_it?.length || 0) >= 500 ? 2 : 0) +
+                    ((data.roleplay_bundle3?.length || 0) >= 200 ? 5 : 0) +
+                    ((data.roleplay_bundle3?.length || 0) >= 350 ? 3 : 0) +
+                    ((data.roleplay_bundle3?.length || 0) >= 500 ? 2 : 0),
+                    20
+                ),
+                audio: finalAudioUrl ? 5 : 0,
+            }
+
+            // 5. Save to DB
             const dbPayload = {
                 first_name: data.first_name,
                 last_name: data.last_name,
@@ -232,9 +251,14 @@ export default function ApplyPage() {
                 audio_url: finalAudioUrl,
                 audio_uploaded: !!finalAudioUrl,
                 score_total: score,
+                score_breakdown: scoreBreakdown,
                 priority: priority,
                 status: isKO ? 'rejected' : 'new',
                 ko_reason: isKO ? koReason : null,
+                pq_hours: !!data.pq_hours,
+                pq_days: !!data.pq_days,
+                pq_punctuality: !!data.pq_punctuality,
+                pq_italian: !!data.pq_italian,
                 consent_privacy: data.consent_privacy,
                 consent_truth: data.consent_truth,
                 consent_whatsapp: data.consent_whatsapp || false,

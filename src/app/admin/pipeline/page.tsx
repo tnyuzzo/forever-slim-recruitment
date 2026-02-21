@@ -21,6 +21,7 @@ type Candidate = {
 const COLUMNS = [
   { id: 'new', label: 'Nuovi', color: 'bg-blue-500', lightBg: 'bg-blue-50' },
   { id: 'qualified', label: 'Qualificati', color: 'bg-amber-500', lightBg: 'bg-amber-50' },
+  { id: 'invited', label: 'Invitati', color: 'bg-indigo-500', lightBg: 'bg-indigo-50' },
   { id: 'interview_booked', label: 'Colloquio Fissato', color: 'bg-purple-500', lightBg: 'bg-purple-50' },
   { id: 'hired', label: 'Assunti', color: 'bg-green-500', lightBg: 'bg-green-50' },
   { id: 'rejected', label: 'Rifiutati', color: 'bg-red-500', lightBg: 'bg-red-50' },

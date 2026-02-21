@@ -39,7 +39,7 @@ export async function POST(request: Request) {
         <p><strong>Punteggio Automazione:</strong> ${score_total}/100</p>
         <p><strong>Priorità:</strong> ${priority.toUpperCase()}</p>
         <br/>
-        <p>Per vedere i dettagli completi, prova a consultare la <a href="https://tuo-link-vercel.vercel.app/admin">Dashboard Admin</a>.</p>
+        <p>Per vedere i dettagli completi, prova a consultare la <a href="https://recruitment-app-sage.vercel.app/admin">Dashboard Admin</a>.</p>
       `;
         }
 
