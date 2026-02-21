@@ -52,9 +52,8 @@ export async function POST(request: Request) {
         }
 
         // 4. Build booking link
-        const baseUrl = process.env.VERCEL_URL
-            ? `https://${process.env.VERCEL_URL}`
-            : process.env.NEXT_PUBLIC_SITE_URL || 'https://recruitment-app-sage.vercel.app';
+        // Usa sempre l'URL stabile (alias Vercel o dominio custom), MAI il VERCEL_URL che è deployment-specific
+        const baseUrl = process.env.NEXT_PUBLIC_SITE_URL || 'https://recruitment-app-sage.vercel.app';
         const bookingLink = `${baseUrl}/book/${token}`;
 
         const results: { email?: { success: boolean; detail?: string }; sms?: { success: boolean; detail?: string } } = {};
@@ -68,7 +67,7 @@ export async function POST(request: Request) {
                     const emailResult = await resend.emails.send({
                         from: 'onboarding@resend.dev',
                         to: candidate.email,
-                        subject: `Forever Slim — Fissa il tuo Colloquio, ${candidate.first_name}!`,
+                        subject: `Fissa il tuo Colloquio Conoscitivo, ${candidate.first_name}!`,
                         html: `
             <div style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; max-width: 560px; margin: 0 auto; padding: 32px 24px;">
               <div style="text-align: center; margin-bottom: 32px;">
@@ -91,7 +90,7 @@ export async function POST(request: Request) {
               </p>
               <hr style="border: none; border-top: 1px solid #e2e8f0; margin: 32px 0;" />
               <p style="color: #94a3b8; font-size: 12px; text-align: center;">
-                Forever Slim Recruiting Team
+                Recruiting Team
               </p>
             </div>
           `,
@@ -125,7 +124,7 @@ export async function POST(request: Request) {
                         messages: [
                             {
                                 source: 'nodejs',
-                                body: `Ciao ${candidate.first_name}, complimenti! Sei stato selezionato per un colloquio con Forever Slim. Scegli il tuo slot qui: ${bookingLink}`,
+                                body: `Ciao ${candidate.first_name}, complimenti! Sei stato selezionato per un colloquio conoscitivo. Scegli il tuo slot qui: ${bookingLink}`,
                                 to: candidate.whatsapp,
                             },
                         ],

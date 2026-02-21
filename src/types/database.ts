@@ -32,6 +32,7 @@ export interface Candidate {
   start_date: string | null
   weekend_sat: boolean
   weekend_sun: boolean
+  weekend_details: string | null
   holidays: boolean
 
   // Step 4 - Esperienza

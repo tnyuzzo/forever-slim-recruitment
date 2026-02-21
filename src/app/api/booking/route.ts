@@ -48,6 +48,7 @@ export async function GET(request: Request) {
         return NextResponse.json({
             candidate_name: interview.candidates?.first_name,
             slots: availableSlots,
+            reference_timezone: 'Europe/Rome',
         });
     } catch (error) {
         console.error('Booking GET error:', error);
@@ -100,7 +101,7 @@ export async function POST(request: Request) {
             const clicksendUser = process.env.CLICKSEND_USERNAME;
             const clicksendKey = process.env.CLICKSEND_API_KEY;
             const candidateName = `${data.candidates?.first_name} ${data.candidates?.last_name}`;
-            const slotDate = new Date(scheduled_at).toLocaleString('it-IT', { dateStyle: 'full', timeStyle: 'short' });
+            const slotDate = new Date(scheduled_at).toLocaleString('it-IT', { timeZone: 'Europe/Rome', dateStyle: 'full', timeStyle: 'short' });
 
             // SMS to admin
             if (adminPhone && clicksendUser && clicksendKey) {
@@ -111,7 +112,7 @@ export async function POST(request: Request) {
                         Authorization: 'Basic ' + Buffer.from(`${clicksendUser}:${clicksendKey}`).toString('base64'),
                     },
                     body: JSON.stringify({
-                        messages: [{ body: `📅 ${candidateName} ha confermato il colloquio per: ${slotDate}`, to: adminPhone, from: 'ForeverSlim' }],
+                        messages: [{ source: 'nodejs', body: `${candidateName} ha confermato il colloquio per: ${slotDate}`, to: adminPhone }],
                     }),
                 });
             }
@@ -145,14 +146,36 @@ export async function POST(request: Request) {
     }
 }
 
+// Converte un'ora italiana (Europe/Rome) in UTC Date
+function italianHourToUTC(baseDate: Date, italianHour: number): Date {
+    // Ottieni anno/mese/giorno nel fuso italiano
+    const year = parseInt(new Intl.DateTimeFormat('en', { timeZone: 'Europe/Rome', year: 'numeric' }).format(baseDate));
+    const month = parseInt(new Intl.DateTimeFormat('en', { timeZone: 'Europe/Rome', month: 'numeric' }).format(baseDate)) - 1;
+    const day = parseInt(new Intl.DateTimeFormat('en', { timeZone: 'Europe/Rome', day: 'numeric' }).format(baseDate));
+
+    // Crea una data UTC di primo tentativo
+    const utcGuess = new Date(Date.UTC(year, month, day, italianHour, 0, 0));
+
+    // Controlla che ora è in Italia quando sono le italianHour UTC
+    const italyHourStr = new Intl.DateTimeFormat('en', { timeZone: 'Europe/Rome', hour: 'numeric', hour12: false }).format(utcGuess);
+    const italyHour = parseInt(italyHourStr);
+
+    // Aggiusta per l'offset (CET=+1, CEST=+2)
+    const diff = italyHour - italianHour;
+    return new Date(utcGuess.getTime() - diff * 60 * 60 * 1000);
+}
+
 function generateAvailableSlots(adminSlots: any[]) {
-    const slots: { date: string; time: string; datetime: string; dayName: string }[] = [];
+    const slots: { date: string; time: string; datetime: string; dayName: string; italianTime: string }[] = [];
     const now = new Date();
 
     for (let d = 1; d <= 7; d++) {
-        const date = new Date(now);
-        date.setDate(now.getDate() + d);
-        const dayOfWeek = date.getDay(); // 0 = Sunday
+        const futureDate = new Date(now.getTime() + d * 24 * 60 * 60 * 1000);
+
+        // Ottieni il giorno della settimana nel fuso italiano (non UTC del server)
+        const italianDayStr = new Intl.DateTimeFormat('en-US', { timeZone: 'Europe/Rome', weekday: 'short' }).format(futureDate);
+        const dayMap: Record<string, number> = { 'Sun': 0, 'Mon': 1, 'Tue': 2, 'Wed': 3, 'Thu': 4, 'Fri': 5, 'Sat': 6 };
+        const dayOfWeek = dayMap[italianDayStr];
 
         const matchingSlots = adminSlots.filter(s => s.day_of_week === dayOfWeek);
 
@@ -160,37 +183,40 @@ function generateAvailableSlots(adminSlots: any[]) {
             const [startHour] = slot.start_time.split(':').map(Number);
             const [endHour] = slot.end_time.split(':').map(Number);
 
-            // Generate hourly slots
             for (let h = startHour; h < endHour; h++) {
-                const slotDate = new Date(date);
-                slotDate.setHours(h, 0, 0, 0);
+                const utcDate = italianHourToUTC(futureDate, h);
+                const italianTimeStr = `${String(h).padStart(2, '0')}:00 - ${String(h + 1).padStart(2, '0')}:00`;
 
                 slots.push({
-                    date: slotDate.toLocaleDateString('it-IT', { weekday: 'long', day: 'numeric', month: 'long' }),
-                    time: `${String(h).padStart(2, '0')}:00 - ${String(h + 1).padStart(2, '0')}:00`,
-                    datetime: slotDate.toISOString(),
-                    dayName: slotDate.toLocaleDateString('it-IT', { weekday: 'long' }),
+                    date: utcDate.toLocaleDateString('it-IT', { timeZone: 'Europe/Rome', weekday: 'long', day: 'numeric', month: 'long' }),
+                    time: italianTimeStr,
+                    datetime: utcDate.toISOString(),
+                    dayName: utcDate.toLocaleDateString('it-IT', { timeZone: 'Europe/Rome', weekday: 'long' }),
+                    italianTime: italianTimeStr,
                 });
             }
         }
     }
 
-    // If no admin slots configured, generate default slots (Mon-Fri 10-18)
+    // Fallback: slot default Lun-Ven 10-18 se nessuno configurato
     if (slots.length === 0) {
         for (let d = 1; d <= 7; d++) {
-            const date = new Date(now);
-            date.setDate(now.getDate() + d);
-            const dayOfWeek = date.getDay();
-            if (dayOfWeek === 0 || dayOfWeek === 6) continue; // Skip weekends
+            const futureDate = new Date(now.getTime() + d * 24 * 60 * 60 * 1000);
+            const italianDayStr = new Intl.DateTimeFormat('en-US', { timeZone: 'Europe/Rome', weekday: 'short' }).format(futureDate);
+            const dayMap: Record<string, number> = { 'Sun': 0, 'Mon': 1, 'Tue': 2, 'Wed': 3, 'Thu': 4, 'Fri': 5, 'Sat': 6 };
+            const dayOfWeek = dayMap[italianDayStr];
+            if (dayOfWeek === 0 || dayOfWeek === 6) continue;
 
             for (let h = 10; h < 18; h++) {
-                const slotDate = new Date(date);
-                slotDate.setHours(h, 0, 0, 0);
+                const utcDate = italianHourToUTC(futureDate, h);
+                const italianTimeStr = `${String(h).padStart(2, '0')}:00 - ${String(h + 1).padStart(2, '0')}:00`;
+
                 slots.push({
-                    date: slotDate.toLocaleDateString('it-IT', { weekday: 'long', day: 'numeric', month: 'long' }),
-                    time: `${String(h).padStart(2, '0')}:00 - ${String(h + 1).padStart(2, '0')}:00`,
-                    datetime: slotDate.toISOString(),
-                    dayName: slotDate.toLocaleDateString('it-IT', { weekday: 'long' }),
+                    date: utcDate.toLocaleDateString('it-IT', { timeZone: 'Europe/Rome', weekday: 'long', day: 'numeric', month: 'long' }),
+                    time: italianTimeStr,
+                    datetime: utcDate.toISOString(),
+                    dayName: utcDate.toLocaleDateString('it-IT', { timeZone: 'Europe/Rome', weekday: 'long' }),
+                    italianTime: italianTimeStr,
                 });
             }
         }

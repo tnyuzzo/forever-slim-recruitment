@@ -7,7 +7,37 @@ import { format, parse, startOfWeek, getDay } from 'date-fns'
 import { it } from 'date-fns/locale'
 import { Calendar as BigCalendar, dateFnsLocalizer, type View } from 'react-big-calendar'
 import 'react-big-calendar/lib/css/react-big-calendar.css'
-import { Clock, Video, AlertCircle } from 'lucide-react'
+import { Clock, Video, AlertCircle, Globe } from 'lucide-react'
+
+// Timezone helpers
+function detectTimezone(): string {
+  try {
+    return Intl.DateTimeFormat().resolvedOptions().timeZone
+  } catch {
+    return 'Europe/Rome'
+  }
+}
+
+function getTimezoneCity(tz: string): string {
+  const parts = tz.split('/')
+  return (parts[parts.length - 1] || tz).replace(/_/g, ' ')
+}
+
+function getGMTOffset(tz: string): string {
+  const now = new Date()
+  const formatter = new Intl.DateTimeFormat('en', { timeZone: tz, timeZoneName: 'shortOffset' })
+  const parts = formatter.formatToParts(now)
+  const tzPart = parts.find(p => p.type === 'timeZoneName')
+  return tzPart?.value || ''
+}
+
+function formatDualTime(dateStr: string, userTz: string, isDifferentTz: boolean): string {
+  const d = new Date(dateStr)
+  const italianTime = d.toLocaleString('it-IT', { timeZone: 'Europe/Rome', weekday: 'short', day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' })
+  if (!isDifferentTz) return italianTime
+  const localTime = d.toLocaleString('it-IT', { timeZone: userTz, weekday: 'short', day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' })
+  return `${localTime} (${italianTime.split(', ').pop()} IT)`
+}
 
 const localizer = dateFnsLocalizer({
   format,
@@ -78,6 +108,19 @@ export default function CalendarPage() {
   const [view, setView] = useState<View>('week')
   const [date, setDate] = useState(new Date())
   const supabase = createClient()
+
+  // Timezone state
+  const [userTz, setUserTz] = useState('Europe/Rome')
+  const [isDifferentTz, setIsDifferentTz] = useState(false)
+  const [tzConfirmed, setTzConfirmed] = useState(false)
+
+  useEffect(() => {
+    const tz = detectTimezone()
+    setUserTz(tz)
+    const isItalian = tz === 'Europe/Rome' || tz === 'Europe/Vatican'
+    setIsDifferentTz(!isItalian)
+    if (isItalian) setTzConfirmed(true)
+  }, [])
 
   useEffect(() => {
     fetchInterviews()
@@ -195,14 +238,60 @@ export default function CalendarPage() {
   function getInterviewDate(interview: InterviewWithCandidate): string {
     const dateStr = interview.scheduled_start || interview.scheduled_at
     if (!dateStr) return 'N/D'
-    return format(new Date(dateStr), "EEE d MMM, HH:mm", { locale: it })
+    return formatDualTime(dateStr, userTz, isDifferentTz)
+  }
+
+  // Timezone popup
+  if (isDifferentTz && !tzConfirmed) {
+    return (
+      <div className="space-y-6">
+        <div className="max-w-md mx-auto mt-20">
+          <div className="bg-white p-8 rounded-3xl shadow-lg border border-indigo-100 text-center space-y-6">
+            <div className="w-16 h-16 bg-indigo-100 rounded-full flex items-center justify-center mx-auto">
+              <Globe className="w-8 h-8 text-indigo-600" />
+            </div>
+            <h2 className="text-2xl font-black text-slate-900">Fuso Orario Rilevato</h2>
+            <div className="bg-slate-50 rounded-2xl p-5 space-y-1">
+              <p className="text-lg font-bold text-slate-800">{getTimezoneCity(userTz)}</p>
+              <p className="text-sm text-slate-500">{getGMTOffset(userTz)}</p>
+            </div>
+            <p className="text-slate-500 leading-relaxed text-sm">
+              Il calendario mostrerà gli orari nel <strong>tuo fuso orario</strong> ({getTimezoneCity(userTz)}).
+              L&apos;ora italiana sarà indicata tra parentesi come riferimento.
+            </p>
+            <button
+              onClick={() => setTzConfirmed(true)}
+              className="w-full py-3 bg-indigo-600 hover:bg-indigo-700 text-white font-bold rounded-xl transition-colors"
+            >
+              Conferma e continua
+            </button>
+            <button
+              onClick={() => { setIsDifferentTz(false); setTzConfirmed(true) }}
+              className="text-sm text-slate-400 hover:text-slate-600 transition-colors"
+            >
+              Sono in Italia, mostra ora italiana
+            </button>
+          </div>
+        </div>
+      </div>
+    )
   }
 
   return (
     <div className="space-y-6">
       <div>
-        <h1 className="text-2xl font-bold text-text-main">Calendario Colloqui</h1>
-        <p className="text-text-muted text-sm mt-1">Visualizza e gestisci tutti i colloqui programmati.</p>
+        <div className="flex items-center justify-between">
+          <div>
+            <h1 className="text-2xl font-bold text-text-main">Calendario Colloqui</h1>
+            <p className="text-text-muted text-sm mt-1">Visualizza e gestisci tutti i colloqui programmati.</p>
+          </div>
+          {isDifferentTz && (
+            <div className="flex items-center gap-2 bg-indigo-50 text-indigo-700 px-3 py-1.5 rounded-full text-xs font-medium">
+              <Globe className="w-3.5 h-3.5" />
+              {getTimezoneCity(userTz)} ({getGMTOffset(userTz)}) — ora italiana tra parentesi
+            </div>
+          )}
+        </div>
       </div>
 
       {loading ? (
