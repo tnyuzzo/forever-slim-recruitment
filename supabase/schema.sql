@@ -70,7 +70,7 @@ CREATE TABLE candidates (
   hours_per_day INT NOT NULL DEFAULT 4,
   days_per_week INT NOT NULL DEFAULT 3,
   time_slots TEXT,
-  start_date DATE,
+  start_date TEXT,
   weekend_sat BOOLEAN DEFAULT false,
   weekend_sun BOOLEAN DEFAULT false,
   holidays BOOLEAN DEFAULT false,

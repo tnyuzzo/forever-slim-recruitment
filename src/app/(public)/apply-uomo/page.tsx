@@ -53,8 +53,8 @@ const step4Schema = z.object({
 })
 
 const step5Schema = z.object({
-    roleplay_think_about_it: z.string().min(200, "Minimo 200 caratteri"),
-    roleplay_bundle3: z.string().min(200, "Minimo 200 caratteri"),
+    roleplay_think_about_it: z.string().min(50, "Minimo 50 caratteri"),
+    roleplay_bundle3: z.string().min(50, "Minimo 50 caratteri"),
 })
 
 const step6Schema = z.object({
@@ -492,7 +492,7 @@ export default function ApplyPage() {
                             <div className="space-y-2 mt-4">
                                 <label className="text-sm font-semibold text-text-main">Ascolti queste parole dal cliente. Cosa dici esattamente per rispondergli e provare a chiuderlo senza sembrare aggressivo? *</label>
                                 <textarea {...register("roleplay_think_about_it")} rows={6} className="w-full border border-gray-300 rounded-xl px-4 py-3 bg-white focus:outline-none focus:ring-2 focus:ring-blue-600 resize-none" placeholder="Scrivi parola per parola cosa diresti..."></textarea>
-                                <p className="text-xs text-text-muted text-right">Minimo 200 caratteri. Valutiamo l'empatia e la tecnica.</p>
+                                <p className="text-xs text-text-muted text-right">Minimo 50 caratteri. Valutiamo l'empatia e la tecnica.</p>
                                 {errors.roleplay_think_about_it && <span className="text-error text-xs">{errors.roleplay_think_about_it.message}</span>}
                             </div>
                         </div>
@@ -503,7 +503,7 @@ export default function ApplyPage() {
                             <div className="space-y-2 mt-4">
                                 <label className="text-sm font-semibold text-text-main">Cosa e come glielo dici per convincerlo a prendere il kit da 3 scatole (che conviene sia a lui che al tuo portafoglio) invece di quello da 1 scatola? *</label>
                                 <textarea {...register("roleplay_bundle3")} rows={6} className="w-full border border-gray-300 rounded-xl px-4 py-3 bg-white focus:outline-none focus:ring-2 focus:ring-blue-600 resize-none" placeholder="Scrivi la tua spiegazione/presentazione della proposta..."></textarea>
-                                <p className="text-xs text-text-muted text-right">Minimo 200 caratteri</p>
+                                <p className="text-xs text-text-muted text-right">Minimo 50 caratteri</p>
                                 {errors.roleplay_bundle3 && <span className="text-error text-xs">{errors.roleplay_bundle3.message}</span>}
                             </div>
                         </div>
@@ -565,7 +565,7 @@ export default function ApplyPage() {
     }
 
     return (
-        <div className="min-h-screen bg-bg-alt py-12 px-4">
+        <div className="min-h-screen bg-bg-alt py-12 px-4 selection:bg-blue-600 selection:text-white">
             <div className="max-w-3xl mx-auto">
                 <div className="mb-8 p-6 bg-white rounded-3xl shadow-sm border border-gray-100">
                     <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-8 border-b border-gray-100 pb-6">
