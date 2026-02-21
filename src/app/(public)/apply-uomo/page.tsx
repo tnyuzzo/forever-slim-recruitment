@@ -135,7 +135,7 @@ export default function ApplyPage() {
         }
     }
 
-    const onSubmit = async (data: CandidateFormData) => {
+    const onSubmit = async (_stepData: CandidateFormData) => {
         if (step !== schemas.length - 1) {
             return handleNext()
         }
@@ -143,6 +143,10 @@ export default function ApplyPage() {
         try {
             setIsSubmitting(true)
             const supabase = createClient()
+
+            // Get ALL form values — the zodResolver only returns current step's fields,
+            // so we must use getValues() to retrieve fields from all previous steps.
+            const data = getValues() as CandidateFormData
 
             // 1. Calculate KO Rules
             let isKO = false
@@ -587,7 +591,7 @@ export default function ApplyPage() {
                         <h2 className="text-2xl font-bold text-text-main mb-6">{stepTitles[step]}</h2>
                         <form onSubmit={handleSubmit(onSubmit as any)} autoComplete="off" className="space-y-8">
 
-                            {renderStepContent()}
+                            <div key={step}>{renderStepContent()}</div>
 
                             <div className="flex gap-4 pt-6 mt-8 border-t border-gray-100">
                                 {step > 0 && (
