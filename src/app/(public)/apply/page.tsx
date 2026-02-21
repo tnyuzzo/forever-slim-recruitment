@@ -39,8 +39,8 @@ const step3Schema = z.object({
     days_per_week: z.coerce.number().min(1, "Minimo 1").max(7, "Massimo 7"),
     time_slots: z.string().min(1, "Descrivi le tue fasce orarie"),
     start_date: z.string().min(2, "Indica quando puoi iniziare"),
-    weekend_sat: z.boolean(),
-    weekend_sun: z.boolean(),
+    weekend_availability: z.string().min(1, "Seleziona la tua disponibilità nel weekend"),
+    weekend_details: z.string().optional(),
     holidays: z.boolean(),
 })
 
@@ -99,8 +99,7 @@ export default function ApplyPage() {
         mode: "onChange",
         defaultValues: {
             strong_accent: false,
-            weekend_sat: false,
-            weekend_sun: false,
+            weekend_availability: '',
             holidays: false,
             audio_uploaded: false,
         } as DefaultValues<CandidateFormData>
@@ -225,7 +224,7 @@ export default function ApplyPage() {
                 score += (data.inbound_outbound === "inbound" || data.inbound_outbound === "entrambi") ? 15 : 0
                 score += data.close_rate_range === "30%+" ? 10 : 0
                 score += data.hours_per_day >= 6 ? 10 : 0
-                score += (data.weekend_sat || data.weekend_sun) ? 5 : 0
+                score += (data.weekend_availability && data.weekend_availability !== 'no') ? 5 : 0
 
                 let roleplayScore = 0
                 if ((data.roleplay_think_about_it?.length || 0) >= 200) roleplayScore += 5
@@ -249,7 +248,7 @@ export default function ApplyPage() {
                 experience: (data.inbound_outbound === "inbound" || data.inbound_outbound === "entrambi") ? 15 : 0,
                 close_rate: data.close_rate_range === "30%+" ? 10 : 0,
                 availability: data.hours_per_day >= 6 ? 10 : 0,
-                weekend: (data.weekend_sat || data.weekend_sun) ? 5 : 0,
+                weekend: (data.weekend_availability && data.weekend_availability !== 'no') ? 5 : 0,
                 roleplay: Math.min(
                     ((data.roleplay_think_about_it?.length || 0) >= 200 ? 5 : 0) +
                     ((data.roleplay_think_about_it?.length || 0) >= 350 ? 3 : 0) +
@@ -280,8 +279,9 @@ export default function ApplyPage() {
                 days_per_week: data.days_per_week,
                 time_slots: data.time_slots,
                 start_date: data.start_date,
-                weekend_sat: data.weekend_sat,
-                weekend_sun: data.weekend_sun,
+                weekend_sat: ['sempre', 'solo_sabato'].includes(data.weekend_availability || ''),
+                weekend_sun: ['sempre', 'solo_domenica'].includes(data.weekend_availability || ''),
+                weekend_details: data.weekend_details || null,
                 holidays: data.holidays,
                 sales_years: data.sales_years,
                 inbound_outbound: data.inbound_outbound,
@@ -520,13 +520,31 @@ export default function ApplyPage() {
                             {errors.start_date && <span className="text-error text-xs">{errors.start_date.message}</span>}
                         </div>
 
-                        <div className="pt-4 space-y-3">
-                            <p className="text-sm font-semibold text-text-main">Extra: Lavori anche nei fine settimana/festivi? (Opzionale ma apprezzato)</p>
-                            <div className="flex flex-col gap-2">
-                                <label className="flex items-center gap-3"><input type="checkbox" {...register("weekend_sat")} className="w-4 h-4 accent-primary-main" /> Qualche Sabato mattina/pome</label>
-                                <label className="flex items-center gap-3"><input type="checkbox" {...register("weekend_sun")} className="w-4 h-4 accent-primary-main" /> Qualche Domenica</label>
-                                <label className="flex items-center gap-3"><input type="checkbox" {...register("holidays")} className="w-4 h-4 accent-primary-main" /> Festivi generali (rossi sul calendario)</label>
+                        <div className="pt-4 space-y-4">
+                            <div className="space-y-2">
+                                <label className="text-sm font-semibold text-text-main">Puoi lavorare nel fine settimana? *</label>
+                                <select {...register("weekend_availability")} className="w-full border border-gray-300 rounded-xl px-4 py-3 bg-white focus:outline-none focus:ring-2 focus:ring-primary-main appearance-none">
+                                    <option value="">Seleziona...</option>
+                                    <option value="sempre">Sì, sempre (sabato e domenica)</option>
+                                    <option value="solo_sabato">Solo il sabato</option>
+                                    <option value="solo_domenica">Solo la domenica</option>
+                                    <option value="qualche_weekend">Qualche weekend (non tutti)</option>
+                                    <option value="no">No, non sono disponibile nel weekend</option>
+                                </select>
+                                {errors.weekend_availability && <span className="text-error text-xs">{errors.weekend_availability.message}</span>}
                             </div>
+
+                            {form.watch("weekend_availability") && form.watch("weekend_availability") !== "no" && (
+                                <div className="space-y-2">
+                                    <label className="text-sm font-semibold text-text-main">Dettagli disponibilità weekend <span className="font-normal text-text-muted">(fasce orarie, frequenza, ecc.)</span></label>
+                                    <input {...register("weekend_details")} className="w-full border border-gray-300 rounded-xl px-4 py-3 focus:outline-none focus:ring-2 focus:ring-primary-main" placeholder="Es. Sabato mattina 9-13, qualche domenica pomeriggio" />
+                                </div>
+                            )}
+
+                            <label className="flex items-center gap-3">
+                                <input type="checkbox" {...register("holidays")} className="w-4 h-4 accent-primary-main" />
+                                <span className="text-sm">Disponibile anche nei giorni festivi (rossi sul calendario)</span>
+                            </label>
                         </div>
                     </div>
                 )
