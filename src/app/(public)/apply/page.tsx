@@ -585,7 +585,7 @@ export default function ApplyPage() {
 
                     <div>
                         <h2 className="text-2xl font-bold text-text-main mb-6">{stepTitles[step]}</h2>
-                        <form onSubmit={handleSubmit(onSubmit as any)} className="space-y-8">
+                        <form onSubmit={handleSubmit(onSubmit as any)} autoComplete="off" className="space-y-8">
 
                             {renderStepContent()}
 
