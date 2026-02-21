@@ -8,6 +8,47 @@ import { z } from 'zod'
 import { Check, ChevronRight, ChevronLeft, Loader2, Upload, Headphones, Camera, X } from 'lucide-react'
 import { createClient } from '@/lib/supabase/client'
 
+// --- DATA ---
+const COUNTRIES = [
+    'Italia', 'Albania', 'Argentina', 'Australia', 'Austria', 'Belgio', 'Bosnia ed Erzegovina',
+    'Brasile', 'Bulgaria', 'Canada', 'Cile', 'Cina', 'Colombia', 'Croazia', 'Danimarca',
+    'Ecuador', 'Egitto', 'Estonia', 'Filippine', 'Finlandia', 'Francia', 'Germania', 'Giappone',
+    'Grecia', 'India', 'Irlanda', 'Kosovo', 'Lettonia', 'Lituania', 'Lussemburgo',
+    'Macedonia del Nord', 'Malta', 'Marocco', 'Messico', 'Moldova', 'Montenegro', 'Nigeria',
+    'Norvegia', 'Paesi Bassi', 'Pakistan', 'Perù', 'Polonia', 'Portogallo', 'Regno Unito',
+    'Repubblica Ceca', 'Romania', 'Russia', 'Senegal', 'Serbia', 'Slovacchia', 'Slovenia',
+    'Spagna', 'Sri Lanka', 'Stati Uniti', 'Svezia', 'Svizzera', 'Tunisia', 'Turchia', 'Ucraina',
+    'Ungheria', 'Venezuela', 'Altro'
+]
+
+const COUNTRY_PREFIXES: Record<string, string> = {
+    'Italia': '+39', 'Albania': '+355', 'Argentina': '+54', 'Australia': '+61', 'Austria': '+43',
+    'Belgio': '+32', 'Bosnia ed Erzegovina': '+387', 'Brasile': '+55', 'Bulgaria': '+359',
+    'Canada': '+1', 'Cile': '+56', 'Cina': '+86', 'Colombia': '+57', 'Croazia': '+385',
+    'Danimarca': '+45', 'Ecuador': '+593', 'Egitto': '+20', 'Estonia': '+372', 'Filippine': '+63',
+    'Finlandia': '+358', 'Francia': '+33', 'Germania': '+49', 'Giappone': '+81', 'Grecia': '+30',
+    'India': '+91', 'Irlanda': '+353', 'Kosovo': '+383', 'Lettonia': '+371', 'Lituania': '+370',
+    'Lussemburgo': '+352', 'Macedonia del Nord': '+389', 'Malta': '+356', 'Marocco': '+212',
+    'Messico': '+52', 'Moldova': '+373', 'Montenegro': '+382', 'Nigeria': '+234', 'Norvegia': '+47',
+    'Paesi Bassi': '+31', 'Pakistan': '+92', 'Perù': '+51', 'Polonia': '+48', 'Portogallo': '+351',
+    'Regno Unito': '+44', 'Repubblica Ceca': '+420', 'Romania': '+40', 'Russia': '+7',
+    'Senegal': '+221', 'Serbia': '+381', 'Slovacchia': '+421', 'Slovenia': '+386', 'Spagna': '+34',
+    'Sri Lanka': '+94', 'Stati Uniti': '+1', 'Svezia': '+46', 'Svizzera': '+41', 'Tunisia': '+216',
+    'Turchia': '+90', 'Ucraina': '+380', 'Ungheria': '+36', 'Venezuela': '+58'
+}
+
+const NATIONALITIES = [
+    'Italiana', 'Albanese', 'Argentina', 'Australiana', 'Austriaca', 'Belga', 'Bosniaca',
+    'Brasiliana', 'Bulgara', 'Canadese', 'Cilena', 'Cinese', 'Colombiana', 'Croata', 'Danese',
+    'Ecuadoriana', 'Egiziana', 'Estone', 'Filippina', 'Finlandese', 'Francese', 'Tedesca',
+    'Giapponese', 'Greca', 'Indiana', 'Irlandese', 'Kosovara', 'Lettone', 'Lituana',
+    'Lussemburghese', 'Macedone', 'Maltese', 'Marocchina', 'Messicana', 'Moldava', 'Montenegrina',
+    'Nigeriana', 'Norvegese', 'Olandese', 'Pakistana', 'Peruviana', 'Polacca', 'Portoghese',
+    'Britannica', 'Ceca', 'Rumena', 'Russa', 'Senegalese', 'Serba', 'Slovacca', 'Slovena',
+    'Spagnola', 'Singalese', 'Statunitense', 'Svedese', 'Svizzera', 'Tunisina', 'Turca',
+    'Ucraina', 'Ungherese', 'Venezuelana', 'Altra'
+]
+
 // --- SCHEMAS ---
 const step0Schema = z.object({
     pq_hours: z.boolean().refine(val => val === true, "Questo requisito è necessario"),
@@ -20,7 +61,7 @@ const step1Schema = z.object({
     first_name: z.string().min(2, "Inserisci il tuo nome"),
     last_name: z.string().min(2, "Inserisci il tuo cognome"),
     email: z.string().email("Email non valida"),
-    whatsapp: z.string().min(8, "Inserisci il numero WhatsApp con prefisso (es: +39...)"),
+    whatsapp: z.string().min(6, "Inserisci il numero di telefono"),
     country: z.string().min(2, "Seleziona/Inserisci il paese"),
     city: z.string().min(2, "Inserisci la città"),
     age_range: z.string().min(1, "Seleziona una fascia d'età"),
@@ -79,7 +120,7 @@ const schemas = [
 
 const stepTitles = [
     "Pre-qualifica", "Dati base", "Comunicazione", "Disponibilità",
-    "Esperienza", "Prove Pratiche", "Audio (Opzionale)", "Consenso e Invio"
+    "Esperienza", "Prove Pratiche", "Audio & Foto", "Consenso e Invio"
 ]
 
 export default function ApplyPage() {
@@ -90,6 +131,7 @@ export default function ApplyPage() {
     const [audioUrl, setAudioUrl] = useState<string | null>(null)
     const [photoFile, setPhotoFile] = useState<File | null>(null)
     const [photoPreview, setPhotoPreview] = useState<string | null>(null)
+    const [phonePrefix, setPhonePrefix] = useState('+39')
 
     const currentSchema = schemas[step]
 
@@ -102,6 +144,8 @@ export default function ApplyPage() {
             weekend_availability: '',
             holidays: false,
             audio_uploaded: false,
+            country: 'Italia',
+            nationality: 'Italiana',
         } as DefaultValues<CandidateFormData>
     })
 
@@ -170,7 +214,7 @@ export default function ApplyPage() {
 
             // 0. Validate photo
             if (!photoFile) {
-                alert("La foto è obbligatoria. Torna allo Step 1 e carica una tua foto.")
+                alert("La foto è obbligatoria. Torna allo Step 7 (Audio & Foto) e carica una tua foto.")
                 setIsSubmitting(false)
                 return
             }
@@ -266,7 +310,7 @@ export default function ApplyPage() {
                 first_name: data.first_name,
                 last_name: data.last_name,
                 email: data.email,
-                whatsapp: data.whatsapp,
+                whatsapp: phonePrefix + ' ' + (data.whatsapp || '').replace(/^\+?\d+\s*/, ''),
                 city: data.city,
                 country: data.country,
                 age_range: data.age_range,
@@ -324,7 +368,7 @@ export default function ApplyPage() {
                         first_name: data.first_name,
                         last_name: data.last_name,
                         email: data.email,
-                        whatsapp: data.whatsapp,
+                        whatsapp: phonePrefix + ' ' + (data.whatsapp || '').replace(/^\+?\d+\s*/, ''),
                         score_total: score,
                         priority: priority,
                         isKO: isKO
@@ -374,31 +418,6 @@ export default function ApplyPage() {
             case 1:
                 return (
                     <div className="space-y-6">
-                        {/* Foto Obbligatoria */}
-                        <div className="space-y-2">
-                            <label className="text-sm font-semibold text-text-main">La tua foto *</label>
-                            <p className="text-xs text-text-muted">Carica una tua foto recente e ben visibile (volto in primo piano). Formati accettati: JPG, PNG, WebP. Max 5MB.</p>
-                            {photoPreview ? (
-                                <div className="flex items-center gap-4">
-                                    <div className="relative">
-                                        <img src={photoPreview} alt="Anteprima foto" className="w-24 h-24 rounded-2xl object-cover border-2 border-blue-600 shadow-sm" />
-                                        <button type="button" onClick={removePhoto} className="absolute -top-2 -right-2 w-6 h-6 bg-red-500 text-white rounded-full flex items-center justify-center hover:bg-red-600 transition-colors shadow-sm">
-                                            <X className="w-3.5 h-3.5" />
-                                        </button>
-                                    </div>
-                                    <div className="text-sm text-green-600 font-semibold flex items-center gap-1.5">
-                                        <Check className="w-4 h-4" /> Foto caricata
-                                    </div>
-                                </div>
-                            ) : (
-                                <label className="flex items-center justify-center gap-3 px-4 py-6 bg-white border-2 border-dashed border-gray-300 rounded-2xl cursor-pointer hover:bg-gray-50 hover:border-blue-600 transition-colors">
-                                    <input type="file" accept="image/jpeg,image/png,image/webp" className="hidden" onChange={handlePhotoChange} />
-                                    <Camera className="w-6 h-6 text-gray-400" />
-                                    <span className="text-sm font-medium text-text-muted">Tocca per caricare la tua foto</span>
-                                </label>
-                            )}
-                        </div>
-
                         <div className="grid md:grid-cols-2 gap-6">
                             <div className="space-y-2">
                                 <label className="text-sm font-semibold text-text-main">Nome *</label>
@@ -420,14 +439,34 @@ export default function ApplyPage() {
 
                         <div className="space-y-2">
                             <label className="text-sm font-semibold text-text-main">Numero WhatsApp * <span className="font-normal text-text-muted">(usato per le comunicazioni)</span></label>
-                            <input type="tel" {...register("whatsapp")} className="w-full border border-gray-300 rounded-xl px-4 py-3 focus:outline-none focus:ring-2 focus:ring-blue-600" placeholder="+39 333 000 0000" />
+                            <div className="flex gap-2">
+                                <select
+                                    value={phonePrefix}
+                                    onChange={(e) => setPhonePrefix(e.target.value)}
+                                    className="shrink-0 w-[130px] border border-gray-300 rounded-xl px-3 py-3 bg-white focus:outline-none focus:ring-2 focus:ring-blue-600 appearance-none text-sm font-medium"
+                                >
+                                    {COUNTRIES.filter(c => c !== 'Altro').map(c => (
+                                        <option key={c} value={COUNTRY_PREFIXES[c]}>{COUNTRY_PREFIXES[c]} {c}</option>
+                                    ))}
+                                </select>
+                                <input type="tel" {...register("whatsapp")} className="flex-1 border border-gray-300 rounded-xl px-4 py-3 focus:outline-none focus:ring-2 focus:ring-blue-600" placeholder="333 000 0000" />
+                            </div>
                             {errors.whatsapp && <span className="text-error text-xs">{errors.whatsapp.message}</span>}
                         </div>
 
                         <div className="grid md:grid-cols-2 gap-6">
                             <div className="space-y-2">
                                 <label className="text-sm font-semibold text-text-main">Paese di residenza *</label>
-                                <input {...register("country")} className="w-full border border-gray-300 rounded-xl px-4 py-3 focus:outline-none focus:ring-2 focus:ring-blue-600" placeholder="Es. Italia" />
+                                <select {...register("country", {
+                                    onChange: (e: React.ChangeEvent<HTMLSelectElement>) => {
+                                        const prefix = COUNTRY_PREFIXES[e.target.value]
+                                        if (prefix) setPhonePrefix(prefix)
+                                    }
+                                })} className="w-full border border-gray-300 rounded-xl px-4 py-3 bg-white focus:outline-none focus:ring-2 focus:ring-blue-600 appearance-none">
+                                    {COUNTRIES.map(c => (
+                                        <option key={c} value={c}>{c}</option>
+                                    ))}
+                                </select>
                                 {errors.country && <span className="text-error text-xs">{errors.country.message}</span>}
                             </div>
                             <div className="space-y-2">
@@ -457,8 +496,12 @@ export default function ApplyPage() {
                     <div className="space-y-6">
                         <div className="grid md:grid-cols-2 gap-6">
                             <div className="space-y-2">
-                                <label className="text-sm font-semibold text-text-main">Nazionalità *</label>
-                                <input {...register("nationality")} className="w-full border border-gray-300 rounded-xl px-4 py-3 focus:outline-none focus:ring-2 focus:ring-blue-600" />
+                                <label className="text-sm font-semibold text-text-main">Cittadinanza *</label>
+                                <select {...register("nationality")} className="w-full border border-gray-300 rounded-xl px-4 py-3 bg-white focus:outline-none focus:ring-2 focus:ring-blue-600 appearance-none">
+                                    {NATIONALITIES.map(n => (
+                                        <option key={n} value={n}>{n}</option>
+                                    ))}
+                                </select>
                                 {errors.nationality && <span className="text-error text-xs">{errors.nationality.message}</span>}
                             </div>
                             <div className="space-y-2">
@@ -625,29 +668,58 @@ export default function ApplyPage() {
                 )
             case 6:
                 return (
-                    <div className="space-y-6 flex flex-col items-center">
-                        <div className="w-16 h-16 bg-blue-100 rounded-full flex items-center justify-center text-blue-600 mb-2">
-                            <Headphones className="w-8 h-8" />
+                    <div className="space-y-8">
+                        {/* Audio */}
+                        <div className="flex flex-col items-center space-y-4">
+                            <div className="w-16 h-16 bg-blue-100 rounded-full flex items-center justify-center text-blue-600 mb-2">
+                                <Headphones className="w-8 h-8" />
+                            </div>
+                            <h3 className="text-2xl font-bold text-center">Inviaci un breve memo vocale</h3>
+                            <p className="text-text-muted text-center max-w-md">
+                                Il tuo strumento di lavoro è la voce. Un breve audio in cui ti presenti (chi sei, perché dovremmo sceglierti) di 30-45 secondi vale più di mille parole scritte e accelera nettamente la valutazione.
+                            </p>
+                            <div className="w-full max-w-md mt-4">
+                                <label className="w-full flex justify-center items-center px-4 py-6 bg-white border-2 border-dashed border-gray-300 rounded-2xl cursor-pointer hover:bg-gray-50 hover:border-blue-600 transition-colors">
+                                    <input type="file" accept="audio/*" className="hidden" onChange={handleAudioChange} />
+                                    <div className="flex flex-col items-center gap-2">
+                                        <Upload className="w-6 h-6 text-gray-400" />
+                                        {audioFile ? (
+                                            <span className="text-sm font-semibold text-success flex items-center gap-2"><Check className="w-4 h-4" /> {audioFile.name} (Pronto)</span>
+                                        ) : (
+                                            <span className="text-sm font-medium text-text-muted">Tocca per caricare un file audio (.mp3, .m4a)</span>
+                                        )}
+                                    </div>
+                                </label>
+                            </div>
+                            <p className="text-xs text-text-muted uppercase font-semibold tracking-wider">L'audio è facoltativo ma consigliatissimo</p>
                         </div>
-                        <h3 className="text-2xl font-bold text-center">Inviaci un breve memo vocale</h3>
-                        <p className="text-text-muted text-center max-w-md">
-                            Il tuo strumento di lavoro è la voce. Un breve audio in cui ti presenti (chi sei, perché dovremmo sceglierti) di 30-45 secondi vale più di mille parole scritte e accelera nettamente la valutazione.
-                        </p>
 
-                        <div className="w-full max-w-md mt-6">
-                            <label className="w-full flex justify-center items-center px-4 py-6 bg-white border-2 border-dashed border-gray-300 rounded-2xl cursor-pointer hover:bg-gray-50 hover:border-blue-600 transition-colors">
-                                <input type="file" accept="audio/*" className="hidden" onChange={handleAudioChange} />
-                                <div className="flex flex-col items-center gap-2">
-                                    <Upload className="w-6 h-6 text-gray-400" />
-                                    {audioFile ? (
-                                        <span className="text-sm font-semibold text-success flex items-center gap-2"><Check className="w-4 h-4" /> {audioFile.name} (Pronto)</span>
-                                    ) : (
-                                        <span className="text-sm font-medium text-text-muted">Tocca per caricare un file audio (.mp3, .m4a)</span>
-                                    )}
-                                </div>
-                            </label>
+                        {/* Foto */}
+                        <div className="border-t border-gray-200 pt-8">
+                            <div className="space-y-3">
+                                <label className="text-sm font-semibold text-text-main">La tua foto *</label>
+                                <p className="text-xs text-text-muted">Carica una tua foto recente e ben visibile (volto in primo piano). Formati: JPG, PNG, WebP. Max 5MB.</p>
+                                {photoPreview ? (
+                                    <div className="flex items-center gap-4">
+                                        <div className="relative">
+                                            <img src={photoPreview} alt="Anteprima foto" className="w-24 h-24 rounded-2xl object-cover border-2 border-blue-600 shadow-sm" />
+                                            <button type="button" onClick={removePhoto} className="absolute -top-2 -right-2 w-6 h-6 bg-red-500 text-white rounded-full flex items-center justify-center hover:bg-red-600 transition-colors shadow-sm">
+                                                <X className="w-3.5 h-3.5" />
+                                            </button>
+                                        </div>
+                                        <div className="text-sm text-green-600 font-semibold flex items-center gap-1.5">
+                                            <Check className="w-4 h-4" /> Foto caricata
+                                        </div>
+                                    </div>
+                                ) : (
+                                    <label className="flex items-center justify-center gap-3 px-4 py-6 bg-white border-2 border-dashed border-gray-300 rounded-2xl cursor-pointer hover:bg-gray-50 hover:border-blue-600 transition-colors">
+                                        <input type="file" accept="image/jpeg,image/png,image/webp" className="hidden" onChange={handlePhotoChange} />
+                                        <Camera className="w-6 h-6 text-gray-400" />
+                                        <span className="text-sm font-medium text-text-muted">Tocca per caricare la tua foto</span>
+                                    </label>
+                                )}
+                            </div>
                         </div>
-                        <p className="text-xs text-text-muted uppercase font-semibold tracking-wider pt-4">Questo step è facoltativo ma consigliatissimo</p>
                     </div>
                 )
             case 7:
