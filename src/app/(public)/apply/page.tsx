@@ -67,10 +67,15 @@ const step1Schema = z.object({
     age_range: z.string().min(1, "Seleziona una fascia d'età"),
 })
 
+const LANGUAGE_OPTIONS = [
+    'Francese', 'Spagnolo', 'Tedesco', 'Portoghese', 'Arabo', 'Russo', 'Cinese', 'Rumeno'
+]
+
 const step2Schema = z.object({
     nationality: z.string().min(2, "Inserisci la nazionalità"),
     native_language: z.string().min(2, "Inserisci la lingua madre"),
     italian_level: z.string().min(1, "Seleziona il livello di italiano"),
+    english_level: z.string().min(1, "Seleziona il livello di inglese"),
     strong_accent: z.boolean(),
     bio_short: z.string().max(300, "Massimo 300 caratteri").min(20, "Scrivi almeno 20 caratteri"),
 })
@@ -132,6 +137,8 @@ export default function ApplyPage() {
     const [photoFile, setPhotoFile] = useState<File | null>(null)
     const [photoPreview, setPhotoPreview] = useState<string | null>(null)
     const [phonePrefix, setPhonePrefix] = useState('+39')
+    const [spokenLanguages, setSpokenLanguages] = useState<string[]>([])
+    const [otherLanguagesText, setOtherLanguagesText] = useState('')
 
     const currentSchema = schemas[step]
 
@@ -317,6 +324,8 @@ export default function ApplyPage() {
                 nationality: data.nationality,
                 native_language: data.native_language,
                 italian_level: data.italian_level,
+                english_level: data.english_level,
+                other_languages: [...spokenLanguages, otherLanguagesText].filter(Boolean).join(', ') || null,
                 strong_accent: data.strong_accent,
                 bio_short: data.bio_short,
                 hours_per_day: data.hours_per_day,
@@ -520,6 +529,48 @@ export default function ApplyPage() {
                                 <option value="low">Scolastico / Base (Mi arrangio)</option>
                             </select>
                             {errors.italian_level && <span className="text-error text-xs">{errors.italian_level.message}</span>}
+                        </div>
+
+                        <div className="space-y-2">
+                            <label className="text-sm font-semibold text-text-main">Livello di inglese *</label>
+                            <select {...register("english_level")} className="w-full border border-gray-300 rounded-xl px-4 py-3 bg-white focus:outline-none focus:ring-2 focus:ring-primary-main appearance-none">
+                                <option value="">Seleziona...</option>
+                                <option value="none">Nessuna conoscenza</option>
+                                <option value="basic">Base (A1-A2)</option>
+                                <option value="intermediate">Intermedio (B1-B2)</option>
+                                <option value="advanced">Avanzato (C1-C2)</option>
+                                <option value="native">Madrelingua / Bilingue</option>
+                            </select>
+                            {errors.english_level && <span className="text-error text-xs">{errors.english_level.message}</span>}
+                        </div>
+
+                        <div className="space-y-3">
+                            <label className="text-sm font-semibold text-text-main">Altre lingue parlate <span className="font-normal text-text-muted">(oltre italiano e inglese)</span></label>
+                            <div className="grid grid-cols-2 md:grid-cols-4 gap-2">
+                                {LANGUAGE_OPTIONS.map(lang => (
+                                    <label key={lang} className="flex items-center gap-2 p-2.5 border border-gray-200 rounded-xl cursor-pointer hover:bg-gray-50 text-sm">
+                                        <input
+                                            type="checkbox"
+                                            checked={spokenLanguages.includes(lang)}
+                                            onChange={(e) => {
+                                                if (e.target.checked) {
+                                                    setSpokenLanguages(prev => [...prev, lang])
+                                                } else {
+                                                    setSpokenLanguages(prev => prev.filter(l => l !== lang))
+                                                }
+                                            }}
+                                            className="w-4 h-4 accent-primary-main rounded"
+                                        />
+                                        <span>{lang}</span>
+                                    </label>
+                                ))}
+                            </div>
+                            <input
+                                value={otherLanguagesText}
+                                onChange={(e) => setOtherLanguagesText(e.target.value)}
+                                className="w-full border border-gray-300 rounded-xl px-4 py-3 focus:outline-none focus:ring-2 focus:ring-primary-main"
+                                placeholder="Altre lingue non in elenco (es. Giapponese, Hindi...)"
+                            />
                         </div>
 
                         <label className="flex items-center gap-3 p-4 border border-gray-200 rounded-xl cursor-pointer hover:bg-gray-50">
