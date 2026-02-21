@@ -256,12 +256,22 @@ export default function CandidateDetailPage({ params }: { params: Promise<{ id: 
         setInviteSent(true)
         setCandidate({ ...candidate, status: 'invited' })
         fetchInterviews()
+        // Mostra feedback dettagliato per canale
+        const msgs: string[] = []
+        if (data.results?.email) {
+          msgs.push(data.results.email.success ? 'Email inviata' : 'Email: ' + data.results.email.detail)
+        }
+        if (data.results?.sms) {
+          msgs.push(data.results.sms.success ? 'SMS inviato' : 'SMS: ' + data.results.sms.detail)
+        }
+        showToast(msgs.length > 0 ? msgs.join(' | ') : 'Invito inviato!',
+          data.results?.email?.success === false || data.results?.sms?.success === false ? 'error' : 'success')
       } else {
-        alert("Errore nell'invio: " + (data.error || 'Sconosciuto'))
+        showToast("Errore nell'invio: " + (data.error || 'Sconosciuto'), 'error')
       }
     } catch (err) {
       console.error(err)
-      alert("Errore nell'invio dell'invito")
+      showToast("Errore di rete nell'invio dell'invito. Riprova.", 'error')
     } finally {
       setInviteLoading(false)
     }
