@@ -5,7 +5,7 @@ import { useRouter } from 'next/navigation'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { useForm, DefaultValues } from 'react-hook-form'
 import { z } from 'zod'
-import { Check, ChevronRight, ChevronLeft, Loader2, Upload, Headphones } from 'lucide-react'
+import { Check, ChevronRight, ChevronLeft, Loader2, Upload, Headphones, Camera, X } from 'lucide-react'
 import { createClient } from '@/lib/supabase/client'
 
 // --- SCHEMAS ---
@@ -88,6 +88,8 @@ export default function ApplyPage() {
     const [isSubmitting, setIsSubmitting] = useState(false)
     const [audioFile, setAudioFile] = useState<File | null>(null)
     const [audioUrl, setAudioUrl] = useState<string | null>(null)
+    const [photoFile, setPhotoFile] = useState<File | null>(null)
+    const [photoPreview, setPhotoPreview] = useState<string | null>(null)
 
     const currentSchema = schemas[step]
 
@@ -123,6 +125,25 @@ export default function ApplyPage() {
         window.scrollTo(0, 0)
     }
 
+    const handlePhotoChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+        const file = e.target.files?.[0]
+        if (file) {
+            if (file.size > 5 * 1024 * 1024) {
+                alert("La foto non può superare i 5MB.")
+                return
+            }
+            setPhotoFile(file)
+            const reader = new FileReader()
+            reader.onloadend = () => setPhotoPreview(reader.result as string)
+            reader.readAsDataURL(file)
+        }
+    }
+
+    const removePhoto = () => {
+        setPhotoFile(null)
+        setPhotoPreview(null)
+    }
+
     const handleAudioChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
         const file = e.target.files?.[0]
         if (file) {
@@ -148,6 +169,13 @@ export default function ApplyPage() {
             // so we must use getValues() to retrieve fields from all previous steps.
             const data = getValues() as CandidateFormData
 
+            // 0. Validate photo
+            if (!photoFile) {
+                alert("La foto è obbligatoria. Torna allo Step 1 e carica una tua foto.")
+                setIsSubmitting(false)
+                return
+            }
+
             // 1. Calculate KO Rules
             let isKO = false
             let koReason = null
@@ -159,6 +187,20 @@ export default function ApplyPage() {
             else if (data.italian_level === "low") { isKO = true; koReason = "Livello italiano insufficiente" }
             else if (data.hours_per_day < 4) { isKO = true; koReason = "Disponibilità oraria insufficiente (< 4h/giorno)" }
             else if (data.days_per_week < 3) { isKO = true; koReason = "Disponibilità giornaliera insufficiente (< 3gg/settimana)" }
+
+            // 1b. Upload Photo
+            let finalPhotoUrl = null
+            if (photoFile) {
+                const photoExt = photoFile.name.split('.').pop()
+                const photoName = `${data.first_name.toLowerCase()}_${data.last_name.toLowerCase()}_${Date.now()}.${photoExt}`
+                const { error: photoUploadError, data: photoUploadData } = await supabase.storage
+                    .from('candidate-photos')
+                    .upload(photoName, photoFile)
+
+                if (!photoUploadError && photoUploadData) {
+                    finalPhotoUrl = supabase.storage.from('candidate-photos').getPublicUrl(photoName).data.publicUrl
+                }
+            }
 
             // 2. Upload Audio if exists
             let finalAudioUrl = null
@@ -248,6 +290,7 @@ export default function ApplyPage() {
                 motivation: data.motivation,
                 roleplay_think_about_it: data.roleplay_think_about_it,
                 roleplay_bundle3: data.roleplay_bundle3,
+                photo_url: finalPhotoUrl,
                 audio_url: finalAudioUrl,
                 audio_uploaded: !!finalAudioUrl,
                 score_total: score,
@@ -331,6 +374,31 @@ export default function ApplyPage() {
             case 1:
                 return (
                     <div className="space-y-6">
+                        {/* Foto Obbligatoria */}
+                        <div className="space-y-2">
+                            <label className="text-sm font-semibold text-text-main">La tua foto *</label>
+                            <p className="text-xs text-text-muted">Carica una tua foto recente e ben visibile (volto in primo piano). Formati accettati: JPG, PNG, WebP. Max 5MB.</p>
+                            {photoPreview ? (
+                                <div className="flex items-center gap-4">
+                                    <div className="relative">
+                                        <img src={photoPreview} alt="Anteprima foto" className="w-24 h-24 rounded-2xl object-cover border-2 border-primary-main shadow-sm" />
+                                        <button type="button" onClick={removePhoto} className="absolute -top-2 -right-2 w-6 h-6 bg-red-500 text-white rounded-full flex items-center justify-center hover:bg-red-600 transition-colors shadow-sm">
+                                            <X className="w-3.5 h-3.5" />
+                                        </button>
+                                    </div>
+                                    <div className="text-sm text-green-600 font-semibold flex items-center gap-1.5">
+                                        <Check className="w-4 h-4" /> Foto caricata
+                                    </div>
+                                </div>
+                            ) : (
+                                <label className="flex items-center justify-center gap-3 px-4 py-6 bg-white border-2 border-dashed border-gray-300 rounded-2xl cursor-pointer hover:bg-gray-50 hover:border-primary-main transition-colors">
+                                    <input type="file" accept="image/jpeg,image/png,image/webp" className="hidden" onChange={handlePhotoChange} />
+                                    <Camera className="w-6 h-6 text-gray-400" />
+                                    <span className="text-sm font-medium text-text-muted">Tocca per caricare la tua foto</span>
+                                </label>
+                            )}
+                        </div>
+
                         <div className="grid md:grid-cols-2 gap-6">
                             <div className="space-y-2">
                                 <label className="text-sm font-semibold text-text-main">Nome *</label>

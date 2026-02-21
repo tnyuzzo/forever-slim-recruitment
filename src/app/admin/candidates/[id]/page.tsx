@@ -4,7 +4,7 @@ import { useEffect, useState, use } from 'react'
 import Link from 'next/link'
 import { createClient } from '@/lib/supabase/client'
 import { format } from 'date-fns'
-import { ChevronLeft, CheckCircle2, XCircle, Play, Mail, Phone, MessageCircle, Send, Globe, Clock, Briefcase, Headphones, Shield, FileText, Save, Loader2, Video, X, AlertTriangle, BarChart3 } from 'lucide-react'
+import { ChevronLeft, CheckCircle2, XCircle, Play, Mail, Phone, MessageCircle, Send, Globe, Clock, Briefcase, Headphones, Shield, FileText, Save, Loader2, Video, X, AlertTriangle, BarChart3, Pencil, User } from 'lucide-react'
 import { notFound } from 'next/navigation'
 
 const OUTCOME_STYLES: Record<string, string> = {
@@ -74,6 +74,14 @@ export default function CandidateDetailPage({ params }: { params: Promise<{ id: 
 
   // Confirm dialog
   const [confirmDialog, setConfirmDialog] = useState<{ title: string; message: string; onConfirm: () => void } | null>(null)
+
+  // Status dropdown
+  const [showStatusDropdown, setShowStatusDropdown] = useState(false)
+
+  // Edit mode
+  const [isEditing, setIsEditing] = useState(false)
+  const [editData, setEditData] = useState<Record<string, any>>({})
+  const [editSaving, setEditSaving] = useState(false)
 
   // Outcome modal
   const [showOutcomeModal, setShowOutcomeModal] = useState(false)
@@ -259,6 +267,63 @@ export default function CandidateDetailPage({ params }: { params: Promise<{ id: 
     }
   }
 
+  function startEditing() {
+    setEditData({
+      first_name: candidate.first_name,
+      last_name: candidate.last_name,
+      email: candidate.email,
+      whatsapp: candidate.whatsapp,
+      phone_secondary: candidate.phone_secondary || '',
+      city: candidate.city || '',
+      country: candidate.country || '',
+      age_range: candidate.age_range || '',
+      nationality: candidate.nationality || '',
+      native_language: candidate.native_language || '',
+      italian_level: candidate.italian_level || '',
+      bio_short: candidate.bio_short || '',
+      hours_per_day: candidate.hours_per_day || 0,
+      days_per_week: candidate.days_per_week || 0,
+      time_slots: candidate.time_slots || '',
+      start_date: candidate.start_date || '',
+      sales_years: candidate.sales_years || 0,
+      close_rate_range: candidate.close_rate_range || '',
+      inbound_outbound: candidate.inbound_outbound || '',
+      sectors: candidate.sectors || '',
+      motivation: candidate.motivation || '',
+    })
+    setIsEditing(true)
+  }
+
+  function cancelEditing() {
+    setIsEditing(false)
+    setEditData({})
+  }
+
+  async function saveEditing() {
+    setEditSaving(true)
+    try {
+      const { error } = await supabase
+        .from('candidates')
+        .update(editData)
+        .eq('id', id)
+
+      if (error) throw error
+      setCandidate({ ...candidate, ...editData })
+      setIsEditing(false)
+      setEditData({})
+      showToast('Dati candidato aggiornati')
+    } catch (error) {
+      console.error('Error saving candidate data:', error)
+      showToast('Errore nel salvataggio', 'error')
+    } finally {
+      setEditSaving(false)
+    }
+  }
+
+  function editField(key: string, value: any) {
+    setEditData(prev => ({ ...prev, [key]: value }))
+  }
+
   if (loading) {
     return <div className="p-12 text-center text-text-muted">Caricamento dettagli candidato...</div>
   }
@@ -286,55 +351,189 @@ export default function CandidateDetailPage({ params }: { params: Promise<{ id: 
 
           {/* Header Card */}
           <div className="bg-white p-6 md:p-8 rounded-3xl shadow-sm border border-gray-100 relative overflow-hidden">
-            <div className="absolute top-0 right-0 p-4">
+            <div className="absolute top-0 right-0 p-4 flex items-start gap-3">
+              {!isEditing && (
+                <button
+                  onClick={startEditing}
+                  className="p-2 rounded-xl border border-gray-200 hover:bg-gray-50 text-gray-500 hover:text-indigo-600 transition-colors"
+                  title="Modifica dati"
+                >
+                  <Pencil className="w-4 h-4" />
+                </button>
+              )}
               <div className="text-center">
                 <div className="text-3xl font-black text-primary-main">{candidate.score_total || 0}</div>
                 <div className="text-xs uppercase font-bold text-text-muted">Score</div>
               </div>
             </div>
 
-            <div className="flex items-center gap-3 mb-2">
-              <h1 className="text-3xl font-black text-text-main">{candidate.first_name} {candidate.last_name}</h1>
-              <span className={`px-3 py-1 rounded-full text-xs font-bold border ${STATUS_COLORS[candidate.status] || 'bg-gray-100 text-gray-600 border-gray-200'}`}>
-                {STATUS_LABELS[candidate.status] || candidate.status}
-              </span>
-            </div>
-            <p className="text-text-muted font-medium mb-6">Inviato il {format(new Date(candidate.created_at), 'dd MMM yyyy, HH:mm')}</p>
+            {isEditing ? (
+              <>
+                <div className="flex items-center gap-4 mb-2">
+                  {candidate.photo_url ? (
+                    <img src={candidate.photo_url} alt="Foto candidato" className="w-16 h-16 rounded-2xl object-cover border-2 border-indigo-200 shadow-sm shrink-0" />
+                  ) : (
+                    <div className="w-16 h-16 rounded-2xl bg-gray-100 border-2 border-gray-200 flex items-center justify-center shrink-0">
+                      <User className="w-7 h-7 text-gray-400" />
+                    </div>
+                  )}
+                  <div className="flex flex-wrap items-center gap-3">
+                    <input value={editData.first_name} onChange={e => editField('first_name', e.target.value)} className="text-2xl font-black text-text-main border border-gray-200 rounded-xl px-3 py-1 w-40 focus:outline-none focus:ring-2 focus:ring-indigo-500" />
+                    <input value={editData.last_name} onChange={e => editField('last_name', e.target.value)} className="text-2xl font-black text-text-main border border-gray-200 rounded-xl px-3 py-1 w-40 focus:outline-none focus:ring-2 focus:ring-indigo-500" />
+                    <span className={`px-3 py-1 rounded-full text-xs font-bold border ${STATUS_COLORS[candidate.status] || 'bg-gray-100 text-gray-600 border-gray-200'}`}>
+                      {STATUS_LABELS[candidate.status] || candidate.status}
+                    </span>
+                  </div>
+                </div>
+                <p className="text-text-muted font-medium mb-6">Inviato il {format(new Date(candidate.created_at), 'dd MMM yyyy, HH:mm')}</p>
 
-            {/* Contatti Rapidi */}
-            <div className="flex flex-wrap gap-3 mb-8 border-b border-gray-100 pb-8">
-              <a href={`mailto:${candidate.email}`} className="inline-flex items-center gap-2 px-4 py-2 bg-blue-50 text-blue-700 rounded-xl text-sm font-semibold hover:bg-blue-100 transition-colors">
-                <Mail className="w-4 h-4" /> {candidate.email}
-              </a>
-              <a href={`tel:${candidate.whatsapp}`} className="inline-flex items-center gap-2 px-4 py-2 bg-green-50 text-green-700 rounded-xl text-sm font-semibold hover:bg-green-100 transition-colors">
-                <Phone className="w-4 h-4" /> {candidate.whatsapp}
-              </a>
-              {whatsappLink && (
-                <a href={whatsappLink} target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-2 px-4 py-2 bg-emerald-50 text-emerald-700 rounded-xl text-sm font-semibold hover:bg-emerald-100 transition-colors">
-                  <MessageCircle className="w-4 h-4" /> WhatsApp
-                </a>
-              )}
-            </div>
+                {/* Contatti editabili */}
+                <div className="space-y-3 mb-8 border-b border-gray-100 pb-8">
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                    <div>
+                      <label className="text-xs text-text-muted mb-1 block">Email</label>
+                      <div className="flex items-center gap-2">
+                        <Mail className="w-4 h-4 text-blue-500 shrink-0" />
+                        <input value={editData.email} onChange={e => editField('email', e.target.value)} className="flex-1 border border-gray-200 rounded-xl px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500" />
+                      </div>
+                    </div>
+                    <div>
+                      <label className="text-xs text-text-muted mb-1 block">WhatsApp / Telefono</label>
+                      <div className="flex items-center gap-2">
+                        <Phone className="w-4 h-4 text-green-500 shrink-0" />
+                        <input value={editData.whatsapp} onChange={e => editField('whatsapp', e.target.value)} className="flex-1 border border-gray-200 rounded-xl px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500" />
+                      </div>
+                    </div>
+                    <div>
+                      <label className="text-xs text-text-muted mb-1 block">Secondo Numero (opzionale)</label>
+                      <div className="flex items-center gap-2">
+                        <Phone className="w-4 h-4 text-orange-500 shrink-0" />
+                        <input value={editData.phone_secondary} onChange={e => editField('phone_secondary', e.target.value)} placeholder="+39 ..." className="flex-1 border border-gray-200 rounded-xl px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500" />
+                      </div>
+                    </div>
+                  </div>
+                </div>
 
-            {/* Dati Anagrafici Completi */}
-            <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
-              <div className="bg-gray-50 p-3 rounded-xl">
-                <div className="text-xs text-text-muted mb-1">Città / Nazione</div>
-                <div className="font-semibold text-sm">{candidate.city}, {candidate.country}</div>
-              </div>
-              <div className="bg-gray-50 p-3 rounded-xl">
-                <div className="text-xs text-text-muted mb-1">Età</div>
-                <div className="font-semibold text-sm">{candidate.age_range}</div>
-              </div>
-              <div className="bg-gray-50 p-3 rounded-xl">
-                <div className="text-xs text-text-muted mb-1">Nazionalità</div>
-                <div className="font-semibold text-sm">{candidate.nationality}</div>
-              </div>
-              <div className="bg-gray-50 p-3 rounded-xl">
-                <div className="text-xs text-text-muted mb-1">Lingua Madre</div>
-                <div className="font-semibold text-sm">{candidate.native_language}</div>
-              </div>
-            </div>
+                {/* Dati Anagrafici editabili */}
+                <div className="grid grid-cols-2 md:grid-cols-4 gap-3 mb-6">
+                  <div>
+                    <label className="text-xs text-text-muted mb-1 block">Città</label>
+                    <input value={editData.city} onChange={e => editField('city', e.target.value)} className="w-full border border-gray-200 rounded-xl px-3 py-2 text-sm font-semibold focus:outline-none focus:ring-2 focus:ring-indigo-500" />
+                  </div>
+                  <div>
+                    <label className="text-xs text-text-muted mb-1 block">Nazione</label>
+                    <input value={editData.country} onChange={e => editField('country', e.target.value)} className="w-full border border-gray-200 rounded-xl px-3 py-2 text-sm font-semibold focus:outline-none focus:ring-2 focus:ring-indigo-500" />
+                  </div>
+                  <div>
+                    <label className="text-xs text-text-muted mb-1 block">Età</label>
+                    <input value={editData.age_range} onChange={e => editField('age_range', e.target.value)} className="w-full border border-gray-200 rounded-xl px-3 py-2 text-sm font-semibold focus:outline-none focus:ring-2 focus:ring-indigo-500" />
+                  </div>
+                  <div>
+                    <label className="text-xs text-text-muted mb-1 block">Nazionalità</label>
+                    <input value={editData.nationality} onChange={e => editField('nationality', e.target.value)} className="w-full border border-gray-200 rounded-xl px-3 py-2 text-sm font-semibold focus:outline-none focus:ring-2 focus:ring-indigo-500" />
+                  </div>
+                </div>
+
+                {/* Save/Cancel bar */}
+                <div className="flex items-center gap-3 pt-4 border-t border-gray-100">
+                  <button
+                    onClick={saveEditing}
+                    disabled={editSaving}
+                    className="inline-flex items-center gap-2 px-5 py-2.5 bg-indigo-600 hover:bg-indigo-700 text-white font-bold rounded-xl transition-colors disabled:opacity-50 text-sm"
+                  >
+                    {editSaving ? <Loader2 className="w-4 h-4 animate-spin" /> : <Save className="w-4 h-4" />}
+                    {editSaving ? 'Salvataggio...' : 'Salva Modifiche'}
+                  </button>
+                  <button
+                    onClick={cancelEditing}
+                    className="px-5 py-2.5 border border-gray-200 rounded-xl text-sm font-semibold hover:bg-gray-50 transition-colors"
+                  >
+                    Annulla
+                  </button>
+                </div>
+              </>
+            ) : (
+              <>
+                <div className="flex items-center gap-4 mb-2">
+                  {candidate.photo_url ? (
+                    <img src={candidate.photo_url} alt="Foto candidato" className="w-16 h-16 rounded-2xl object-cover border-2 border-indigo-200 shadow-sm shrink-0" />
+                  ) : (
+                    <div className="w-16 h-16 rounded-2xl bg-gray-100 border-2 border-gray-200 flex items-center justify-center shrink-0">
+                      <User className="w-7 h-7 text-gray-400" />
+                    </div>
+                  )}
+                  <h1 className="text-3xl font-black text-text-main">{candidate.first_name} {candidate.last_name}</h1>
+                  <div className="relative">
+                    <button
+                      onClick={() => setShowStatusDropdown(!showStatusDropdown)}
+                      className={`px-3 py-1 rounded-full text-xs font-bold border cursor-pointer hover:opacity-80 transition-opacity ${STATUS_COLORS[candidate.status] || 'bg-gray-100 text-gray-600 border-gray-200'}`}
+                    >
+                      {STATUS_LABELS[candidate.status] || candidate.status} ▾
+                    </button>
+                    {showStatusDropdown && (
+                      <div className="absolute top-full left-0 mt-1 bg-white border border-gray-200 rounded-xl shadow-lg z-30 py-1 min-w-[160px]">
+                        {Object.entries(STATUS_LABELS).map(([key, label]) => (
+                          <button
+                            key={key}
+                            onClick={() => {
+                              if (key === 'rejected') { handleReject(); }
+                              else if (key === 'hired') { handleHire(); }
+                              else { updateStatus(key); }
+                              setShowStatusDropdown(false)
+                            }}
+                            className={`w-full text-left px-4 py-2 text-sm hover:bg-gray-50 transition-colors flex items-center gap-2 ${candidate.status === key ? 'font-bold' : ''}`}
+                          >
+                            <span className={`w-2 h-2 rounded-full ${STATUS_COLORS[key]?.split(' ')[0] || 'bg-gray-300'}`} />
+                            {label}
+                          </button>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+                </div>
+                <p className="text-text-muted font-medium mb-6">Inviato il {format(new Date(candidate.created_at), 'dd MMM yyyy, HH:mm')}</p>
+
+                {/* Contatti Rapidi */}
+                <div className="flex flex-wrap gap-3 mb-8 border-b border-gray-100 pb-8">
+                  <a href={`mailto:${candidate.email}`} className="inline-flex items-center gap-2 px-4 py-2 bg-blue-50 text-blue-700 rounded-xl text-sm font-semibold hover:bg-blue-100 transition-colors">
+                    <Mail className="w-4 h-4" /> {candidate.email}
+                  </a>
+                  <a href={`tel:${candidate.whatsapp}`} className="inline-flex items-center gap-2 px-4 py-2 bg-green-50 text-green-700 rounded-xl text-sm font-semibold hover:bg-green-100 transition-colors">
+                    <Phone className="w-4 h-4" /> {candidate.whatsapp}
+                  </a>
+                  {whatsappLink && (
+                    <a href={whatsappLink} target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-2 px-4 py-2 bg-emerald-50 text-emerald-700 rounded-xl text-sm font-semibold hover:bg-emerald-100 transition-colors">
+                      <MessageCircle className="w-4 h-4" /> WhatsApp
+                    </a>
+                  )}
+                  {candidate.phone_secondary && (
+                    <a href={`tel:${candidate.phone_secondary}`} className="inline-flex items-center gap-2 px-4 py-2 bg-orange-50 text-orange-700 rounded-xl text-sm font-semibold hover:bg-orange-100 transition-colors">
+                      <Phone className="w-4 h-4" /> {candidate.phone_secondary}
+                    </a>
+                  )}
+                </div>
+
+                {/* Dati Anagrafici Completi */}
+                <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
+                  <div className="bg-gray-50 p-3 rounded-xl">
+                    <div className="text-xs text-text-muted mb-1">Città / Nazione</div>
+                    <div className="font-semibold text-sm">{candidate.city}, {candidate.country}</div>
+                  </div>
+                  <div className="bg-gray-50 p-3 rounded-xl">
+                    <div className="text-xs text-text-muted mb-1">Età</div>
+                    <div className="font-semibold text-sm">{candidate.age_range}</div>
+                  </div>
+                  <div className="bg-gray-50 p-3 rounded-xl">
+                    <div className="text-xs text-text-muted mb-1">Nazionalità</div>
+                    <div className="font-semibold text-sm">{candidate.nationality}</div>
+                  </div>
+                  <div className="bg-gray-50 p-3 rounded-xl">
+                    <div className="text-xs text-text-muted mb-1">Lingua Madre</div>
+                    <div className="font-semibold text-sm">{candidate.native_language}</div>
+                  </div>
+                </div>
+              </>
+            )}
           </div>
 
           {/* Pre-Qualifica */}
@@ -410,20 +609,45 @@ export default function CandidateDetailPage({ params }: { params: Promise<{ id: 
             <h3 className="text-lg font-bold border-b border-gray-100 pb-2 mb-4 flex items-center gap-2">
               <Globe className="w-5 h-5 text-primary-main" /> Comunicazione & Profilo
             </h3>
-            <div className="grid md:grid-cols-2 gap-4 mb-4">
-              <div className="bg-gray-50 p-4 rounded-xl">
-                <div className="text-xs text-text-muted mb-1">Livello Italiano</div>
-                <div className="font-semibold capitalize">{candidate.italian_level} {candidate.strong_accent && <span className="text-amber-600 text-xs ml-1">(Forte Accento)</span>}</div>
+            {isEditing ? (
+              <div className="space-y-3">
+                <div className="grid md:grid-cols-2 gap-3">
+                  <div>
+                    <label className="text-xs text-text-muted mb-1 block">Livello Italiano</label>
+                    <select value={editData.italian_level} onChange={e => editField('italian_level', e.target.value)} className="w-full border border-gray-200 rounded-xl px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500">
+                      <option value="high">Alto</option>
+                      <option value="medium">Medio</option>
+                      <option value="low">Basso</option>
+                    </select>
+                  </div>
+                  <div>
+                    <label className="text-xs text-text-muted mb-1 block">Lingua Madre</label>
+                    <input value={editData.native_language} onChange={e => editField('native_language', e.target.value)} className="w-full border border-gray-200 rounded-xl px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500" />
+                  </div>
+                </div>
+                <div>
+                  <label className="text-xs text-text-muted mb-1 block">Breve Bio</label>
+                  <textarea value={editData.bio_short} onChange={e => editField('bio_short', e.target.value)} rows={3} className="w-full border border-gray-200 rounded-xl p-3 text-sm resize-none focus:outline-none focus:ring-2 focus:ring-indigo-500" />
+                </div>
               </div>
-              <div className="bg-gray-50 p-4 rounded-xl">
-                <div className="text-xs text-text-muted mb-1">Lingua Madre</div>
-                <div className="font-semibold">{candidate.native_language}</div>
-              </div>
-            </div>
-            <div>
-              <div className="text-xs font-semibold text-text-muted uppercase mb-1">Breve Bio</div>
-              <p className="text-sm leading-relaxed bg-gray-50 p-4 rounded-xl">{candidate.bio_short}</p>
-            </div>
+            ) : (
+              <>
+                <div className="grid md:grid-cols-2 gap-4 mb-4">
+                  <div className="bg-gray-50 p-4 rounded-xl">
+                    <div className="text-xs text-text-muted mb-1">Livello Italiano</div>
+                    <div className="font-semibold capitalize">{candidate.italian_level} {candidate.strong_accent && <span className="text-amber-600 text-xs ml-1">(Forte Accento)</span>}</div>
+                  </div>
+                  <div className="bg-gray-50 p-4 rounded-xl">
+                    <div className="text-xs text-text-muted mb-1">Lingua Madre</div>
+                    <div className="font-semibold">{candidate.native_language}</div>
+                  </div>
+                </div>
+                <div>
+                  <div className="text-xs font-semibold text-text-muted uppercase mb-1">Breve Bio</div>
+                  <p className="text-sm leading-relaxed bg-gray-50 p-4 rounded-xl">{candidate.bio_short}</p>
+                </div>
+              </>
+            )}
           </div>
 
           {/* Esperienza */}
@@ -431,28 +655,66 @@ export default function CandidateDetailPage({ params }: { params: Promise<{ id: 
             <h3 className="text-lg font-bold border-b border-gray-100 pb-2 mb-4 flex items-center gap-2">
               <Briefcase className="w-5 h-5 text-primary-main" /> Esperienza & Vendita
             </h3>
-            <div className="grid md:grid-cols-2 gap-4 mb-4">
-              <div className="bg-gray-50 p-4 rounded-xl">
-                <div className="text-xs text-text-muted mb-1">Anni nelle vendite</div>
-                <div className="font-semibold">{candidate.sales_years}</div>
+            {isEditing ? (
+              <div className="space-y-3">
+                <div className="grid md:grid-cols-2 gap-3">
+                  <div>
+                    <label className="text-xs text-text-muted mb-1 block">Anni nelle vendite</label>
+                    <input type="number" value={editData.sales_years} onChange={e => editField('sales_years', parseInt(e.target.value) || 0)} className="w-full border border-gray-200 rounded-xl px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500" />
+                  </div>
+                  <div>
+                    <label className="text-xs text-text-muted mb-1 block">Close Rate Massimo</label>
+                    <select value={editData.close_rate_range} onChange={e => editField('close_rate_range', e.target.value)} className="w-full border border-gray-200 rounded-xl px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500">
+                      <option value="30%+">30%+</option>
+                      <option value="20-30%">20-30%</option>
+                      <option value="10-20%">10-20%</option>
+                      <option value="<10%">&lt;10%</option>
+                    </select>
+                  </div>
+                  <div>
+                    <label className="text-xs text-text-muted mb-1 block">Tipo Chiamate</label>
+                    <select value={editData.inbound_outbound} onChange={e => editField('inbound_outbound', e.target.value)} className="w-full border border-gray-200 rounded-xl px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500">
+                      <option value="inbound">Inbound</option>
+                      <option value="outbound">Outbound</option>
+                      <option value="entrambi">Entrambi</option>
+                    </select>
+                  </div>
+                  <div>
+                    <label className="text-xs text-text-muted mb-1 block">Settori</label>
+                    <input value={editData.sectors} onChange={e => editField('sectors', e.target.value)} className="w-full border border-gray-200 rounded-xl px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500" />
+                  </div>
+                </div>
+                <div>
+                  <label className="text-xs text-text-muted mb-1 block">Motivazione</label>
+                  <textarea value={editData.motivation} onChange={e => editField('motivation', e.target.value)} rows={3} className="w-full border border-gray-200 rounded-xl p-3 text-sm resize-none focus:outline-none focus:ring-2 focus:ring-indigo-500" />
+                </div>
               </div>
-              <div className="bg-gray-50 p-4 rounded-xl">
-                <div className="text-xs text-text-muted mb-1">Close Rate Massimo</div>
-                <div className="font-semibold">{candidate.close_rate_range}</div>
-              </div>
-              <div className="bg-gray-50 p-4 rounded-xl">
-                <div className="text-xs text-text-muted mb-1">Tipo Chiamate</div>
-                <div className="font-semibold capitalize">{candidate.inbound_outbound}</div>
-              </div>
-              <div className="bg-gray-50 p-4 rounded-xl">
-                <div className="text-xs text-text-muted mb-1">Settori</div>
-                <div className="font-semibold">{candidate.sectors || 'Nessuno specificato'}</div>
-              </div>
-            </div>
-            <div>
-              <div className="text-xs font-semibold text-text-muted uppercase mb-1">Perché vuoi questo ruolo?</div>
-              <p className="text-sm leading-relaxed bg-gray-50 p-4 rounded-xl">{candidate.motivation}</p>
-            </div>
+            ) : (
+              <>
+                <div className="grid md:grid-cols-2 gap-4 mb-4">
+                  <div className="bg-gray-50 p-4 rounded-xl">
+                    <div className="text-xs text-text-muted mb-1">Anni nelle vendite</div>
+                    <div className="font-semibold">{candidate.sales_years}</div>
+                  </div>
+                  <div className="bg-gray-50 p-4 rounded-xl">
+                    <div className="text-xs text-text-muted mb-1">Close Rate Massimo</div>
+                    <div className="font-semibold">{candidate.close_rate_range}</div>
+                  </div>
+                  <div className="bg-gray-50 p-4 rounded-xl">
+                    <div className="text-xs text-text-muted mb-1">Tipo Chiamate</div>
+                    <div className="font-semibold capitalize">{candidate.inbound_outbound}</div>
+                  </div>
+                  <div className="bg-gray-50 p-4 rounded-xl">
+                    <div className="text-xs text-text-muted mb-1">Settori</div>
+                    <div className="font-semibold">{candidate.sectors || 'Nessuno specificato'}</div>
+                  </div>
+                </div>
+                <div>
+                  <div className="text-xs font-semibold text-text-muted uppercase mb-1">Perché vuoi questo ruolo?</div>
+                  <p className="text-sm leading-relaxed bg-gray-50 p-4 rounded-xl">{candidate.motivation}</p>
+                </div>
+              </>
+            )}
           </div>
 
           {/* Disponibilità */}
@@ -460,25 +722,48 @@ export default function CandidateDetailPage({ params }: { params: Promise<{ id: 
             <h3 className="text-lg font-bold border-b border-gray-100 pb-2 mb-4 flex items-center gap-2">
               <Clock className="w-5 h-5 text-primary-main" /> Disponibilità
             </h3>
-            <div className="grid md:grid-cols-2 gap-4 mb-4">
-              <div className="bg-gray-50 p-4 rounded-xl">
-                <div className="text-xs text-text-muted mb-1">Ore al Giorno / Settimana</div>
-                <div className="font-semibold">{candidate.hours_per_day}h / {candidate.days_per_week}gg</div>
+            {isEditing ? (
+              <div className="grid md:grid-cols-2 gap-3">
+                <div>
+                  <label className="text-xs text-text-muted mb-1 block">Ore al giorno</label>
+                  <input type="number" value={editData.hours_per_day} onChange={e => editField('hours_per_day', parseInt(e.target.value) || 0)} className="w-full border border-gray-200 rounded-xl px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500" />
+                </div>
+                <div>
+                  <label className="text-xs text-text-muted mb-1 block">Giorni a settimana</label>
+                  <input type="number" value={editData.days_per_week} onChange={e => editField('days_per_week', parseInt(e.target.value) || 0)} className="w-full border border-gray-200 rounded-xl px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500" />
+                </div>
+                <div>
+                  <label className="text-xs text-text-muted mb-1 block">Fasce orarie ideali</label>
+                  <input value={editData.time_slots} onChange={e => editField('time_slots', e.target.value)} className="w-full border border-gray-200 rounded-xl px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500" />
+                </div>
+                <div>
+                  <label className="text-xs text-text-muted mb-1 block">Da quando può iniziare</label>
+                  <input value={editData.start_date} onChange={e => editField('start_date', e.target.value)} className="w-full border border-gray-200 rounded-xl px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500" />
+                </div>
               </div>
-              <div className="bg-gray-50 p-4 rounded-xl">
-                <div className="text-xs text-text-muted mb-1">Da quando può iniziare</div>
-                <div className="font-semibold">{candidate.start_date}</div>
-              </div>
-            </div>
-            <div className="bg-gray-50 p-4 rounded-xl mb-4">
-              <div className="text-xs text-text-muted mb-1">Fasce Orarie Ideali</div>
-              <div className="font-semibold">{candidate.time_slots}</div>
-            </div>
-            <div className="flex gap-2 flex-wrap text-xs">
-              {candidate.weekend_sat && <span className="bg-green-100 text-green-700 px-3 py-1 rounded-full font-semibold">Disponibile Sabato</span>}
-              {candidate.weekend_sun && <span className="bg-green-100 text-green-700 px-3 py-1 rounded-full font-semibold">Disponibile Domenica</span>}
-              {candidate.holidays && <span className="bg-green-100 text-green-700 px-3 py-1 rounded-full font-semibold">Disponibile Festivi</span>}
-            </div>
+            ) : (
+              <>
+                <div className="grid md:grid-cols-2 gap-4 mb-4">
+                  <div className="bg-gray-50 p-4 rounded-xl">
+                    <div className="text-xs text-text-muted mb-1">Ore al Giorno / Settimana</div>
+                    <div className="font-semibold">{candidate.hours_per_day}h / {candidate.days_per_week}gg</div>
+                  </div>
+                  <div className="bg-gray-50 p-4 rounded-xl">
+                    <div className="text-xs text-text-muted mb-1">Da quando può iniziare</div>
+                    <div className="font-semibold">{candidate.start_date}</div>
+                  </div>
+                </div>
+                <div className="bg-gray-50 p-4 rounded-xl mb-4">
+                  <div className="text-xs text-text-muted mb-1">Fasce Orarie Ideali</div>
+                  <div className="font-semibold">{candidate.time_slots}</div>
+                </div>
+                <div className="flex gap-2 flex-wrap text-xs">
+                  {candidate.weekend_sat && <span className="bg-green-100 text-green-700 px-3 py-1 rounded-full font-semibold">Disponibile Sabato</span>}
+                  {candidate.weekend_sun && <span className="bg-green-100 text-green-700 px-3 py-1 rounded-full font-semibold">Disponibile Domenica</span>}
+                  {candidate.holidays && <span className="bg-green-100 text-green-700 px-3 py-1 rounded-full font-semibold">Disponibile Festivi</span>}
+                </div>
+              </>
+            )}
           </div>
 
           {/* Prove Pratiche (Roleplay) */}

@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from 'react'
 import { createClient } from '@/lib/supabase/client'
-import { Save, Clock, Bell, Loader2, CheckCircle2, Plus, Trash2 } from 'lucide-react'
+import { Save, Clock, Bell, Loader2, CheckCircle2, Plus, Trash2, Copy } from 'lucide-react'
 
 type SlotRow = {
   id?: string
@@ -13,6 +13,9 @@ type SlotRow = {
 }
 
 const DAY_NAMES = ['Domenica', 'Lunedì', 'Martedì', 'Mercoledì', 'Giovedì', 'Venerdì', 'Sabato']
+const SHORT_DAYS = ['Dom', 'Lun', 'Mar', 'Mer', 'Gio', 'Ven', 'Sab']
+const WEEKDAYS = [1, 2, 3, 4, 5] // Lun-Ven
+const ALL_DAYS = [1, 2, 3, 4, 5, 6, 0] // Lun-Dom
 
 export default function SettingsPage() {
   const [slots, setSlots] = useState<SlotRow[]>([])
@@ -36,25 +39,11 @@ export default function SettingsPage() {
       if (data && data.length > 0) {
         setSlots(data)
       } else {
-        // Default Mon-Fri 10-18
-        setSlots([
-          { day_of_week: 1, start_time: '10:00', end_time: '18:00', is_active: true },
-          { day_of_week: 2, start_time: '10:00', end_time: '18:00', is_active: true },
-          { day_of_week: 3, start_time: '10:00', end_time: '18:00', is_active: true },
-          { day_of_week: 4, start_time: '10:00', end_time: '18:00', is_active: true },
-          { day_of_week: 5, start_time: '10:00', end_time: '18:00', is_active: true },
-        ])
+        setSlots(WEEKDAYS.map(d => ({ day_of_week: d, start_time: '10:00', end_time: '18:00', is_active: true })))
       }
     } catch (error) {
       console.error('Error fetching slots:', error)
-      // Use defaults
-      setSlots([
-        { day_of_week: 1, start_time: '10:00', end_time: '18:00', is_active: true },
-        { day_of_week: 2, start_time: '10:00', end_time: '18:00', is_active: true },
-        { day_of_week: 3, start_time: '10:00', end_time: '18:00', is_active: true },
-        { day_of_week: 4, start_time: '10:00', end_time: '18:00', is_active: true },
-        { day_of_week: 5, start_time: '10:00', end_time: '18:00', is_active: true },
-      ])
+      setSlots(WEEKDAYS.map(d => ({ day_of_week: d, start_time: '10:00', end_time: '18:00', is_active: true })))
     } finally {
       setLoading(false)
     }
@@ -62,8 +51,12 @@ export default function SettingsPage() {
 
   function addSlot() {
     const usedDays = new Set(slots.map(s => s.day_of_week))
-    const nextDay = [1, 2, 3, 4, 5, 6, 0].find(d => !usedDays.has(d)) ?? 0
-    setSlots([...slots, { day_of_week: nextDay, start_time: '09:00', end_time: '17:00', is_active: true }])
+    const nextDay = ALL_DAYS.find(d => !usedDays.has(d))
+    if (nextDay === undefined) return
+    setSlots([...slots, { day_of_week: nextDay, start_time: '09:00', end_time: '17:00', is_active: true }].sort((a, b) => {
+      const order = [1, 2, 3, 4, 5, 6, 0]
+      return order.indexOf(a.day_of_week) - order.indexOf(b.day_of_week)
+    }))
   }
 
   function removeSlot(index: number) {
@@ -74,13 +67,55 @@ export default function SettingsPage() {
     setSlots(slots.map((s, i) => i === index ? { ...s, [field]: value } : s))
   }
 
+  function copyToWeekdays(sourceIndex: number) {
+    const source = slots[sourceIndex]
+    const newSlots = [...slots]
+
+    for (const day of WEEKDAYS) {
+      const existing = newSlots.findIndex(s => s.day_of_week === day)
+      if (existing >= 0) {
+        newSlots[existing] = { ...newSlots[existing], start_time: source.start_time, end_time: source.end_time, is_active: source.is_active }
+      } else {
+        newSlots.push({ day_of_week: day, start_time: source.start_time, end_time: source.end_time, is_active: source.is_active })
+      }
+    }
+
+    setSlots(newSlots.sort((a, b) => {
+      const order = [1, 2, 3, 4, 5, 6, 0]
+      return order.indexOf(a.day_of_week) - order.indexOf(b.day_of_week)
+    }))
+  }
+
+  function copyToAll(sourceIndex: number) {
+    const source = slots[sourceIndex]
+    const newSlots: SlotRow[] = ALL_DAYS.map(day => ({
+      day_of_week: day,
+      start_time: source.start_time,
+      end_time: source.end_time,
+      is_active: source.is_active,
+    }))
+    setSlots(newSlots)
+  }
+
+  function toggleDay(day: number) {
+    const existing = slots.findIndex(s => s.day_of_week === day)
+    if (existing >= 0) {
+      setSlots(slots.filter((_, i) => i !== existing))
+    } else {
+      const ref = slots[0] || { start_time: '10:00', end_time: '18:00', is_active: true }
+      const newSlots = [...slots, { day_of_week: day, start_time: ref.start_time, end_time: ref.end_time, is_active: true }]
+      setSlots(newSlots.sort((a, b) => {
+        const order = [1, 2, 3, 4, 5, 6, 0]
+        return order.indexOf(a.day_of_week) - order.indexOf(b.day_of_week)
+      }))
+    }
+  }
+
   async function saveSlots() {
     setSaving(true)
     try {
-      // Delete all existing slots
       await supabase.from('interview_slots').delete().neq('id', '00000000-0000-0000-0000-000000000000')
 
-      // Insert new slots
       const { error } = await supabase
         .from('interview_slots')
         .insert(slots.map(s => ({
@@ -105,6 +140,8 @@ export default function SettingsPage() {
     return <div className="p-12 text-center text-text-muted">Caricamento impostazioni...</div>
   }
 
+  const activeDays = new Set(slots.map(s => s.day_of_week))
+
   return (
     <div className="space-y-6">
       <div>
@@ -120,28 +157,41 @@ export default function SettingsPage() {
           </div>
           <div>
             <h2 className="text-lg font-bold text-text-main">Disponibilità per Colloqui</h2>
-            <p className="text-sm text-text-muted">Definisci le fasce orarie in cui sei disponibile per i colloqui. I candidati potranno prenotare solo in questi slot.</p>
+            <p className="text-sm text-text-muted">Seleziona i giorni e imposta le fasce orarie. I candidati potranno prenotare solo in questi slot.</p>
           </div>
         </div>
 
+        {/* Day selector chips */}
+        <div className="mb-6">
+          <label className="text-xs font-semibold text-text-muted uppercase mb-2 block">Giorni Attivi</label>
+          <div className="flex flex-wrap gap-2">
+            {ALL_DAYS.map(day => (
+              <button
+                key={day}
+                onClick={() => toggleDay(day)}
+                className={`px-4 py-2 rounded-xl text-sm font-bold transition-all ${
+                  activeDays.has(day)
+                    ? 'bg-indigo-600 text-white shadow-sm'
+                    : 'bg-gray-100 text-gray-400 hover:bg-gray-200'
+                }`}
+              >
+                {SHORT_DAYS[day]}
+              </button>
+            ))}
+          </div>
+        </div>
+
+        {/* Slot rows */}
         <div className="space-y-3">
           {slots.map((slot, index) => (
-            <div key={index} className={`flex items-center gap-3 p-4 rounded-xl border transition-all ${slot.is_active ? 'border-gray-200 bg-white' : 'border-gray-100 bg-gray-50 opacity-60'}`}>
+            <div key={`${slot.day_of_week}-${index}`} className={`flex flex-wrap items-center gap-3 p-4 rounded-xl border transition-all ${slot.is_active ? 'border-gray-200 bg-white' : 'border-gray-100 bg-gray-50 opacity-60'}`}>
               <input
                 type="checkbox"
                 checked={slot.is_active}
                 onChange={(e) => updateSlot(index, 'is_active', e.target.checked)}
                 className="w-5 h-5 accent-indigo-600 rounded"
               />
-              <select
-                value={slot.day_of_week}
-                onChange={(e) => updateSlot(index, 'day_of_week', parseInt(e.target.value))}
-                className="px-3 py-2 border border-gray-200 rounded-xl text-sm font-semibold bg-white focus:outline-none focus:ring-2 focus:ring-indigo-500 w-36"
-              >
-                {DAY_NAMES.map((name, i) => (
-                  <option key={i} value={i}>{name}</option>
-                ))}
-              </select>
+              <span className="font-bold text-sm text-text-main w-24">{DAY_NAMES[slot.day_of_week]}</span>
               <div className="flex items-center gap-2">
                 <input
                   type="time"
@@ -157,24 +207,42 @@ export default function SettingsPage() {
                   className="px-3 py-2 border border-gray-200 rounded-xl text-sm bg-white focus:outline-none focus:ring-2 focus:ring-indigo-500"
                 />
               </div>
-              <button
-                onClick={() => removeSlot(index)}
-                className="ml-auto p-2 text-gray-400 hover:text-red-500 hover:bg-red-50 rounded-lg transition-colors"
-              >
-                <Trash2 className="w-4 h-4" />
-              </button>
+              <div className="flex items-center gap-1 ml-auto">
+                <button
+                  onClick={() => copyToWeekdays(index)}
+                  className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold text-indigo-600 bg-indigo-50 hover:bg-indigo-100 rounded-lg transition-colors"
+                  title="Copia questa fascia su Lun-Ven"
+                >
+                  <Copy className="w-3 h-3" /> Lun-Ven
+                </button>
+                <button
+                  onClick={() => copyToAll(index)}
+                  className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold text-purple-600 bg-purple-50 hover:bg-purple-100 rounded-lg transition-colors"
+                  title="Copia questa fascia su tutti i giorni"
+                >
+                  <Copy className="w-3 h-3" /> Tutti
+                </button>
+                <button
+                  onClick={() => removeSlot(index)}
+                  className="p-1.5 text-gray-400 hover:text-red-500 hover:bg-red-50 rounded-lg transition-colors"
+                >
+                  <Trash2 className="w-4 h-4" />
+                </button>
+              </div>
             </div>
           ))}
         </div>
 
-        <div className="mt-4 flex items-center gap-3">
-          <button
-            onClick={addSlot}
-            className="inline-flex items-center gap-2 px-4 py-2 rounded-xl border border-dashed border-gray-300 text-sm font-semibold text-text-muted hover:bg-gray-50 transition-colors"
-          >
-            <Plus className="w-4 h-4" /> Aggiungi Fascia Oraria
-          </button>
-        </div>
+        {slots.length < 7 && (
+          <div className="mt-4">
+            <button
+              onClick={addSlot}
+              className="inline-flex items-center gap-2 px-4 py-2 rounded-xl border border-dashed border-gray-300 text-sm font-semibold text-text-muted hover:bg-gray-50 transition-colors"
+            >
+              <Plus className="w-4 h-4" /> Aggiungi Giorno
+            </button>
+          </div>
+        )}
 
         <div className="mt-6 pt-6 border-t border-gray-100 flex items-center justify-between">
           <div>
@@ -211,7 +279,7 @@ export default function SettingsPage() {
           <div className="flex items-center justify-between p-4 rounded-xl border border-gray-200">
             <div>
               <div className="font-semibold text-sm text-text-main">Email di Notifica</div>
-              <div className="text-xs text-text-muted mt-0.5">Ricevi un'email ad ogni nuova candidatura</div>
+              <div className="text-xs text-text-muted mt-0.5">Ricevi un&apos;email ad ogni nuova candidatura</div>
             </div>
             <div className="flex items-center gap-2">
               <span className="text-xs text-text-muted bg-gray-100 px-2 py-1 rounded-full">Configurato in .env</span>

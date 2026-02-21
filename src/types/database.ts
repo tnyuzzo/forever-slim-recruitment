@@ -66,6 +66,9 @@ export interface Candidate {
   notes: string | null
   interview_link: string | null
 
+  // Foto
+  photo_url: string | null
+
   // UTM tracking
   utm_source: string | null
   utm_medium: string | null
