@@ -65,11 +65,17 @@ export async function POST(request: Request) {
         }
 
         // Update the interview record
+        const scheduledDate = new Date(scheduled_at);
+        const endDate = new Date(scheduledDate.getTime() + 60 * 60 * 1000); // +1 hour
+
         const { data, error } = await supabase
             .from('interviews')
             .update({
                 status: 'confirmed',
                 scheduled_at,
+                scheduled_start: scheduledDate.toISOString(),
+                scheduled_end: endDate.toISOString(),
+                channel: 'phone',
             })
             .eq('slot_token', token)
             .eq('status', 'pending')

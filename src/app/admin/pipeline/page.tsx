@@ -3,7 +3,8 @@
 import { useEffect, useState, useCallback } from 'react'
 import Link from 'next/link'
 import { createClient } from '@/lib/supabase/client'
-import { User, ChevronRight, GripVertical } from 'lucide-react'
+import { ChevronRight, GripVertical, Calendar } from 'lucide-react'
+import { format } from 'date-fns'
 
 type Candidate = {
   id: string
@@ -36,6 +37,7 @@ export default function PipelinePage() {
   const [loading, setLoading] = useState(true)
   const [draggedId, setDraggedId] = useState<string | null>(null)
   const [dragOverColumn, setDragOverColumn] = useState<string | null>(null)
+  const [interviewMap, setInterviewMap] = useState<Record<string, any>>({})
   const supabase = createClient()
 
   useEffect(() => {
@@ -50,7 +52,30 @@ export default function PipelinePage() {
         .order('score_total', { ascending: false })
 
       if (error) throw error
-      if (data) setCandidates(data)
+      if (data) {
+        setCandidates(data)
+
+        // Fetch latest interview for booked candidates
+        const bookedIds = data.filter(c => c.status === 'interview_booked').map(c => c.id)
+        if (bookedIds.length > 0) {
+          const { data: interviewData } = await supabase
+            .from('interviews')
+            .select('candidate_id, scheduled_start, scheduled_at, status, outcome')
+            .in('candidate_id', bookedIds)
+            .in('status', ['confirmed', 'scheduled', 'pending'])
+            .order('created_at', { ascending: false })
+
+          if (interviewData) {
+            const map: Record<string, any> = {}
+            for (const iv of interviewData) {
+              if (!map[iv.candidate_id]) {
+                map[iv.candidate_id] = iv
+              }
+            }
+            setInterviewMap(map)
+          }
+        }
+      }
     } catch (error) {
       console.error('Error:', error)
     } finally {
@@ -168,6 +193,12 @@ export default function PipelinePage() {
                             </span>
                             <span className="text-[10px] text-text-muted">{c.hours_per_day}h/gg</span>
                           </div>
+                          {interviewMap[c.id] && (
+                            <div className="flex items-center gap-1 mt-1.5 text-[10px] text-purple-600 font-medium">
+                              <Calendar className="w-3 h-3" />
+                              {format(new Date(interviewMap[c.id].scheduled_start || interviewMap[c.id].scheduled_at), 'dd MMM HH:mm')}
+                            </div>
+                          )}
                         </div>
                         <Link
                           href={`/admin/candidates/${c.id}`}

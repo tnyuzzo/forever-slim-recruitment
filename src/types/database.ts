@@ -1,7 +1,7 @@
 export type CandidateStatus = 'new' | 'qualified' | 'interview_booked' | 'hired' | 'rejected'
 export type CandidatePriority = 'low' | 'medium' | 'high'
 export type ItalianLevel = 'low' | 'medium' | 'high'
-export type InterviewStatus = 'scheduled' | 'completed' | 'no_show' | 'rescheduled' | 'canceled'
+export type InterviewStatus = 'pending' | 'confirmed' | 'scheduled' | 'completed' | 'no_show' | 'rescheduled' | 'cancelled'
 export type InterviewOutcome = 'pass' | 'fail' | 'follow_up'
 export type InterviewChannel = 'phone' | 'whatsapp' | 'zoom'
 
@@ -86,16 +86,24 @@ export interface Interview {
   id: string
   created_at: string
   candidate_id: string
-  scheduled_start: string
-  scheduled_end: string
-  channel: InterviewChannel
+
+  // Booking flow fields (live schema)
+  slot_token: string | null
+  scheduled_at: string | null
+
+  // Rich fields (extended schema)
+  scheduled_start: string | null
+  scheduled_end: string | null
+  channel: InterviewChannel | null
   meeting_link: string | null
   interviewer: string | null
   status: InterviewStatus
   outcome: InterviewOutcome | null
   admin_notes: string | null
+
   // Joined data
   candidate?: Candidate
+  candidates?: Candidate
 }
 
 export interface ScoringWeights {

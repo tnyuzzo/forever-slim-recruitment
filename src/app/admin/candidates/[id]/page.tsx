@@ -4,8 +4,24 @@ import { useEffect, useState, use } from 'react'
 import Link from 'next/link'
 import { createClient } from '@/lib/supabase/client'
 import { format } from 'date-fns'
-import { ChevronLeft, CheckCircle2, XCircle, Calendar, Play, Mail, Phone, MessageCircle, Send, Globe, User, Clock, Briefcase, Headphones, Shield } from 'lucide-react'
+import { ChevronLeft, CheckCircle2, XCircle, Calendar, Play, Mail, Phone, MessageCircle, Send, Globe, Clock, Briefcase, Headphones, Shield, FileText, Save, Loader2, Video, X } from 'lucide-react'
 import { notFound } from 'next/navigation'
+
+const OUTCOME_STYLES: Record<string, string> = {
+  pass: 'border-green-400 bg-green-50 text-green-700',
+  fail: 'border-red-400 bg-red-50 text-red-700',
+  follow_up: 'border-amber-400 bg-amber-50 text-amber-700',
+}
+
+const INTERVIEW_STATUS_LABELS: Record<string, string> = {
+  pending: 'In attesa',
+  confirmed: 'Confermato',
+  scheduled: 'Programmato',
+  completed: 'Completato',
+  no_show: 'No Show',
+  rescheduled: 'Riprogrammato',
+  cancelled: 'Annullato',
+}
 
 export default function CandidateDetailPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = use(params)
@@ -13,10 +29,32 @@ export default function CandidateDetailPage({ params }: { params: Promise<{ id: 
   const [loading, setLoading] = useState(true)
   const [inviteLoading, setInviteLoading] = useState(false)
   const [inviteSent, setInviteSent] = useState(false)
+
+  // Notes
+  const [notes, setNotes] = useState('')
+  const [notesSaving, setNotesSaving] = useState(false)
+  const [notesSaved, setNotesSaved] = useState(false)
+
+  // Rejection
+  const [rejectionReason, setRejectionReason] = useState('')
+
+  // Interviews
+  const [interviews, setInterviews] = useState<any[]>([])
+
+  // Outcome modal
+  const [showOutcomeModal, setShowOutcomeModal] = useState(false)
+  const [outcomeData, setOutcomeData] = useState({
+    interview_id: '',
+    outcome: '' as '' | 'pass' | 'fail' | 'follow_up',
+    admin_notes: '',
+    status: 'completed',
+  })
+
   const supabase = createClient()
 
   useEffect(() => {
     fetchCandidate()
+    fetchInterviews()
   }, [id])
 
   async function fetchCandidate() {
@@ -28,13 +66,27 @@ export default function CandidateDetailPage({ params }: { params: Promise<{ id: 
         .single()
 
       if (error) throw error
-      if (data) setCandidate(data)
+      if (data) {
+        setCandidate(data)
+        setNotes(data.notes || '')
+        setRejectionReason(data.ko_reason || '')
+      }
     } catch (error) {
       console.error('Error fetching candidate:', error)
       notFound()
     } finally {
       setLoading(false)
     }
+  }
+
+  async function fetchInterviews() {
+    const { data, error } = await supabase
+      .from('interviews')
+      .select('*')
+      .eq('candidate_id', id)
+      .order('created_at', { ascending: false })
+
+    if (!error && data) setInterviews(data)
   }
 
   async function updateStatus(newStatus: string) {
@@ -52,6 +104,75 @@ export default function CandidateDetailPage({ params }: { params: Promise<{ id: 
     }
   }
 
+  async function saveNotes() {
+    setNotesSaving(true)
+    try {
+      const { error } = await supabase
+        .from('candidates')
+        .update({ notes })
+        .eq('id', id)
+
+      if (error) throw error
+      setCandidate({ ...candidate, notes })
+      setNotesSaved(true)
+      setTimeout(() => setNotesSaved(false), 2000)
+    } catch (error) {
+      console.error('Error saving notes:', error)
+      alert('Errore nel salvataggio delle note')
+    } finally {
+      setNotesSaving(false)
+    }
+  }
+
+  async function rejectWithReason() {
+    try {
+      const updateData: any = { status: 'rejected' }
+      if (rejectionReason.trim()) {
+        updateData.ko_reason = rejectionReason
+      }
+
+      const { error } = await supabase
+        .from('candidates')
+        .update(updateData)
+        .eq('id', id)
+
+      if (error) throw error
+      setCandidate({ ...candidate, ...updateData })
+    } catch (error) {
+      console.error('Error rejecting candidate:', error)
+      alert("Errore nell'aggiornamento")
+    }
+  }
+
+  async function recordOutcome() {
+    if (!outcomeData.outcome) return
+    try {
+      const { error } = await supabase
+        .from('interviews')
+        .update({
+          status: outcomeData.status,
+          outcome: outcomeData.outcome,
+          admin_notes: outcomeData.admin_notes || null,
+        })
+        .eq('id', outcomeData.interview_id)
+
+      if (error) throw error
+
+      setShowOutcomeModal(false)
+      fetchInterviews()
+
+      // Auto-advance candidate status based on outcome
+      if (outcomeData.outcome === 'pass') {
+        updateStatus('hired')
+      } else if (outcomeData.outcome === 'fail') {
+        updateStatus('rejected')
+      }
+    } catch (error) {
+      console.error('Error recording outcome:', error)
+      alert("Errore nel salvataggio dell'esito")
+    }
+  }
+
   async function sendInvite(channels: string[]) {
     setInviteLoading(true)
     try {
@@ -64,6 +185,7 @@ export default function CandidateDetailPage({ params }: { params: Promise<{ id: 
       if (res.ok) {
         setInviteSent(true)
         updateStatus('interview_booked')
+        fetchInterviews()
       } else {
         alert("Errore nell'invio: " + (data.error || 'Sconosciuto'))
       }
@@ -82,6 +204,12 @@ export default function CandidateDetailPage({ params }: { params: Promise<{ id: 
   if (!candidate) return notFound()
 
   const whatsappLink = candidate.whatsapp ? `https://wa.me/${candidate.whatsapp.replace(/[^0-9]/g, '')}` : null
+
+  function getInterviewDate(interview: any): string {
+    const dateStr = interview.scheduled_start || interview.scheduled_at
+    if (!dateStr) return 'Data non definita'
+    return format(new Date(dateStr), 'dd MMM yyyy, HH:mm')
+  }
 
   return (
     <div className="space-y-6 relative pb-24">
@@ -176,7 +304,7 @@ export default function CandidateDetailPage({ params }: { params: Promise<{ id: 
               </div>
               <audio controls className="w-full h-12 outline-none rounded-xl">
                 <source src={candidate.audio_url} type="audio/mpeg" />
-                Il tuo browser non supporta l'elemento audio.
+                Il tuo browser non supporta l&apos;elemento audio.
               </audio>
             </div>
           )}
@@ -264,20 +392,86 @@ export default function CandidateDetailPage({ params }: { params: Promise<{ id: 
             </h3>
             <div className="space-y-6">
               <div>
-                <div className="text-sm font-semibold text-text-main mb-2">1. Come gestiresti l'obiezione "Ci Devo Pensare"?</div>
+                <div className="text-sm font-semibold text-text-main mb-2">1. Come gestiresti l&apos;obiezione &quot;Ci Devo Pensare&quot;?</div>
                 <div className="bg-blue-50/50 border border-blue-100 p-5 rounded-2xl text-sm leading-relaxed text-slate-700 italic">
-                  "{candidate.roleplay_think_about_it}"
+                  &quot;{candidate.roleplay_think_about_it}&quot;
                 </div>
                 <div className="text-xs text-text-muted mt-1">{candidate.roleplay_think_about_it?.length || 0} caratteri</div>
               </div>
               <div>
                 <div className="text-sm font-semibold text-text-main mb-2">2. Upsell: Da 1 scatola a Kit 3 scatole</div>
                 <div className="bg-blue-50/50 border border-blue-100 p-5 rounded-2xl text-sm leading-relaxed text-slate-700 italic">
-                  "{candidate.roleplay_bundle3}"
+                  &quot;{candidate.roleplay_bundle3}&quot;
                 </div>
                 <div className="text-xs text-text-muted mt-1">{candidate.roleplay_bundle3?.length || 0} caratteri</div>
               </div>
             </div>
+          </div>
+
+          {/* Storico Colloqui */}
+          <div className="bg-white p-6 md:p-8 rounded-3xl shadow-sm border border-gray-100">
+            <h3 className="text-lg font-bold border-b border-gray-100 pb-2 mb-4 flex items-center gap-2">
+              <Video className="w-5 h-5 text-primary-main" /> Storico Colloqui
+            </h3>
+            {interviews.length === 0 ? (
+              <p className="text-text-muted text-sm">Nessun colloquio registrato.</p>
+            ) : (
+              <div className="space-y-3">
+                {interviews.map(interview => (
+                  <div key={interview.id} className="border border-gray-100 rounded-xl p-4">
+                    <div className="flex items-center justify-between gap-4">
+                      <div className="flex-1">
+                        <div className="font-semibold text-sm">
+                          {getInterviewDate(interview)}
+                        </div>
+                        <div className="flex flex-wrap items-center gap-2 mt-1.5">
+                          <span className={`text-xs font-medium px-2 py-0.5 rounded-full ${
+                            interview.status === 'confirmed' ? 'bg-purple-100 text-purple-700' :
+                            interview.status === 'completed' ? 'bg-green-100 text-green-700' :
+                            interview.status === 'no_show' ? 'bg-red-100 text-red-700' :
+                            interview.status === 'pending' ? 'bg-gray-100 text-gray-600' :
+                            'bg-gray-100 text-gray-600'
+                          }`}>
+                            {INTERVIEW_STATUS_LABELS[interview.status] || interview.status}
+                          </span>
+                          {interview.outcome && (
+                            <span className={`text-xs font-semibold px-2 py-0.5 rounded-full ${
+                              interview.outcome === 'pass' ? 'bg-green-100 text-green-700' :
+                              interview.outcome === 'fail' ? 'bg-red-100 text-red-700' :
+                              'bg-amber-100 text-amber-700'
+                            }`}>
+                              {interview.outcome === 'pass' ? 'Superato' : interview.outcome === 'fail' ? 'Non Superato' : 'Follow-up'}
+                            </span>
+                          )}
+                          {interview.channel && (
+                            <span className="text-xs text-text-muted">{interview.channel}</span>
+                          )}
+                        </div>
+                        {interview.admin_notes && (
+                          <p className="text-xs text-text-muted mt-2 bg-gray-50 p-2 rounded-lg italic">{interview.admin_notes}</p>
+                        )}
+                      </div>
+                      {['confirmed', 'scheduled'].includes(interview.status) && !interview.outcome && (
+                        <button
+                          onClick={() => {
+                            setOutcomeData({
+                              interview_id: interview.id,
+                              outcome: '',
+                              admin_notes: '',
+                              status: 'completed',
+                            })
+                            setShowOutcomeModal(true)
+                          }}
+                          className="px-3 py-2 bg-indigo-50 text-indigo-700 rounded-xl text-xs font-semibold hover:bg-indigo-100 transition-colors shrink-0"
+                        >
+                          Registra Esito
+                        </button>
+                      )}
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
           </div>
 
           {/* Consensi */}
@@ -300,8 +494,8 @@ export default function CandidateDetailPage({ params }: { params: Promise<{ id: 
 
         {/* Action Sidebar */}
         <div className="lg:w-80 flex-shrink-0">
-          <div className="bg-white p-6 rounded-3xl shadow-sm border border-gray-100 sticky top-24">
-            <h3 className="font-bold text-lg mb-6">Azioni Rapide</h3>
+          <div className="bg-white p-6 rounded-3xl shadow-sm border border-gray-100 sticky top-24 space-y-6">
+            <h3 className="font-bold text-lg">Azioni Rapide</h3>
 
             <div className="space-y-3">
               <button
@@ -331,9 +525,16 @@ export default function CandidateDetailPage({ params }: { params: Promise<{ id: 
                 <CheckCircle2 className="w-5 h-5 opacity-50" />
               </button>
 
-              <div className="pt-4 mt-4 border-t border-gray-100">
+              <div className="pt-4 mt-4 border-t border-gray-100 space-y-2">
+                <input
+                  type="text"
+                  value={rejectionReason}
+                  onChange={(e) => setRejectionReason(e.target.value)}
+                  placeholder="Motivo del rifiuto (opzionale)..."
+                  className="w-full border border-gray-200 rounded-xl px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-red-300"
+                />
                 <button
-                  onClick={() => updateStatus('rejected')}
+                  onClick={rejectWithReason}
                   className={`w-full flex items-center justify-between p-4 rounded-xl border transition-all ${candidate.status === 'rejected' ? 'bg-red-50 border-red-200 text-red-700 shadow-sm' : 'border-gray-200 text-red-600 hover:bg-red-50'
                     }`}
                 >
@@ -344,11 +545,13 @@ export default function CandidateDetailPage({ params }: { params: Promise<{ id: 
             </div>
 
             {/* Invita a Colloquio */}
-            <div className="mt-6 pt-6 border-t border-gray-100">
-              <h4 className="font-bold text-sm mb-3 text-text-main">📩 Invia Link Colloquio</h4>
+            <div className="pt-6 border-t border-gray-100">
+              <h4 className="font-bold text-sm mb-3 text-text-main flex items-center gap-2">
+                <Send className="w-4 h-4" /> Invia Link Colloquio
+              </h4>
               {inviteSent ? (
                 <div className="bg-green-50 border border-green-200 rounded-xl p-4 text-sm text-green-700 font-medium text-center">
-                  ✅ Link inviato con successo!
+                  Link inviato con successo!
                 </div>
               ) : (
                 <div className="space-y-2">
@@ -379,8 +582,30 @@ export default function CandidateDetailPage({ params }: { params: Promise<{ id: 
               )}
             </div>
 
-            {candidate.ko_reason && (
-              <div className="mt-8 p-4 bg-red-50 rounded-xl border border-red-100">
+            {/* Note Interne */}
+            <div className="pt-6 border-t border-gray-100">
+              <h4 className="font-bold text-sm mb-3 text-text-main flex items-center gap-2">
+                <FileText className="w-4 h-4" /> Note Interne
+              </h4>
+              <textarea
+                value={notes}
+                onChange={(e) => { setNotes(e.target.value); setNotesSaved(false) }}
+                placeholder="Aggiungi note su questo candidato..."
+                rows={4}
+                className="w-full border border-gray-200 rounded-xl p-3 text-sm focus:outline-none focus:ring-2 focus:ring-primary-main resize-none"
+              />
+              <button
+                onClick={saveNotes}
+                disabled={notesSaving}
+                className="mt-2 w-full flex items-center justify-center gap-2 px-4 py-2 bg-gray-100 hover:bg-gray-200 rounded-xl text-sm font-semibold transition-colors disabled:opacity-50"
+              >
+                {notesSaving ? <Loader2 className="w-4 h-4 animate-spin" /> : notesSaved ? <CheckCircle2 className="w-4 h-4 text-green-600" /> : <Save className="w-4 h-4" />}
+                {notesSaving ? 'Salvataggio...' : notesSaved ? 'Salvato!' : 'Salva Note'}
+              </button>
+            </div>
+
+            {candidate.ko_reason && candidate.status !== 'rejected' && (
+              <div className="p-4 bg-red-50 rounded-xl border border-red-100">
                 <div className="text-xs font-bold text-red-600 uppercase mb-1">Motivo KO Automatico</div>
                 <div className="text-sm font-medium text-red-800">{candidate.ko_reason}</div>
               </div>
@@ -389,6 +614,83 @@ export default function CandidateDetailPage({ params }: { params: Promise<{ id: 
         </div>
 
       </div>
+
+      {/* Outcome Recording Modal */}
+      {showOutcomeModal && (
+        <div className="fixed inset-0 bg-black/30 z-50 flex items-center justify-center p-4">
+          <div className="bg-white rounded-2xl p-6 max-w-md w-full shadow-xl space-y-5">
+            <div className="flex items-center justify-between">
+              <h3 className="text-lg font-bold">Registra Esito Colloquio</h3>
+              <button onClick={() => setShowOutcomeModal(false)} className="p-1 hover:bg-gray-100 rounded-lg">
+                <X className="w-5 h-5 text-gray-400" />
+              </button>
+            </div>
+
+            <div>
+              <label className="text-sm font-semibold text-text-muted block mb-2">Esito</label>
+              <div className="grid grid-cols-3 gap-2">
+                {[
+                  { value: 'pass' as const, label: 'Superato' },
+                  { value: 'fail' as const, label: 'Non Superato' },
+                  { value: 'follow_up' as const, label: 'Follow-up' },
+                ].map(opt => (
+                  <button
+                    key={opt.value}
+                    onClick={() => setOutcomeData(prev => ({ ...prev, outcome: opt.value }))}
+                    className={`p-3 rounded-xl border-2 text-sm font-semibold transition-all ${
+                      outcomeData.outcome === opt.value
+                        ? OUTCOME_STYLES[opt.value]
+                        : 'border-gray-200 hover:bg-gray-50'
+                    }`}
+                  >
+                    {opt.label}
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            <div>
+              <label className="text-sm font-semibold text-text-muted block mb-2">Stato colloquio</label>
+              <select
+                value={outcomeData.status}
+                onChange={(e) => setOutcomeData(prev => ({ ...prev, status: e.target.value }))}
+                className="w-full border border-gray-200 rounded-xl px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary-main"
+              >
+                <option value="completed">Completato</option>
+                <option value="no_show">No Show</option>
+                <option value="rescheduled">Da Riprogrammare</option>
+              </select>
+            </div>
+
+            <div>
+              <label className="text-sm font-semibold text-text-muted block mb-2">Note Colloquio</label>
+              <textarea
+                value={outcomeData.admin_notes}
+                onChange={(e) => setOutcomeData(prev => ({ ...prev, admin_notes: e.target.value }))}
+                placeholder="Impressioni, punti di forza, criticita..."
+                rows={3}
+                className="w-full border border-gray-200 rounded-xl p-3 text-sm resize-none focus:outline-none focus:ring-2 focus:ring-primary-main"
+              />
+            </div>
+
+            <div className="flex gap-3 pt-2">
+              <button
+                onClick={() => setShowOutcomeModal(false)}
+                className="flex-1 px-4 py-3 border border-gray-200 rounded-xl text-sm font-semibold hover:bg-gray-50 transition-colors"
+              >
+                Annulla
+              </button>
+              <button
+                onClick={recordOutcome}
+                disabled={!outcomeData.outcome}
+                className="flex-1 px-4 py-3 bg-indigo-600 text-white rounded-xl text-sm font-bold hover:bg-indigo-700 disabled:opacity-50 transition-colors"
+              >
+                Salva Esito
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   )
 }
