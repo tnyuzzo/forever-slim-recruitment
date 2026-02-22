@@ -137,6 +137,9 @@ export default function ApplyPage() {
     const [photoFile, setPhotoFile] = useState<File | null>(null)
     const [photoPreview, setPhotoPreview] = useState<string | null>(null)
     const [phonePrefix, setPhonePrefix] = useState('+39')
+    const [birthDay, setBirthDay] = useState('')
+    const [birthMonth, setBirthMonth] = useState('')
+    const [birthYear, setBirthYear] = useState('')
     const [spokenLanguages, setSpokenLanguages] = useState<string[]>([])
     const [otherLanguagesText, setOtherLanguagesText] = useState('')
     const [selectedTimeSlots, setSelectedTimeSlots] = useState<string[]>([])
@@ -158,7 +161,7 @@ export default function ApplyPage() {
         } as DefaultValues<CandidateFormData>
     })
 
-    const { register, handleSubmit, formState: { errors, isValid }, trigger, getValues } = form
+    const { register, handleSubmit, formState: { errors, isValid }, trigger, getValues, setValue } = form
 
     const handleNext = async () => {
         const isStepValid = await trigger()
@@ -489,7 +492,48 @@ export default function ApplyPage() {
 
                         <div className="space-y-2">
                             <label className="text-sm font-semibold text-text-main">Data di nascita *</label>
-                            <input type="date" {...register("birth_date")} className="w-full border border-gray-300 rounded-xl px-4 py-3 focus:outline-none focus:ring-2 focus:ring-primary-main" />
+                            <div className="flex gap-2">
+                                <select
+                                    value={birthDay}
+                                    onChange={(e) => {
+                                        const d = e.target.value
+                                        setBirthDay(d)
+                                        const combined = d && birthMonth && birthYear ? `${birthYear}-${birthMonth}-${d}` : ''
+                                        setValue("birth_date", combined, { shouldValidate: true })
+                                    }}
+                                    className="flex-1 border border-gray-300 rounded-xl px-3 py-3 bg-white focus:outline-none focus:ring-2 focus:ring-primary-main appearance-none text-sm"
+                                >
+                                    <option value="">GG</option>
+                                    {Array.from({length: 31}, (_, i) => { const d = String(i + 1).padStart(2, '0'); return <option key={d} value={d}>{d}</option> })}
+                                </select>
+                                <select
+                                    value={birthMonth}
+                                    onChange={(e) => {
+                                        const m = e.target.value
+                                        setBirthMonth(m)
+                                        const combined = birthDay && m && birthYear ? `${birthYear}-${m}-${birthDay}` : ''
+                                        setValue("birth_date", combined, { shouldValidate: true })
+                                    }}
+                                    className="flex-1 border border-gray-300 rounded-xl px-3 py-3 bg-white focus:outline-none focus:ring-2 focus:ring-primary-main appearance-none text-sm"
+                                >
+                                    <option value="">MM</option>
+                                    {['Gen','Feb','Mar','Apr','Mag','Giu','Lug','Ago','Set','Ott','Nov','Dic'].map((m, i) => { const v = String(i + 1).padStart(2, '0'); return <option key={v} value={v}>{v} {m}</option> })}
+                                </select>
+                                <select
+                                    value={birthYear}
+                                    onChange={(e) => {
+                                        const y = e.target.value
+                                        setBirthYear(y)
+                                        const combined = birthDay && birthMonth && y ? `${y}-${birthMonth}-${birthDay}` : ''
+                                        setValue("birth_date", combined, { shouldValidate: true })
+                                    }}
+                                    className="flex-[1.4] border border-gray-300 rounded-xl px-3 py-3 bg-white focus:outline-none focus:ring-2 focus:ring-primary-main appearance-none text-sm"
+                                >
+                                    <option value="">Anno</option>
+                                    {Array.from({length: 67}, (_, i) => { const y = String(2005 - i); return <option key={y} value={y}>{y}</option> })}
+                                </select>
+                            </div>
+                            <input type="hidden" {...register("birth_date")} />
                             {errors.birth_date && <span className="text-error text-xs">{errors.birth_date.message}</span>}
                         </div>
                     </div>
