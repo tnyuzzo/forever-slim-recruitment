@@ -23,6 +23,18 @@ export default function Hero() {
               Selezione aperta — Posti limitati
             </div>
 
+            {/* Hero image crop 16:9 — solo mobile */}
+            <div className="lg:hidden relative aspect-[16/9] rounded-2xl overflow-hidden shadow-lg -mx-4">
+              <Image
+                src="/images/hero_professional_man.jpg"
+                alt="Consulente al lavoro da casa"
+                fill
+                unoptimized
+                className="object-cover object-[center_20%]"
+                priority
+              />
+            </div>
+
             {/* Headline */}
             <h1 className="text-3xl md:text-4xl lg:text-5xl font-black text-slate-900 leading-tight tracking-tight">
               Niente chiamate a freddo: solo appuntamenti già confermati.

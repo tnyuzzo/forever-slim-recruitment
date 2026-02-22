@@ -15,6 +15,18 @@ export default function LandingPage() {
                         <span className="inline-block py-1.5 px-3 rounded-full bg-primary-light text-primary-main text-sm font-semibold tracking-wide uppercase">
                             Selezione aperta — Posti limitati
                         </span>
+
+                        {/* Hero image crop 16:9 — solo mobile, riusa l'asset portrait */}
+                        <div className="md:hidden relative aspect-[16/9] rounded-2xl overflow-hidden shadow-lg -mx-4">
+                            <Image
+                                src="/images/hero_professional_woman_1771577958488.png"
+                                alt="Lavora da casa con i tuoi orari"
+                                fill
+                                className="object-cover object-[center_15%]"
+                                priority
+                            />
+                        </div>
+
                         <h1 className="text-4xl md:text-5xl lg:text-6xl font-black text-text-main leading-tight tracking-tight">
                             Niente chiamate a freddo: <br className="hidden md:block" />solo appuntamenti già prenotati.
                         </h1>
