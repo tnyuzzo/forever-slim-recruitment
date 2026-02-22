@@ -845,7 +845,7 @@ export default function ApplyPage() {
             <div className="max-w-3xl mx-auto">
                 <div className="mb-8 p-6 bg-white rounded-3xl shadow-sm border border-gray-100">
                     <div className="flex justify-center mb-6">
-                        <img src="/images/closer-agency-logo.jpeg" alt="Closer Agency" className="h-14 w-auto" />
+                        <img src="/images/closer-agency-logo.png" alt="Closer Agency" className="h-14 w-auto" />
                     </div>
                     <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-8 border-b border-gray-100 pb-6">
                         {/* Progress Stepper Visuals (Simplified mobile-friendly line) */}
