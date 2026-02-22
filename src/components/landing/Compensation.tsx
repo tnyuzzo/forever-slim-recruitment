@@ -103,7 +103,7 @@ export default function Compensation() {
         {/* Daily range */}
         <div className="bg-gray-50 rounded-xl p-6 mb-8 max-w-2xl mx-auto text-center">
           <p className="text-gray-600 mb-2">Guadagno medio giornaliero osservato</p>
-          <p className="text-3xl font-bold text-gray-900">€200 — €600 <span className="text-lg font-normal text-gray-500">/giorno</span></p>
+          <p className="text-3xl font-bold text-gray-900">€100 — €300 <span className="text-lg font-normal text-gray-500">/giorno</span></p>
           <p className="text-sm text-gray-500 mt-2">A seconda di esperienza, ore dedicate e tasso di chiusura</p>
         </div>
 
