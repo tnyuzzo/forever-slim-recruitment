@@ -108,7 +108,7 @@ export default function Hero() {
           </div>
 
           {/* Image */}
-          <div className="relative lg:pl-8">
+          <div className="hidden lg:block relative lg:pl-8">
             <div className="relative aspect-[4/5] rounded-2xl overflow-hidden shadow-2xl shadow-pink-900/10 border-4 border-white">
               <Image
                 src="/images/hero_professional_woman_1771577958488.png"

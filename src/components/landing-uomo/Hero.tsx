@@ -108,7 +108,7 @@ export default function Hero() {
           </div>
 
           {/* Image */}
-          <div className="relative lg:pl-8 mt-8 lg:mt-0" style={{ animationDelay: '0.2s' }}>
+          <div className="hidden lg:block relative lg:pl-8 mt-8 lg:mt-0" style={{ animationDelay: '0.2s' }}>
             <div className="relative aspect-[4/5] rounded-[2rem] overflow-hidden shadow-2xl shadow-blue-900/10 border-4 border-white">
               <Image
                 src="/images/hero_professional_man.jpg"
