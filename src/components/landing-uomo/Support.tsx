@@ -28,7 +28,7 @@ export default function Support() {
   ]
 
   return (
-    <section className="py-20 md:py-32 bg-white">
+    <section className="py-12 md:py-32 bg-white">
       <div className="max-w-7xl mx-auto px-4">
 
         <div className="grid lg:grid-cols-2 gap-16 items-center">

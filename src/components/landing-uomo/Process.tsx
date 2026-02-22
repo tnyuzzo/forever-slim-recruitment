@@ -22,7 +22,7 @@ export default function Process() {
   ]
 
   return (
-    <section className="py-20 md:py-32 bg-slate-50 relative border-t border-slate-200">
+    <section className="py-12 md:py-32 bg-slate-50 relative border-t border-slate-200">
       <div className="max-w-7xl mx-auto px-4">
 
         <div className="text-center max-w-3xl mx-auto mb-20">

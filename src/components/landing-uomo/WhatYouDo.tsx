@@ -20,7 +20,7 @@ export default function WhatYouDo() {
   ]
 
   return (
-    <section className="py-20 md:py-32 bg-slate-50 relative">
+    <section className="py-12 md:py-32 bg-slate-50 relative">
       <div className="absolute top-0 inset-x-0 h-px bg-gradient-to-r from-transparent via-slate-200 to-transparent" />
       <div className="max-w-7xl mx-auto px-4 relative z-10">
         <div className="text-center max-w-3xl mx-auto mb-16">

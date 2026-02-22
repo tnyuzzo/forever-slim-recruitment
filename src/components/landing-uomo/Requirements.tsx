@@ -21,7 +21,7 @@ export default function Requirements() {
   ]
 
   return (
-    <section className="py-20 md:py-32 bg-slate-50">
+    <section className="py-12 md:py-32 bg-slate-50">
       <div className="max-w-7xl mx-auto px-4">
         <div className="text-center max-w-3xl mx-auto mb-16">
           <h2 className="text-3xl md:text-5xl font-black text-slate-900 mb-6 tracking-tight">

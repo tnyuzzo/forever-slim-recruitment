@@ -28,7 +28,7 @@ export default function Process() {
   ]
 
   return (
-    <section className="py-16 md:py-24 bg-[#FAFAFA]">
+    <section className="py-10 md:py-24 bg-[#FAFAFA]">
       <div className="max-w-7xl mx-auto px-4">
         <h2 className="text-2xl md:text-3xl font-bold text-gray-900 text-center mb-4">
           Come funziona la selezione. 3 step, nessuna sorpresa.

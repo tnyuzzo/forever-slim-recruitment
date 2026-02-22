@@ -5,7 +5,7 @@ import { Clock } from 'lucide-react'
 
 export default function FinalCTA() {
   return (
-    <section className="py-16 md:py-24 bg-gradient-to-br from-[#D946A8] to-[#C026A0]">
+    <section className="py-10 md:py-24 bg-gradient-to-br from-[#D946A8] to-[#C026A0]">
       <div className="max-w-3xl mx-auto px-4 text-center">
         <h2 className="text-2xl md:text-3xl font-bold text-white mb-6">
           Hai letto fin qui. Sai come funziona, cosa offriamo, cosa chiediamo.

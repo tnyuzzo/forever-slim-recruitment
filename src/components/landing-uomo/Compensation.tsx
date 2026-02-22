@@ -4,7 +4,7 @@ import { Info, TrendingUp, AlertTriangle } from 'lucide-react'
 
 export default function Compensation() {
   return (
-    <section className="py-20 md:py-32 bg-blue-950 text-white relative">
+    <section className="py-12 md:py-32 bg-blue-950 text-white relative">
       <div className="absolute inset-0 bg-[url('https://grainy-gradients.vercel.app/noise.svg')] opacity-20" />
 
       <div className="max-w-7xl mx-auto px-4 relative z-10">

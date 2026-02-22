@@ -4,7 +4,7 @@ import { Flame, Target, CalendarDays, ThumbsUp } from 'lucide-react'
 
 export default function WarmLeads() {
   return (
-    <section className="py-20 md:py-32 bg-white relative overflow-hidden">
+    <section className="py-12 md:py-32 bg-white relative overflow-hidden">
       {/* Decorative background blur */}
       <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[800px] h-[800px] bg-blue-50/50 rounded-full blur-3xl -z-10" />
 

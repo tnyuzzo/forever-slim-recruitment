@@ -42,7 +42,7 @@ export default function FAQ() {
   ]
 
   return (
-    <section className="py-20 md:py-32 bg-white">
+    <section className="py-12 md:py-32 bg-white">
       <div className="max-w-4xl mx-auto px-4">
 
         <div className="text-center mb-16">

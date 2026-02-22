@@ -35,7 +35,7 @@ export default function Compensation() {
   ]
 
   return (
-    <section className="py-16 md:py-24 bg-white">
+    <section className="py-10 md:py-24 bg-white">
       <div className="max-w-7xl mx-auto px-4">
         <h2 className="text-2xl md:text-3xl font-bold text-gray-900 text-center mb-4">
           Quanto puoi guadagnare. I numeri, senza giri di parole.

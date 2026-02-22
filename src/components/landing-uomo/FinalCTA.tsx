@@ -6,7 +6,7 @@ import { Rocket, Clock } from 'lucide-react'
 
 export default function FinalCTA() {
   return (
-    <section className="py-20 md:py-32 relative overflow-hidden bg-slate-900">
+    <section className="py-12 md:py-32 relative overflow-hidden bg-slate-900">
       {/* Background gradients */}
       <div className="absolute top-0 right-0 w-full h-full bg-[radial-gradient(circle_at_top_right,_var(--tw-gradient-stops))] from-blue-900/40 via-transparent to-transparent opacity-60" />
       <div className="absolute bottom-0 left-0 w-full h-full bg-[radial-gradient(circle_at_bottom_left,_var(--tw-gradient-stops))] from-indigo-900/40 via-transparent to-transparent opacity-60" />
