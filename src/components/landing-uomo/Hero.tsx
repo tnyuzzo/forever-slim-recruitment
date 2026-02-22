@@ -80,15 +80,15 @@ export default function Hero() {
               <p className="text-sm font-bold text-slate-900 mb-3">Requisiti essenziali:</p>
               <div className="text-sm space-y-0.5">
                 <p className="font-semibold text-slate-900">• Italiano impeccabile e naturale</p>
-                <p className="text-slate-600">è il tuo strumento di lavoro</p>
+                <p className="text-slate-600 pl-3">è il tuo strumento di lavoro</p>
               </div>
               <div className="text-sm space-y-0.5">
                 <p className="font-semibold text-slate-900">• Puntualità assoluta sugli appuntamenti</p>
-                <p className="text-slate-600">nessuna eccezione</p>
+                <p className="text-slate-600 pl-3">nessuna eccezione</p>
               </div>
               <div className="text-sm space-y-0.5">
                 <p className="font-semibold text-slate-900">• Empatia reale con i clienti</p>
-                <p className="text-slate-600">qui si fa consulenza, non pressione</p>
+                <p className="text-slate-600 pl-3">qui si fa consulenza, non pressione</p>
               </div>
             </div>
 
