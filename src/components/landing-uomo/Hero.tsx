@@ -26,7 +26,7 @@ export default function Hero() {
             </div>
 
             {/* Hero image crop 16:9 — solo mobile */}
-            <div className="lg:hidden relative aspect-[16/9] rounded-2xl overflow-hidden shadow-lg -mx-4">
+            <div className="lg:hidden relative aspect-[16/9] rounded-2xl overflow-hidden shadow-lg">
               <Image
                 src="/images/hero_professional_man.jpg"
                 alt="Consulente al lavoro da casa"
