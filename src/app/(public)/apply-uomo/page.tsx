@@ -64,7 +64,7 @@ const step1Schema = z.object({
     whatsapp: z.string().min(6, "Inserisci il numero di telefono"),
     country: z.string().min(2, "Seleziona/Inserisci il paese"),
     city: z.string().min(2, "Inserisci la città"),
-    age_range: z.string().min(1, "Seleziona una fascia d'età"),
+    birth_date: z.string().min(1, "Inserisci la data di nascita"),
 })
 
 const LANGUAGE_OPTIONS = [
@@ -322,7 +322,7 @@ export default function ApplyPage() {
                 whatsapp: phonePrefix + ' ' + (data.whatsapp || '').replace(/^\+?\d+\s*/, ''),
                 city: data.city,
                 country: data.country,
-                age_range: data.age_range,
+                birth_date: data.birth_date,
                 nationality: data.nationality,
                 native_language: data.native_language,
                 italian_level: data.italian_level,
@@ -454,10 +454,10 @@ export default function ApplyPage() {
                                 <select
                                     value={phonePrefix}
                                     onChange={(e) => setPhonePrefix(e.target.value)}
-                                    className="shrink-0 w-[130px] border border-gray-300 rounded-xl px-3 py-3 bg-white focus:outline-none focus:ring-2 focus:ring-blue-600 appearance-none text-sm font-medium"
+                                    className="shrink-0 w-[72px] border border-gray-300 rounded-xl px-3 py-3 bg-white focus:outline-none focus:ring-2 focus:ring-blue-600 appearance-none text-sm font-medium"
                                 >
                                     {COUNTRIES.filter(c => c !== 'Altro').map(c => (
-                                        <option key={c} value={COUNTRY_PREFIXES[c]}>{COUNTRY_PREFIXES[c]} {c}</option>
+                                        <option key={c} value={COUNTRY_PREFIXES[c]}>{COUNTRY_PREFIXES[c]}</option>
                                     ))}
                                 </select>
                                 <input type="tel" {...register("whatsapp")} className="flex-1 border border-gray-300 rounded-xl px-4 py-3 focus:outline-none focus:ring-2 focus:ring-blue-600" placeholder="333 000 0000" />
@@ -488,17 +488,9 @@ export default function ApplyPage() {
                         </div>
 
                         <div className="space-y-2">
-                            <label className="text-sm font-semibold text-text-main">Fascia d'età *</label>
-                            <select {...register("age_range")} className="w-full border border-gray-300 rounded-xl px-4 py-3 bg-white focus:outline-none focus:ring-2 focus:ring-blue-600 appearance-none">
-                                <option value="">Seleziona...</option>
-                                <option value="25-29">25-29</option>
-                                <option value="30-35">30-35</option>
-                                <option value="36-40">36-40</option>
-                                <option value="41-45">41-45</option>
-                                <option value="46-50">46-50</option>
-                                <option value="50+">50+</option>
-                            </select>
-                            {errors.age_range && <span className="text-error text-xs">{errors.age_range.message}</span>}
+                            <label className="text-sm font-semibold text-text-main">Data di nascita *</label>
+                            <input type="date" {...register("birth_date")} className="w-full border border-gray-300 rounded-xl px-4 py-3 focus:outline-none focus:ring-2 focus:ring-blue-600" />
+                            {errors.birth_date && <span className="text-error text-xs">{errors.birth_date.message}</span>}
                         </div>
                     </div>
                 )
