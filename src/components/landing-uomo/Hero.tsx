@@ -78,9 +78,18 @@ export default function Hero() {
             {/* 3 Requirements */}
             <div className="bg-slate-50 border border-slate-100 rounded-2xl p-5 space-y-2">
               <p className="text-sm font-bold text-slate-900 mb-3">Requisiti essenziali:</p>
-              <p className="text-sm text-slate-700 font-medium">• Italiano impeccabile e naturale — è il tuo strumento di lavoro</p>
-              <p className="text-sm text-slate-700 font-medium">• Puntualità assoluta sugli appuntamenti — nessuna eccezione</p>
-              <p className="text-sm text-slate-700 font-medium">• Empatia reale con i clienti — qui si fa consulenza, non pressione</p>
+              <div className="text-sm space-y-0.5">
+                <p className="font-semibold text-slate-900">• Italiano impeccabile e naturale</p>
+                <p className="text-slate-600">è il tuo strumento di lavoro</p>
+              </div>
+              <div className="text-sm space-y-0.5">
+                <p className="font-semibold text-slate-900">• Puntualità assoluta sugli appuntamenti</p>
+                <p className="text-slate-600">nessuna eccezione</p>
+              </div>
+              <div className="text-sm space-y-0.5">
+                <p className="font-semibold text-slate-900">• Empatia reale con i clienti</p>
+                <p className="text-slate-600">qui si fa consulenza, non pressione</p>
+              </div>
             </div>
 
             {/* CTA */}
