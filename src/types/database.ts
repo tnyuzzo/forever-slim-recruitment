@@ -1,4 +1,4 @@
-export type CandidateStatus = 'new' | 'qualified' | 'invited' | 'interview_booked' | 'hired' | 'rejected'
+export type CandidateStatus = 'new' | 'qualified' | 'invited' | 'interview_booked' | 'offer_sent' | 'hired' | 'rejected'
 export type CandidatePriority = 'low' | 'medium' | 'high'
 export type ItalianLevel = 'low' | 'medium' | 'high'
 export type InterviewStatus = 'pending' | 'confirmed' | 'scheduled' | 'completed' | 'no_show' | 'rescheduled' | 'cancelled'

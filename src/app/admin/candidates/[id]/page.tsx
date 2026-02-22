@@ -28,6 +28,7 @@ const STATUS_COLORS: Record<string, string> = {
   qualified: 'bg-amber-100 text-amber-700 border-amber-200',
   invited: 'bg-indigo-100 text-indigo-700 border-indigo-200',
   interview_booked: 'bg-purple-100 text-purple-700 border-purple-200',
+  offer_sent: 'bg-cyan-100 text-cyan-700 border-cyan-200',
   hired: 'bg-green-100 text-green-700 border-green-200',
   rejected: 'bg-red-100 text-red-700 border-red-200',
 }
@@ -37,6 +38,7 @@ const STATUS_LABELS: Record<string, string> = {
   qualified: 'Qualificato',
   invited: 'Invitato',
   interview_booked: 'Colloquio Fissato',
+  offer_sent: 'Proposta Inviata',
   hired: 'Assunto',
   rejected: 'Rifiutato',
 }
@@ -233,7 +235,7 @@ export default function CandidateDetailPage({ params }: { params: Promise<{ id: 
 
       // Auto-advance candidate status based on outcome
       if (outcomeData.outcome === 'pass') {
-        updateStatus('hired')
+        updateStatus('offer_sent')
       } else if (outcomeData.outcome === 'fail') {
         updateStatus('rejected')
       }

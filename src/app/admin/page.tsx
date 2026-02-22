@@ -15,7 +15,7 @@ type Candidate = {
   whatsapp: string
   score_total: number
   priority: 'low' | 'medium' | 'high'
-  status: 'new' | 'qualified' | 'invited' | 'interview_booked' | 'hired' | 'rejected'
+  status: 'new' | 'qualified' | 'invited' | 'interview_booked' | 'offer_sent' | 'hired' | 'rejected'
   italian_level: string
   hours_per_day: number
 }
@@ -25,6 +25,7 @@ const statusColors: Record<string, string> = {
   qualified: 'bg-amber-100 text-amber-700',
   invited: 'bg-indigo-100 text-indigo-700',
   interview_booked: 'bg-purple-100 text-purple-700',
+  offer_sent: 'bg-cyan-100 text-cyan-700',
   hired: 'bg-green-100 text-green-700',
   rejected: 'bg-red-100 text-red-700'
 }
@@ -34,6 +35,7 @@ const statusLabels: Record<string, string> = {
   qualified: 'Qualificato',
   invited: 'Invitato',
   interview_booked: 'Colloquio Fissato',
+  offer_sent: 'Proposta Inviata',
   hired: 'Assunto',
   rejected: 'Rifiutato'
 }
@@ -115,6 +117,7 @@ export default function CandidatesPage() {
             <option value="qualified">Qualificati</option>
             <option value="invited">Invitati</option>
             <option value="interview_booked">Colloquio Fissato</option>
+            <option value="offer_sent">Proposta Inviata</option>
             <option value="hired">Assunti</option>
             <option value="rejected">Rifiutati KO</option>
           </select>

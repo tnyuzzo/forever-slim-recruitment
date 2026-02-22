@@ -65,7 +65,7 @@ export async function POST(request: Request) {
             promises.push((async () => {
                 try {
                     const emailResult = await resend.emails.send({
-                        from: 'onboarding@resend.dev',
+                        from: 'Closer Agency <recruiting@closeragency.eu>',
                         to: candidate.email,
                         subject: `Fissa il tuo Colloquio Conoscitivo, ${candidate.first_name}!`,
                         html: `

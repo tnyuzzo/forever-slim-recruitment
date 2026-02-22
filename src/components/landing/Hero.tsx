@@ -14,6 +14,9 @@ export default function Hero() {
         <div className="grid lg:grid-cols-2 gap-12 items-center">
           {/* Text content */}
           <div className="space-y-6">
+            {/* Logo */}
+            <img src="/images/closer-agency-logo.jpeg" alt="Closer Agency" className="h-12 w-auto" />
+
             {/* Pre-headline */}
             <div className="inline-flex items-center gap-2 bg-[#FDF2F8] text-[#D946A8] px-4 py-2 rounded-full text-sm font-medium">
               <span className="w-2 h-2 bg-[#D946A8] rounded-full animate-pulse" />

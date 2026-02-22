@@ -15,7 +15,7 @@ export async function POST(request: Request) {
 
         // Per testare usiamo l'email di test generica di resend come mittente. 
         // In produzione andrà inserito un 'noreply@tuo-dominio.com' verificato.
-        const senderEmail = 'onboarding@resend.dev';
+        const senderEmail = 'notifiche@closeragency.eu';
 
         // Siccome siamo in sandbox Resend, l'email TARGET deve essere quella verificata sull'account Resend.
         // Usiamo una variabile d'ambiente o fallback a una email di default per inoltrare la notifica tecnica.
@@ -39,7 +39,7 @@ export async function POST(request: Request) {
         <p><strong>Punteggio Automazione:</strong> ${score_total}/100</p>
         <p><strong>Priorità:</strong> ${priority.toUpperCase()}</p>
         <br/>
-        <p>Per vedere i dettagli completi, prova a consultare la <a href="https://recruitment-app-sage.vercel.app/admin">Dashboard Admin</a>.</p>
+        <p>Per vedere i dettagli completi, prova a consultare la <a href="https://closeragency.eu/admin">Dashboard Admin</a>.</p>
       `;
         }
 
