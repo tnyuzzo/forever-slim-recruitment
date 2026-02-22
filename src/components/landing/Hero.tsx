@@ -23,6 +23,17 @@ export default function Hero() {
               Selezione aperta — Posti limitati
             </div>
 
+            {/* Hero image crop 16:9 — solo mobile */}
+            <div className="lg:hidden relative aspect-[16/9] rounded-2xl overflow-hidden shadow-lg -mx-4">
+              <Image
+                src="/images/hero_professional_woman_1771577958488.png"
+                alt="Lavora da casa con i tuoi orari"
+                fill
+                className="object-cover object-[center_15%]"
+                priority
+              />
+            </div>
+
             {/* Headline */}
             <h1 className="text-3xl md:text-4xl lg:text-5xl font-bold text-gray-900 leading-tight tracking-tight">
               Niente chiamate a freddo: solo appuntamenti già prenotati.
@@ -86,18 +97,15 @@ export default function Hero() {
 
           {/* Image */}
           <div className="relative lg:pl-8">
-            <div className="relative aspect-[4/5] rounded-2xl overflow-hidden bg-gradient-to-br from-[#FDF2F8] to-[#FCE7F3]">
-              {/* Placeholder for hero image */}
-              <div className="absolute inset-0 flex items-center justify-center">
-                <div className="text-center p-8">
-                  <div className="w-24 h-24 mx-auto bg-[#D946A8]/10 rounded-full flex items-center justify-center mb-4">
-                    <svg className="w-12 h-12 text-[#D946A8]" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
-                    </svg>
-                  </div>
-                  <p className="text-[#D946A8] text-sm">Immagine Hero</p>
-                </div>
-              </div>
+            <div className="relative aspect-[4/5] rounded-2xl overflow-hidden shadow-2xl shadow-pink-900/10 border-4 border-white">
+              <Image
+                src="/images/hero_professional_woman_1771577958488.png"
+                alt="Donna professionista che lavora da casa"
+                fill
+                className="object-cover"
+                priority
+                sizes="(max-width: 1024px) 100vw, 50vw"
+              />
             </div>
             {/* Decorative elements */}
             <div className="absolute -top-4 -right-4 w-24 h-24 bg-[#D946A8]/10 rounded-full blur-2xl" />
