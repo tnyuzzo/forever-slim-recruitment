@@ -1,6 +1,10 @@
 import type { NextConfig } from "next";
 
 const nextConfig: NextConfig = {
+  turbopack: {
+    root: '/Users/antonio/Documents/Vide Code Project/Copy Forever Slim/recruitment-app',
+  },
+  allowedDevOrigins: ['127.0.0.1'],
   async redirects() {
     return [
       {

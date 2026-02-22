@@ -10,13 +10,15 @@ export default function Hero() {
       {/* Background gradient */}
       <div className="absolute inset-0 bg-gradient-to-br from-[#FDF2F8] via-white to-white" />
 
-      <div className="relative max-w-7xl mx-auto px-4 py-12 md:py-20">
+      <div className="relative max-w-7xl mx-auto px-4 pt-6 pb-12 md:pt-8 md:pb-16">
+        {/* Logo centrato */}
+        <div className="flex justify-center mb-8">
+          <img src="/images/closer-agency-logo.png" alt="Closer Agency" className="h-14 w-auto" />
+        </div>
+
         <div className="grid lg:grid-cols-2 gap-12 items-center">
           {/* Text content */}
           <div className="space-y-6">
-            {/* Logo */}
-            <img src="/images/closer-agency-logo.jpeg" alt="Closer Agency" className="h-12 w-auto" />
-
             {/* Pre-headline */}
             <div className="inline-flex items-center gap-2 bg-[#FDF2F8] text-[#D946A8] px-4 py-2 rounded-full text-sm font-medium">
               <span className="w-2 h-2 bg-[#D946A8] rounded-full animate-pulse" />
@@ -29,6 +31,7 @@ export default function Hero() {
                 src="/images/hero_professional_woman_1771577958488.png"
                 alt="Lavora da casa con i tuoi orari"
                 fill
+                unoptimized
                 className="object-cover object-[center_15%]"
                 priority
               />
@@ -102,6 +105,7 @@ export default function Hero() {
                 src="/images/hero_professional_woman_1771577958488.png"
                 alt="Donna professionista che lavora da casa"
                 fill
+                unoptimized
                 className="object-cover"
                 priority
                 sizes="(max-width: 1024px) 100vw, 50vw"

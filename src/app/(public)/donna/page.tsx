@@ -1,4 +1,4 @@
-import LandingPage from '@/app/page'
+import HomePage from '../page'
 
 export const metadata = {
   title: 'Opportunità Vendita Consulenziale | Lavora da Casa',
@@ -6,5 +6,5 @@ export const metadata = {
 }
 
 export default function DonnaPage() {
-  return <LandingPage />
+  return <HomePage />
 }
