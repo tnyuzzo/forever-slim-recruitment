@@ -1,12 +1,14 @@
 import Link from 'next/link'
 
+export const dynamic = 'force-dynamic'
+
 export default function TermsPage() {
     return (
         <div className="min-h-screen bg-bg-alt py-12 px-4">
             <div className="max-w-3xl mx-auto bg-white p-8 md:p-12 rounded-3xl border border-gray-100 shadow-sm prose prose-sm md:prose-base prose-slate">
                 <h1 className="text-3xl font-black mb-8 text-text-main">Termini & Condizioni</h1>
 
-                <p className="mb-4 text-text-muted"><strong>Ultimo aggiornamento: [Data odierna]</strong></p>
+                <p className="mb-4 text-text-muted"><strong>Ultimo aggiornamento: {new Date().toLocaleDateString('it-IT', { month: 'long', year: 'numeric' })}</strong></p>
 
                 <h2 className="text-xl font-bold mt-8 mb-4">1. Natura dell'Opportunità</h2>
                 <p className="text-text-muted mb-4">La presente pagina web promuove un'opportunità di collaborazione autonoma (freelance) per conto di Swiss Research Labs GmbH nel settore della vendita di prodotti per il controllo del peso.</p>

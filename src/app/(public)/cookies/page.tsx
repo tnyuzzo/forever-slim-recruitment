@@ -1,12 +1,14 @@
 import Link from 'next/link'
 
+export const dynamic = 'force-dynamic'
+
 export default function CookiesPage() {
     return (
         <div className="min-h-screen bg-bg-alt py-12 px-4">
             <div className="max-w-3xl mx-auto bg-white p-8 md:p-12 rounded-3xl border border-gray-100 shadow-sm prose prose-sm md:prose-base prose-slate">
                 <h1 className="text-3xl font-black mb-8 text-text-main">Informativa Estesa sui Cookie (Cookie Policy)</h1>
 
-                <p className="mb-4 text-text-muted"><strong>Ultimo aggiornamento: [Data odierna]</strong></p>
+                <p className="mb-4 text-text-muted"><strong>Ultimo aggiornamento: {new Date().toLocaleDateString('it-IT', { month: 'long', year: 'numeric' })}</strong></p>
 
                 <h2 className="text-xl font-bold mt-8 mb-4">1. Cosa sono i Cookie</h2>
                 <p className="text-text-muted mb-4">I cookie sono piccole stringhe di testo che i siti visitati dall'utente inviano al suo terminale, dove vengono memorizzati, per essere poi ritrasmessi agli stessi siti alla successiva visita del medesimo utente.</p>
