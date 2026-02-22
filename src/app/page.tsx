@@ -240,7 +240,7 @@ export default function LandingPage() {
                         </div>
 
                         {/* Scenario B */}
-                        <div className="bg-white rounded-2xl p-6 shadow-lg border-2 border-primary-light space-y-4 flex flex-col relative transform md:-translate-y-4 z-10">
+                        <div className="bg-primary-light/20 rounded-2xl p-6 shadow-lg border-2 border-primary-main space-y-4 flex flex-col relative md:-translate-y-4 z-10">
                             <div className="absolute -top-3 left-1/2 -translate-x-1/2 bg-primary-main text-white text-xs font-bold px-3 py-1 rounded-full uppercase tracking-wide">
                                 Il più comune
                             </div>
@@ -297,7 +297,7 @@ export default function LandingPage() {
                             <ul className="space-y-4">
                                 {[
                                     "Parli italiano in modo impeccabile e naturale. Le nostre clienti sono italiane — devono sentirsi a casa.",
-                                    "Sei puntuale. Punto. Nessun ritardo, nessuna scusa alle consuelenze.",
+                                    "Sei puntuale. Punto. Nessun ritardo, nessuna scusa alle consulenze.",
                                     "Sai ascoltare prima di parlare. La vendita consulenziale parte dall'ascolto.",
                                     "Hai empatia autentica. Servono delicatezza, rispetto e zero giudizio.",
                                     "Hai almeno 4 ore al giorno e 3 giorni a settimana.",

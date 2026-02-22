@@ -99,8 +99,8 @@ const step4Schema = z.object({
 })
 
 const step5Schema = z.object({
-    roleplay_think_about_it: z.string().min(50, "Minimo 50 caratteri"),
-    roleplay_bundle3: z.string().min(50, "Minimo 50 caratteri"),
+    roleplay_think_about_it: z.string().min(30, "Minimo 30 caratteri"),
+    roleplay_bundle3: z.string().min(30, "Minimo 30 caratteri"),
 })
 
 const step6Schema = z.object({
@@ -139,6 +139,8 @@ export default function ApplyPage() {
     const [phonePrefix, setPhonePrefix] = useState('+39')
     const [spokenLanguages, setSpokenLanguages] = useState<string[]>([])
     const [otherLanguagesText, setOtherLanguagesText] = useState('')
+    const [selectedTimeSlots, setSelectedTimeSlots] = useState<string[]>([])
+    const [stepSuccess, setStepSuccess] = useState(false)
 
     const currentSchema = schemas[step]
 
@@ -161,12 +163,12 @@ export default function ApplyPage() {
     const handleNext = async () => {
         const isStepValid = await trigger()
         if (isStepValid) {
-            // Logic Handle Fast KOs on step 0, 2, 3 directly or let the backend do it?
-            // SPEC says check KO before scoring. We'll do it right before submit to give a unified flow and save partial data if needed, or check it instantly.
-            // E.g: if on step 2 they pick 'low' italian, we can fast fail them. Let's fast fail on the submit step to collect some data first, or fast fail immediately?
-            // The spec says "Esegui PRIMA dello scoring... Se KO salva status=rejected". Let's do it at the very end so they feel they completed the application (better UX for them, less insulting).
-            setStep((p) => Math.min(schemas.length - 1, p + 1))
-            window.scrollTo(0, 0)
+            setStepSuccess(true)
+            setTimeout(() => {
+                setStepSuccess(false)
+                setStep((p) => Math.min(schemas.length - 1, p + 1))
+                window.scrollTo(0, 0)
+            }, 600)
         }
     }
 
@@ -603,14 +605,44 @@ export default function ApplyPage() {
                         </div>
 
                         <div className="space-y-2">
-                            <label className="text-sm font-semibold text-text-main">Quali sono le tue fasce orarie ideali? *</label>
-                            <input {...register("time_slots")} className="w-full border border-gray-300 rounded-xl px-4 py-3 focus:outline-none focus:ring-2 focus:ring-primary-main" placeholder="Es. Mattina 10-12 e Sera 17-20" />
+                            <label className="text-sm font-semibold text-text-main">Quali sono le tue fasce orarie ideali? * <span className="font-normal text-text-muted">(seleziona tutte quelle che ti si addicono)</span></label>
+                            <div className="grid grid-cols-1 gap-2">
+                                {[
+                                    'Mattina (9:00 – 13:00)',
+                                    'Pomeriggio (13:00 – 17:00)',
+                                    'Sera (17:00 – 21:00)',
+                                ].map(slot => (
+                                    <label key={slot} className="flex items-center gap-3 p-3 border border-gray-200 rounded-xl cursor-pointer hover:bg-gray-50">
+                                        <input
+                                            type="checkbox"
+                                            checked={selectedTimeSlots.includes(slot)}
+                                            onChange={(e) => {
+                                                const updated = e.target.checked
+                                                    ? [...selectedTimeSlots, slot]
+                                                    : selectedTimeSlots.filter(s => s !== slot)
+                                                setSelectedTimeSlots(updated)
+                                                form.setValue('time_slots', updated.join(', '), { shouldValidate: true })
+                                            }}
+                                            className="w-4 h-4 accent-primary-main"
+                                        />
+                                        <span className="text-sm font-medium">{slot}</span>
+                                    </label>
+                                ))}
+                            </div>
+                            <input type="hidden" {...register("time_slots")} />
                             {errors.time_slots && <span className="text-error text-xs">{errors.time_slots.message}</span>}
                         </div>
 
                         <div className="space-y-2">
                             <label className="text-sm font-semibold text-text-main">Da quando saresti operativa? *</label>
-                            <input {...register("start_date")} className="w-full border border-gray-300 rounded-xl px-4 py-3 focus:outline-none focus:ring-2 focus:ring-primary-main" placeholder="Es. Da subito, dal 1° Settembre, ecc." />
+                            <select {...register("start_date")} className="w-full border border-gray-300 rounded-xl px-4 py-3 bg-white focus:outline-none focus:ring-2 focus:ring-primary-main appearance-none">
+                                <option value="">Seleziona...</option>
+                                <option value="Da subito">Da subito</option>
+                                <option value="Entro 1 settimana">Entro 1 settimana</option>
+                                <option value="Entro 2 settimane">Entro 2 settimane</option>
+                                <option value="Entro 1 mese">Entro 1 mese</option>
+                                <option value="Da concordare">Da concordare</option>
+                            </select>
                             {errors.start_date && <span className="text-error text-xs">{errors.start_date.message}</span>}
                         </div>
 
@@ -700,7 +732,7 @@ export default function ApplyPage() {
                             <div className="space-y-2 mt-4">
                                 <label className="text-sm font-semibold text-text-main">Ascolti queste parole dalla cliente. Cosa dici esattamente per risponderle e provare a chiuderla senza sembrare aggressiva? *</label>
                                 <textarea {...register("roleplay_think_about_it")} rows={6} className="w-full border border-gray-300 rounded-xl px-4 py-3 bg-white focus:outline-none focus:ring-2 focus:ring-primary-main resize-none" placeholder="Scrivi parola per parola cosa diresti..."></textarea>
-                                <p className="text-xs text-text-muted text-right">Minimo 50 caratteri. Valutiamo l'empatia e la tecnica.</p>
+                                <p className="text-xs text-text-muted text-right">Minimo 30 caratteri. Valutiamo l'empatia e la tecnica.</p>
                                 {errors.roleplay_think_about_it && <span className="text-error text-xs">{errors.roleplay_think_about_it.message}</span>}
                             </div>
                         </div>
@@ -711,7 +743,7 @@ export default function ApplyPage() {
                             <div className="space-y-2 mt-4">
                                 <label className="text-sm font-semibold text-text-main">Cosa e come glielo dici per convincerla a prendere il kit da 3 scatole (che conviene sia a lei che al tuo portafoglio) invece di quello da 1 scatola? *</label>
                                 <textarea {...register("roleplay_bundle3")} rows={6} className="w-full border border-gray-300 rounded-xl px-4 py-3 bg-white focus:outline-none focus:ring-2 focus:ring-primary-main resize-none" placeholder="Scrivi la tua spiegazione/presentazione della proposta..."></textarea>
-                                <p className="text-xs text-text-muted text-right">Minimo 50 caratteri</p>
+                                <p className="text-xs text-text-muted text-right">Minimo 30 caratteri</p>
                                 {errors.roleplay_bundle3 && <span className="text-error text-xs">{errors.roleplay_bundle3.message}</span>}
                             </div>
                         </div>
@@ -802,7 +834,14 @@ export default function ApplyPage() {
     }
 
     return (
-        <div className="min-h-screen bg-bg-alt py-12 px-4">
+        <div className="min-h-screen bg-bg-alt py-12 px-4 pb-28 md:pb-12">
+            {stepSuccess && (
+                <div className="fixed top-4 left-0 right-0 z-50 flex justify-center px-4 pointer-events-none">
+                    <div className="bg-green-500 text-white text-sm font-semibold px-6 py-3 rounded-2xl shadow-lg flex items-center gap-2">
+                        <Check className="w-4 h-4" /> Ottimo! Continua così.
+                    </div>
+                </div>
+            )}
             <div className="max-w-3xl mx-auto">
                 <div className="mb-8 p-6 bg-white rounded-3xl shadow-sm border border-gray-100">
                     <div className="flex justify-center mb-6">
@@ -811,14 +850,14 @@ export default function ApplyPage() {
                     <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-8 border-b border-gray-100 pb-6">
                         {/* Progress Stepper Visuals (Simplified mobile-friendly line) */}
                         <div className="col-span-2 lg:col-span-4 flex items-center">
-                            <div className="w-full bg-gray-100 h-2 rounded-full overflow-hidden">
+                            <div className="w-full bg-gray-100 h-3 rounded-full overflow-hidden">
                                 <div
                                     className="bg-primary-main h-full transition-all duration-500 ease-in-out"
-                                    style={{ width: `${((step + 1) / schemas.length) * 100}%` }}
+                                    style={{ width: `${Math.round(((step + 1) / schemas.length) * 100)}%` }}
                                 />
                             </div>
-                            <div className="ml-4 text-xs font-bold text-text-muted shrink-0">
-                                Step {step + 1} di {schemas.length}
+                            <div className="ml-3 text-xs font-bold text-primary-main shrink-0">
+                                {Math.round(((step + 1) / schemas.length) * 100)}%
                             </div>
                         </div>
                     </div>
@@ -831,33 +870,35 @@ export default function ApplyPage() {
                                 preventing stale values from previous step inputs leaking into new fields */}
                             <div key={step}>{renderStepContent()}</div>
 
-                            <div className="flex gap-4 pt-6 mt-8 border-t border-gray-100">
-                                {step > 0 && (
+                            <div className="fixed bottom-0 left-0 right-0 z-40 md:static bg-white border-t border-gray-200 shadow-[0_-4px_20px_rgba(0,0,0,0.08)] md:shadow-none md:border-gray-100 px-4 pb-4 pt-3 md:px-0 md:pt-6 md:pb-0 md:mt-8">
+                                <div className="flex gap-4 max-w-3xl mx-auto md:mx-0">
+                                    {step > 0 && (
+                                        <button
+                                            type="button"
+                                            onClick={handlePrev}
+                                            className="px-6 py-3 rounded-xl border border-gray-200 font-semibold text-text-main hover:bg-gray-50 transition-colors flex items-center gap-2"
+                                        >
+                                            <ChevronLeft className="w-5 h-5" /> Indietro
+                                        </button>
+                                    )}
+
                                     <button
                                         type="button"
-                                        onClick={handlePrev}
-                                        className="px-6 py-3 rounded-xl border border-gray-200 font-semibold text-text-main hover:bg-gray-50 transition-colors flex items-center gap-2"
+                                        onClick={handleSubmit(onSubmit as any)}
+                                        disabled={isSubmitting}
+                                        className="flex-1 px-6 py-4 rounded-xl bg-primary-main hover:bg-primary-hover text-white font-semibold transition-colors flex items-center justify-center gap-2 disabled:opacity-50"
                                     >
-                                        <ChevronLeft className="w-5 h-5" /> Indietro
-                                    </button>
-                                )}
-
-                                <button
-                                    type="button"
-                                    onClick={handleSubmit(onSubmit as any)}
-                                    disabled={isSubmitting}
-                                    className="flex-1 px-6 py-3 rounded-xl bg-primary-main hover:bg-primary-hover text-white font-semibold transition-colors flex items-center justify-center gap-2 disabled:opacity-50"
-                                >
-                                    {isSubmitting ? (
-                                        <><Loader2 className="w-5 h-5 animate-spin" /> Elaborazione...</>
-                                    ) : (
-                                        step === schemas.length - 1 ? (
-                                            <><Check className="w-5 h-5" /> Invia Candidatura</>
+                                        {isSubmitting ? (
+                                            <><Loader2 className="w-5 h-5 animate-spin" /> Elaborazione...</>
                                         ) : (
-                                            <>Avanti <ChevronRight className="w-5 h-5" /></>
-                                        )
-                                    )}
-                                </button>
+                                            step === schemas.length - 1 ? (
+                                                <><Check className="w-5 h-5" /> Invia Candidatura</>
+                                            ) : (
+                                                <>Avanti <ChevronRight className="w-5 h-5" /></>
+                                            )
+                                        )}
+                                    </button>
+                                </div>
                             </div>
                         </form>
                     </div>
