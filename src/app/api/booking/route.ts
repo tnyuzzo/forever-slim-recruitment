@@ -95,6 +95,48 @@ export async function POST(request: Request) {
                 .eq('id', data.candidate_id);
         }
 
+        // CAPI: invia evento Schedule (idempotente su fb_event_sent)
+        const { data: interviewUpdated } = await supabase
+            .from('interviews')
+            .update({ fb_event_sent: true })
+            .eq('id', data.id)
+            .eq('fb_event_sent', false)
+            .select('id')
+            .single();
+
+        if (interviewUpdated && data.candidate_id) {
+            const fb_schedule_event_id = crypto.randomUUID();
+            await supabase
+                .from('candidates')
+                .update({ fb_schedule_event_id, schedule_sent_at: new Date().toISOString() })
+                .eq('id', data.candidate_id);
+
+            const baseUrl = process.env.NEXT_PUBLIC_SITE_URL || 'https://closeragency.eu';
+            const candidate = data.candidates as Record<string, string | null> | null;
+            fetch(`${baseUrl}/api/fb-event`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    Authorization: `Bearer ${process.env.SUPABASE_SERVICE_ROLE_KEY}`,
+                },
+                body: JSON.stringify({
+                    event_name: 'Schedule',
+                    event_id: fb_schedule_event_id,
+                    event_source_url: `${baseUrl}/booking`,
+                    email: candidate?.email,
+                    phone: candidate?.whatsapp,
+                    firstName: candidate?.first_name,
+                    lastName: candidate?.last_name,
+                    fbp: candidate?.fbp,
+                    fbc: candidate?.fbc,
+                    ip_address: candidate?.ip_address,
+                    user_agent: candidate?.user_agent,
+                    country: candidate?.country ?? 'it',
+                    external_id: data.candidate_id,
+                }),
+            }).catch((e) => console.error('[booking] fb-event error:', e));
+        }
+
         // Send notification to admin
         try {
             const adminPhone = process.env.ADMIN_PHONE;

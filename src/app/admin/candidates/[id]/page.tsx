@@ -210,6 +210,12 @@ export default function CandidateDetailPage({ params }: { params: Promise<{ id: 
       message: `Confermi di voler segnare ${candidate?.first_name} ${candidate?.last_name} come assunto?`,
       onConfirm: async () => {
         await updateStatus('hired')
+        // Invia evento CompleteRegistration a Facebook CAPI
+        fetch('/api/select-candidate', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ candidate_id: id }),
+        }).catch((e) => console.error('[handleHire] select-candidate error:', e))
         setConfirmDialog(null)
       },
     })

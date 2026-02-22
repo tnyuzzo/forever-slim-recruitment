@@ -57,7 +57,7 @@ CREATE TABLE candidates (
   whatsapp TEXT NOT NULL,
   city TEXT,
   country TEXT,
-  age_range TEXT,
+  birth_date DATE,
 
   -- Lingua e Comunicazione (Step 2)
   nationality TEXT,

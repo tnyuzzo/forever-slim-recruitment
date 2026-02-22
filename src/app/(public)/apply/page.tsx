@@ -6,6 +6,7 @@ import { zodResolver } from '@hookform/resolvers/zod'
 import { useForm, DefaultValues } from 'react-hook-form'
 import { z } from 'zod'
 import { Check, ChevronRight, ChevronLeft, Loader2, Upload, Headphones, Camera, X } from 'lucide-react'
+import { useTrackVisitor } from '@/hooks/useTrackVisitor'
 import { createClient } from '@/lib/supabase/client'
 
 // --- DATA ---
@@ -129,6 +130,7 @@ const stepTitles = [
 ]
 
 export default function ApplyPage() {
+    useTrackVisitor()
     const router = useRouter()
     const [step, setStep] = useState(0)
     const [isSubmitting, setIsSubmitting] = useState(false)
@@ -365,31 +367,29 @@ export default function ApplyPage() {
                 consent_whatsapp: data.consent_whatsapp || false,
             }
 
-            const { error } = await supabase.from('candidates').insert(dbPayload)
+            // Legge attribution dal browser
+            const sidMatch = typeof document !== 'undefined' ? document.cookie.match(/fs_sid=([^;]+)/) : null
+            const session_id = sidMatch ? sidMatch[1] : null
+            const win = typeof window !== 'undefined' ? (window as unknown as { _fbp?: string; _fbc?: string }) : null
 
-            if (error) {
-                console.error("DB Error", error)
+            const res = await fetch('/api/submit-application', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    ...dbPayload,
+                    session_id,
+                    fbp: win?._fbp ?? null,
+                    fbc: win?._fbc ?? null,
+                    page_url: typeof window !== 'undefined' ? window.location.href : null,
+                    ...Object.fromEntries(new URLSearchParams(typeof window !== 'undefined' ? window.location.search : '')),
+                }),
+            })
+            const result = await res.json()
+
+            if (!res.ok) {
+                console.error("DB Error", result)
                 alert("Si è verificato un errore durante l'invio. Riprova più tardi.")
                 return
-            }
-
-            // 4.5. Invia notifica via Email (Resend webhook interno)
-            try {
-                await fetch('/api/send-notification', {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({
-                        first_name: data.first_name,
-                        last_name: data.last_name,
-                        email: data.email,
-                        whatsapp: phonePrefix + ' ' + (data.whatsapp || '').replace(/^\+?\d+\s*/, ''),
-                        score_total: score,
-                        priority: priority,
-                        isKO: isKO
-                    })
-                })
-            } catch (err) {
-                console.error("Errore notifica email:", err)
             }
 
             // 5. Redirect based on KO
