@@ -1,6 +1,7 @@
 import type { Metadata } from 'next'
 import { Inter } from 'next/font/google'
 import './globals.css'
+import { PostHogProvider } from './providers'
 
 const fbpScript = `
 (function() {
@@ -78,9 +79,11 @@ export default function RootLayout({
         <script defer src="https://zaraz.closeragency.eu/cdn-cgi/zaraz/i.js" />
       </head>
       <body className={`${inter.variable} font-sans antialiased bg-[#FFFFFF] text-[#1A1A1A] min-h-screen flex flex-col`}>
-        <main className="flex-1 flex flex-col">
-          {children}
-        </main>
+        <PostHogProvider>
+          <main className="flex-1 flex flex-col">
+            {children}
+          </main>
+        </PostHogProvider>
       </body>
     </html>
   )
