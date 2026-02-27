@@ -16,11 +16,9 @@ export async function POST(req: NextRequest) {
       req.headers.get('x-real-ip') ??
       null
 
-    // Genera session_id se non presente
-    let session_id: string = body.session_id
-    if (!session_id) {
-      session_id = crypto.randomUUID()
-    }
+    // Session ID: usa cookie HttpOnly esistente o crea nuovo
+    const existingSid = req.cookies.get('fs_sid')?.value ?? body.session_id ?? null
+    const session_id = existingSid || crypto.randomUUID()
 
     // Estrae parametri UTM dalla search string
     const search = body.search ?? ''
@@ -30,39 +28,38 @@ export async function POST(req: NextRequest) {
       attribution[key] = params.get(key) ?? null
     }
 
-    await supabase.from('page_visitors').insert({
-      session_id,
-      ip_address,
-      user_agent: body.user_agent ?? null,
-      page_url: body.page_url ?? null,
-      referrer: body.referrer ?? null,
-      utm_source: attribution.utm_source,
-      utm_medium: attribution.utm_medium,
-      utm_campaign: attribution.utm_campaign,
-      utm_content: attribution.utm_content,
-      utm_term: attribution.utm_term,
-      funnel: attribution.funnel,
-      fbclid: attribution.fbclid,
-      fbc: body.fbc ?? null,
-      fbp: body.fbp ?? null,
-      campaign_id: attribution.campaign_id,
-      adset_id: attribution.adset_id,
-      ad_id: attribution.ad_id,
-      placement: attribution.placement,
-      site_source_name: attribution.site_source_name,
-    })
+    // Fire-and-forget: non blocca la risposta
+    void supabase
+      .from('page_visitors')
+      .insert({
+        session_id,
+        ip_address,
+        user_agent: body.user_agent ?? null,
+        page_url: body.page_url ?? null,
+        referrer: body.referrer ?? null,
+        fbp: body.fbp ?? null,
+        fbc: body.fbc ?? null,
+        ...attribution,
+      })
+      .then(() => {})
 
-    // Imposta cookie fs_sid (90gg, HttpOnly)
-    const res = NextResponse.json({ session_id })
-    res.cookies.set('fs_sid', session_id, {
-      httpOnly: true,
-      sameSite: 'lax',
-      path: '/',
-      maxAge: 60 * 60 * 24 * 90,
-    })
+    const res = NextResponse.json({ ok: true })
+
+    // Imposta fs_sid solo se non esiste già
+    if (!existingSid) {
+      res.cookies.set('fs_sid', session_id, {
+        httpOnly: true,
+        secure: process.env.NODE_ENV === 'production',
+        sameSite: 'lax',
+        path: '/',
+        maxAge: 60 * 60 * 24 * 90, // 90 giorni
+      })
+    }
+
     return res
   } catch (err) {
     console.error('[track-visitor]', err)
-    return NextResponse.json({ error: 'Internal error' }, { status: 500 })
+    // Sempre 200: non bloccare l'UX per errori di tracking
+    return NextResponse.json({ ok: true })
   }
 }

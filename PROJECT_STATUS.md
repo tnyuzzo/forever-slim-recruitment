@@ -1,7 +1,7 @@
 # PROJECT_STATUS.md — Recruitment App (closeragency.eu)
 
 > Fonte di verità condivisa per Claude e Gemini.
-> Aggiornato il: 2026-02-22
+> Aggiornato il: 2026-02-25
 
 ---
 
@@ -113,6 +113,21 @@ recruitment-app/
 - [x] Status `offer_sent` aggiunto al pipeline candidati
 - [x] Route `/donna` e `/apply-donna` per tracking FB Ads genere donna
 - [x] Admin dashboard URL aggiornato al dominio produzione
+- [x] **Ads recruiting batch 1**: generate 6 creatività (bonifico-provvigioni, typography-bold, confronto-ufficio × donna/uomo)
+- [x] **Organizzazione ads/recruiting/**: suddivisa in `donna/` (31), `uomo/` (24), `unisex/` (16) — inclusi file da "Recruting old". Preview HTML aggiornato.
+- [x] **Ads recruiting batch 2+3**: generate 12 immagini (dm-instagram, certificato-top-performer, meme-lunedi, countdown-posti, daylife-collage, lettera-futuro × donna/uomo)
+- [x] **Gap analysis donna/uomo**: identificate 9 asimmetrie di stile e generate creatività mancanti (6 donna: pattern-interrupt, lifestyle, split-confronto, prima/dopo, whatsapp-mockup, candid; 3 uomo: identity, income, ugc-pov)
+- [x] **Ads fascia 45-55**: generate 8 creatività age-specific (4 donna: testimonial-52, figli-grandi, split-20anni, typography-50; 4 uomo: piano-b, testimonial-51, checklist, calcolo-reddito). Preview aggiornato: donna 47, uomo 37, unisex 16 = 100 totali.
+- [x] **Pulizia watermark Gemini**: rigenerati 16 file `Gemini_Generated_Image_*` senza stella/watermark → rinominati con nomi descrittivi (7 donna, 8 unisex, 1 uomo). Vecchi file eliminati. Preview HTML aggiornato.
+- [x] **Fix testo duplicato coppia**: rigenerata `unisex-coppia-da-casa.jpg` (era `ws-10x-07-coppia.png`, lista bullet appariva due volte). Vecchio file eliminato.
+- [x] **Facebook CAPI server-side**: implementati 3 eventi Lead → Schedule → CompleteRegistration in `/api/fb-event`; idempotenza con `fb_lead_event_id` (candidates) e `fb_event_sent` (interviews)
+- [x] **Data di nascita**: tre select GG/MM/Anno in tutti i form (apply, apply-donna, apply-uomo) al posto di input date nativo
+- [x] **UTM tracking completo**: 12 parametri attribution (`utm_source/medium/campaign/content/term`, `funnel`, `campaign_id/adset_id/ad_id`, `placement`, `site_source_name`, `fbclid`) salvati su `candidates`, `page_visitors`, e `localStorage('fs_utm')`
+- [x] **Cloudflare Zaraz**: script caricato da `zaraz.closeragency.eu`; `zaraz.track('fb_pageview')` via DOMContentLoaded in fbpScript (trigger Cloudflare: `Event Name Equals fb_pageview`); `zaraz.track('Lead')` al submit form (apply + apply-uomo)
+- [x] **page_visitors table**: nuova tabella Supabase per attribution recovery (session_id cookie HttpOnly 90gg + IP fallback)
+- [x] **DB migration**: aggiornati `candidates` (+14 colonne attribution/CAPI) e `interviews` (+3 colonne CAPI idempotenza) via Management API
+- [x] **`useUTMCapture.ts`**: nuovo hook + `getStoredUTMs()` utility per leggere UTMs da localStorage nel submit handler
+- [x] **`/api/track-visitor`**: migliorato con idempotenza session_id (cookie `fs_sid`), fire-and-forget DB insert, sempre 200
 
 ---
 
@@ -124,10 +139,12 @@ recruitment-app/
 
 ## TODO / Planned
 
+- [ ] **Vercel env vars produzione**: aggiungere `FB_PIXEL_ID`, `FB_ACCESS_TOKEN`, `NEXT_PUBLIC_SITE_URL` tramite `vercel env add` (presenti in `.env.local` ma non su Vercel)
 - [ ] Verifica funzionamento webhook inbound in produzione (corpo email nelle notifiche)
 - [ ] Landing uomo `/uomo` (esiste ma da verificare parità con donna)
 - [ ] A/B test headline landing donna
 - [ ] Form uomo `/apply-uomo`: eventuali differenze copy rispetto a donna
+- [ ] Valutare ads unisex fascia 45-55 (stili già coperti per donna/uomo)
 
 ---
 

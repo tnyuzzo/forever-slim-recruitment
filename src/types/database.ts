@@ -70,12 +70,30 @@ export interface Candidate {
   // Foto
   photo_url: string | null
 
-  // UTM tracking
+  // Attribution & tracking
+  session_id: string | null
+  ip_address: string | null
+  user_agent: string | null
+  fbp: string | null
+  fbc: string | null
+  fbclid: string | null
   utm_source: string | null
   utm_medium: string | null
   utm_campaign: string | null
-  utm_adset: string | null
-  utm_ad: string | null
+  utm_content: string | null
+  utm_term: string | null
+  utm_adset: string | null  // legacy, non rimuovere
+  utm_ad: string | null     // legacy, non rimuovere
+  funnel: string | null
+  campaign_id: string | null
+  adset_id: string | null
+  ad_id: string | null
+  placement: string | null
+  site_source_name: string | null
+  fb_lead_event_id: string | null
+  lead_sent_at: string | null
+  fb_schedule_event_id: string | null
+  schedule_sent_at: string | null
 
   // Consensi
   consent_privacy: boolean
@@ -112,9 +130,38 @@ export interface Interview {
   outcome: InterviewOutcome | null
   admin_notes: string | null
 
+  // Facebook CAPI idempotenza
+  fb_event_sent: boolean
+  fb_schedule_event_id: string | null
+  schedule_sent_at: string | null
+
   // Joined data
   candidate?: Candidate
   candidates?: Candidate
+}
+
+export interface PageVisitor {
+  id: string
+  created_at: string
+  session_id: string | null
+  ip_address: string | null
+  user_agent: string | null
+  page_url: string | null
+  referrer: string | null
+  fbp: string | null
+  fbc: string | null
+  fbclid: string | null
+  utm_source: string | null
+  utm_medium: string | null
+  utm_campaign: string | null
+  utm_content: string | null
+  utm_term: string | null
+  funnel: string | null
+  campaign_id: string | null
+  adset_id: string | null
+  ad_id: string | null
+  placement: string | null
+  site_source_name: string | null
 }
 
 export interface ScoringWeights {

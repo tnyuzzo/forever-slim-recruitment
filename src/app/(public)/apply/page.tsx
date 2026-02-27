@@ -7,6 +7,7 @@ import { useForm, DefaultValues } from 'react-hook-form'
 import { z } from 'zod'
 import { Check, ChevronRight, ChevronLeft, Loader2, Upload, Headphones, Camera, X } from 'lucide-react'
 import { useTrackVisitor } from '@/hooks/useTrackVisitor'
+import { getStoredUTMs } from '@/hooks/useUTMCapture'
 import { createClient } from '@/lib/supabase/client'
 
 // --- DATA ---
@@ -372,6 +373,9 @@ export default function ApplyPage() {
             const session_id = sidMatch ? sidMatch[1] : null
             const win = typeof window !== 'undefined' ? (window as unknown as { _fbp?: string; _fbc?: string }) : null
 
+            // UTM da localStorage (persistenti dalla landing page)
+            const storedUTMs = getStoredUTMs()
+
             const res = await fetch('/api/submit-application', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
@@ -381,7 +385,7 @@ export default function ApplyPage() {
                     fbp: win?._fbp ?? null,
                     fbc: win?._fbc ?? null,
                     page_url: typeof window !== 'undefined' ? window.location.href : null,
-                    ...Object.fromEntries(new URLSearchParams(typeof window !== 'undefined' ? window.location.search : '')),
+                    ...storedUTMs,
                 }),
             })
             const result = await res.json()
@@ -391,6 +395,8 @@ export default function ApplyPage() {
                 alert("Si è verificato un errore durante l'invio. Riprova più tardi.")
                 return
             }
+
+            // Lead event inviato solo server-side via CAPI (submit-application route)
 
             // 5. Redirect based on KO
             if (isKO) {

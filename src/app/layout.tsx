@@ -31,6 +31,26 @@ const fbpScript = `
     var existingFbc = getCookie('_fbc');
     if (existingFbc) window._fbc = existingFbc;
   }
+  // UTM → localStorage (persistenza cross-session)
+  var UTM_KEYS = ['utm_source','utm_medium','utm_campaign','utm_content','utm_term','funnel','campaign_id','adset_id','ad_id','placement','site_source_name','fbclid'];
+  var fresh = {};
+  UTM_KEYS.forEach(function(k) { var v = params.get(k); if (v) fresh[k] = v; });
+  if (Object.keys(fresh).length > 0) {
+    try {
+      if (fresh.utm_source) {
+        localStorage.setItem('fs_utm', JSON.stringify(fresh));
+      } else {
+        var existing = JSON.parse(localStorage.getItem('fs_utm') || '{}');
+        localStorage.setItem('fs_utm', JSON.stringify(Object.assign({}, existing, fresh)));
+      }
+    } catch(e) {}
+  }
+  // Pageview via Zaraz (proxied server-side da Cloudflare)
+  document.addEventListener('DOMContentLoaded', function() {
+    if (window.zaraz && typeof window.zaraz.track === 'function') {
+      window.zaraz.track('fb_pageview');
+    }
+  });
 })();
 `
 
@@ -54,6 +74,8 @@ export default function RootLayout({
     <html lang="it" className="scroll-smooth">
       <head>
         <script dangerouslySetInnerHTML={{ __html: fbpScript }} />
+        {/* Cloudflare Zaraz — pageview tracciato server-side */}
+        <script defer src="https://zaraz.closeragency.eu/cdn-cgi/zaraz/i.js" />
       </head>
       <body className={`${inter.variable} font-sans antialiased bg-[#FFFFFF] text-[#1A1A1A] min-h-screen flex flex-col`}>
         <main className="flex-1 flex flex-col">
