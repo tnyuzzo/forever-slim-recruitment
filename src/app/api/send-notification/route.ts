@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server';
 import { Resend } from 'resend';
+import { escapeHtml } from '@/lib/escapeHtml';
 
 // Visto che il dominio foreverslim.me non è abilitato per l'invio, usiamo il dominio sandbox/default di resend o un indirizzo onboarding-enabled.
 // In assenza di dominio verificato Resend obbliga l'uso di onboarding@resend.dev verso l'indirizzo email verificato del proprietario (in questo caso te).
@@ -8,6 +9,12 @@ const resend = new Resend(process.env.RESEND_API_KEY);
 
 export async function POST(request: Request) {
     try {
+        // Auth: solo chiamate interne server-side con Bearer token
+        const authHeader = request.headers.get('authorization');
+        if (authHeader !== `Bearer ${process.env.SUPABASE_SERVICE_ROLE_KEY}`) {
+            return NextResponse.json({ error: 'Non autorizzato' }, { status: 401 });
+        }
+
         const body = await request.json();
         const { first_name, last_name, email, whatsapp, score_total, priority, isKO } = body;
 
@@ -24,20 +31,24 @@ export async function POST(request: Request) {
         let subject = '';
         let htmlContent = '';
 
+        const safeApplicantName = escapeHtml(applicantName);
+        const safeEmail = escapeHtml(email);
+        const safePriority = escapeHtml(priority);
+
         if (isKO) {
             subject = `Nuova Candidatura (KO) - ${applicantName}`;
             htmlContent = `
         <h2>Candidatura Rifiutata Automaticamente</h2>
-        <p>Il candidato <strong>${applicantName}</strong> (${email}) è stato scartato automaticamente dai filtri KO.</p>
+        <p>Il candidato <strong>${safeApplicantName}</strong> (${safeEmail}) è stato scartato automaticamente dai filtri KO.</p>
       `;
         } else {
-            subject = `[${priority.toUpperCase()}] Nuova Candidatura - ${applicantName} (Score: ${score_total})`;
+            subject = `[${safePriority.toUpperCase()}] Nuova Candidatura - ${safeApplicantName} (Score: ${score_total})`;
             htmlContent = `
         <h2>Nuova Candidatura Ricevuta!</h2>
-        <p><strong>Nome:</strong> ${applicantName}</p>
-        <p><strong>Email:</strong> ${email}</p>
-        <p><strong>Punteggio Automazione:</strong> ${score_total}/100</p>
-        <p><strong>Priorità:</strong> ${priority.toUpperCase()}</p>
+        <p><strong>Nome:</strong> ${safeApplicantName}</p>
+        <p><strong>Email:</strong> ${safeEmail}</p>
+        <p><strong>Punteggio Automazione:</strong> ${escapeHtml(String(score_total))}/100</p>
+        <p><strong>Priorità:</strong> ${safePriority.toUpperCase()}</p>
         <br/>
         <p>Per vedere i dettagli completi, prova a consultare la <a href="https://closeragency.eu/admin">Dashboard Admin</a>.</p>
       `;

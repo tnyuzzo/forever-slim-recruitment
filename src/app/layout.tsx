@@ -1,5 +1,6 @@
 import type { Metadata } from 'next'
 import { Inter } from 'next/font/google'
+import Script from 'next/script'
 import './globals.css'
 import { PostHogProvider } from './providers'
 
@@ -58,6 +59,7 @@ const fbpScript = `
 const inter = Inter({
   subsets: ['latin'],
   variable: '--font-inter',
+  display: 'swap',
 })
 
 export const metadata: Metadata = {
@@ -74,7 +76,6 @@ export default function RootLayout({
   return (
     <html lang="it" className="scroll-smooth">
       <head>
-        <script dangerouslySetInnerHTML={{ __html: fbpScript }} />
         {/* Cloudflare Zaraz — pageview tracciato server-side */}
         <script defer src="https://zaraz.closeragency.eu/cdn-cgi/zaraz/i.js" />
       </head>
@@ -84,6 +85,7 @@ export default function RootLayout({
             {children}
           </main>
         </PostHogProvider>
+        <Script id="fbp-script" strategy="afterInteractive">{fbpScript}</Script>
       </body>
     </html>
   )

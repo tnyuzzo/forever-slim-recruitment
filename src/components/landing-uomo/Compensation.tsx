@@ -1,6 +1,4 @@
-'use client'
-
-import { Info, TrendingUp, AlertTriangle } from 'lucide-react'
+import { TrendingUp, AlertTriangle } from 'lucide-react'
 
 export default function Compensation() {
   return (

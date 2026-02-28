@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server';
 import { Resend } from 'resend';
 import { Webhook } from 'svix';
+import { escapeHtml } from '@/lib/escapeHtml';
 
 const resend = new Resend(process.env.RESEND_API_KEY);
 
@@ -76,15 +77,15 @@ async function handleInbound(payload: any) {
       <div style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; max-width: 680px; margin: 0 auto; padding: 24px;">
         <div style="background: #f1f5f9; border-left: 4px solid #4f46e5; padding: 12px 16px; margin-bottom: 24px; border-radius: 0 8px 8px 0;">
           <p style="margin: 0; font-size: 12px; color: #64748b; font-weight: 600; text-transform: uppercase; letter-spacing: 0.05em;">Email inoltrata da closeragency.eu</p>
-          <p style="margin: 4px 0 0; font-size: 13px; color: #334155;"><strong>Da:</strong> ${from}</p>
-          <p style="margin: 4px 0 0; font-size: 13px; color: #334155;"><strong>A:</strong> ${to}</p>
-          <p style="margin: 4px 0 0; font-size: 13px; color: #334155;"><strong>Oggetto:</strong> ${subject}</p>
+          <p style="margin: 4px 0 0; font-size: 13px; color: #334155;"><strong>Da:</strong> ${escapeHtml(from)}</p>
+          <p style="margin: 4px 0 0; font-size: 13px; color: #334155;"><strong>A:</strong> ${escapeHtml(to)}</p>
+          <p style="margin: 4px 0 0; font-size: 13px; color: #334155;"><strong>Oggetto:</strong> ${escapeHtml(subject)}</p>
         </div>
         ${bodyHtml
             ? bodyHtml
             : bodyText
-                ? `<p style="color: #475569; white-space: pre-wrap; font-size: 14px; line-height: 1.6;">${bodyText}</p>`
-                : `<details><summary style="cursor:pointer;color:#6366f1;font-size:12px;">Debug payload (body non trovato)</summary><pre style="font-size:11px;overflow:auto;">${JSON.stringify(data, null, 2)}</pre></details>`
+                ? `<p style="color: #475569; white-space: pre-wrap; font-size: 14px; line-height: 1.6;">${escapeHtml(bodyText)}</p>`
+                : `<details><summary style="cursor:pointer;color:#6366f1;font-size:12px;">Debug payload (body non trovato)</summary><pre style="font-size:11px;overflow:auto;">${escapeHtml(JSON.stringify(data, null, 2))}</pre></details>`
         }
       </div>
     `;

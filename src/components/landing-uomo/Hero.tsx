@@ -13,7 +13,7 @@ export default function Hero() {
       <div className="relative max-w-7xl mx-auto px-4 pt-6 pb-12 md:pt-8 md:pb-16">
         {/* Logo centrato */}
         <div className="flex justify-center mb-8">
-          <img src="/images/closer-agency-logo.png" alt="Closer Agency" className="h-14 w-auto" />
+          <Image src="/images/closer-agency-logo.png" alt="Closer Agency" width={150} height={56} className="h-14 w-auto" />
         </div>
 
         <div className="grid lg:grid-cols-2 gap-12 items-center">
@@ -31,7 +31,6 @@ export default function Hero() {
                 src="/images/hero_professional_man.jpg"
                 alt="Consulente al lavoro da casa"
                 fill
-                unoptimized
                 className="object-cover object-[center_20%]"
                 priority
               />
@@ -114,7 +113,6 @@ export default function Hero() {
                 src="/images/hero_professional_man.jpg"
                 alt="Consulente telefonico al lavoro da casa"
                 fill
-                unoptimized
                 className="object-cover"
                 priority
                 sizes="(max-width: 768px) 100vw, 50vw"

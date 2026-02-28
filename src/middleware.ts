@@ -31,7 +31,7 @@ export async function middleware(request: NextRequest) {
   const { data: { user } } = await supabase.auth.getUser()
 
   const isProtectedRoute = request.nextUrl.pathname.startsWith('/admin') && request.nextUrl.pathname !== '/admin/login'
-  const devBypass = process.env.DEV_BYPASS_AUTH === 'true'
+  const devBypass = process.env.DEV_BYPASS_AUTH === 'true' && process.env.NODE_ENV !== 'production'
 
   if (isProtectedRoute && !user && !devBypass) {
     const url = request.nextUrl.clone()
@@ -50,7 +50,5 @@ export async function middleware(request: NextRequest) {
 }
 
 export const config = {
-  matcher: [
-    '/((?!_next/static|_next/image|favicon.ico|.*\\.(?:svg|png|jpg|jpeg|gif|webp)$).*)',
-  ],
+  matcher: ['/admin/:path*'],
 }

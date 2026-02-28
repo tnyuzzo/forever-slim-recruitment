@@ -1,5 +1,3 @@
-'use client'
-
 import { Eye, Calendar, Phone } from 'lucide-react'
 
 export default function WarmLeads() {

@@ -1,5 +1,3 @@
-'use client'
-
 import { CheckCircle2, XOctagon } from 'lucide-react'
 
 export default function WhatYouDo() {

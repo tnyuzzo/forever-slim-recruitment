@@ -1,7 +1,7 @@
 # PROJECT_STATUS.md — Recruitment App (closeragency.eu)
 
 > Fonte di verità condivisa per Claude e Gemini.
-> Aggiornato il: 2026-02-25
+> Aggiornato il: 2026-02-28
 
 ---
 
@@ -70,7 +70,6 @@ recruitment-app/
 │   ├── components/
 │   │   ├── landing/            # Componenti landing donna
 │   │   ├── landing-uomo/       # Componenti landing uomo
-│   │   ├── form/               # FormStep0–7 + MultiStepForm
 │   │   ├── layout/             # Footer (accordion disclaimers)
 │   │   └── ui/                 # Componenti UI base
 │   ├── lib/
@@ -131,6 +130,10 @@ recruitment-app/
 
 ---
 
+- [x] **Cleanup & API optimization**: booking POST notifiche admin fire-and-forget (SMS+Email non bloccano la risposta), `Promise.all` su query DB indipendenti, import `Resend` top-level. Eliminati `src/components/form/` (9 file dead code) e `public/images/closer-agency-logo.jpeg` (2.6MB inutilizzato).
+
+---
+
 ## In Progress
 
 - nessuno
@@ -145,6 +148,16 @@ recruitment-app/
 - [ ] A/B test headline landing donna
 - [ ] Form uomo `/apply-uomo`: eventuali differenze copy rispetto a donna
 - [ ] Valutare ads unisex fascia 45-55 (stili già coperti per donna/uomo)
+
+### Sicurezza (completati 2026-02-28)
+- [x] **`escapeHtml` utility**: creato `src/lib/escapeHtml.ts` per sanitizzare dati utente in template HTML email
+- [x] **Auth server-side API admin**: aggiunto auth check con `createClient()` (cookie-based) in `team`, `invite`, `select-candidate` routes
+- [x] **Auth Bearer send-notification**: protetto con `SUPABASE_SERVICE_ROLE_KEY` (chiamata interna da submit-application)
+- [x] **Cron auth bypass fix**: `reminders/route.ts` ora richiede `CRON_SECRET` obbligatorio (`!CRON_SECRET` = 401)
+- [x] **DEV_BYPASS_AUTH produzione**: aggiunto check `NODE_ENV !== 'production'` in `middleware.ts` e `supabase/middleware.ts`
+- [x] **Whitelist submit-application**: sostituito spread operator con whitelist esplicita dei campi, `status` accetta solo `'rejected' | 'new'`
+- [x] **escapeHtml email**: applicato a `send-notification`, `booking`, `invite`, `cron/reminders`, `inbound` routes
+- [x] **Error message leak**: `submit-application` non espone più `error.message` al client
 
 ---
 

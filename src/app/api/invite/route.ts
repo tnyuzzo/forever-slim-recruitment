@@ -1,6 +1,8 @@
 import { NextResponse } from 'next/server';
 import { createClient } from '@supabase/supabase-js';
+import { createClient as createServerClient } from '@/lib/supabase/server';
 import { Resend } from 'resend';
+import { escapeHtml } from '@/lib/escapeHtml';
 
 const supabase = createClient(
     process.env.NEXT_PUBLIC_SUPABASE_URL!,
@@ -22,6 +24,12 @@ async function fetchWithTimeout(url: string, options: RequestInit, timeoutMs = 1
 
 export async function POST(request: Request) {
     try {
+        const authClient = await createServerClient();
+        const { data: { user } } = await authClient.auth.getUser();
+        if (!user) {
+            return NextResponse.json({ error: 'Non autorizzato' }, { status: 401 });
+        }
+
         const { candidate_id, channels } = await request.json();
 
         // 1. Fetch candidate
@@ -64,6 +72,7 @@ export async function POST(request: Request) {
         if (channels.includes('email') && candidate.email) {
             promises.push((async () => {
                 try {
+                    const safeFirstName = escapeHtml(candidate.first_name);
                     const emailResult = await resend.emails.send({
                         from: 'Closer Agency <recruiting@closeragency.eu>',
                         to: candidate.email,
@@ -71,7 +80,7 @@ export async function POST(request: Request) {
                         html: `
             <div style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; max-width: 560px; margin: 0 auto; padding: 32px 24px;">
               <div style="text-align: center; margin-bottom: 32px;">
-                <h1 style="font-size: 24px; font-weight: 800; color: #1e293b; margin: 0;">Complimenti, ${candidate.first_name}! 🎉</h1>
+                <h1 style="font-size: 24px; font-weight: 800; color: #1e293b; margin: 0;">Complimenti, ${safeFirstName}! 🎉</h1>
               </div>
               <p style="color: #475569; font-size: 15px; line-height: 1.7;">
                 Il tuo profilo ci ha colpito e vorremmo conoscerti meglio con un breve colloquio conoscitivo.

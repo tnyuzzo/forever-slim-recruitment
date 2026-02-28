@@ -94,12 +94,58 @@ export async function POST(req: NextRequest) {
     // Genera event_id univoco
     const fb_lead_event_id = crypto.randomUUID()
 
-    // Build payload DB (tutti i campi dal body + attribution)
-    // eslint-disable-next-line @typescript-eslint/no-unused-vars
-    const { fbp: _fbp, fbc: _fbc, session_id: _sid, page_url, search, ...candidateFields } = body
+    // Build payload DB (whitelist esplicita — nessun campo arbitrario dal body)
+    const page_url = body.page_url
 
     const dbRecord = {
-      ...candidateFields,
+      email: body.email,
+      first_name: body.first_name,
+      last_name: body.last_name,
+      whatsapp: body.whatsapp,
+      birth_date: body.birth_date,
+      age_range: body.age_range,
+      city: body.city,
+      country: body.country ?? 'it',
+      nationality: body.nationality,
+      native_language: body.native_language,
+      italian_level: body.italian_level,
+      english_level: body.english_level,
+      other_languages: body.other_languages,
+      strong_accent: body.strong_accent,
+      bio_short: body.bio_short,
+      hours_per_day: body.hours_per_day,
+      days_per_week: body.days_per_week,
+      time_slots: body.time_slots,
+      start_date: body.start_date,
+      weekend_sat: body.weekend_sat,
+      weekend_sun: body.weekend_sun,
+      weekend_details: body.weekend_details,
+      holidays: body.holidays,
+      sales_years: body.sales_years,
+      inbound_outbound: body.inbound_outbound,
+      sectors: body.sectors,
+      close_rate_range: body.close_rate_range,
+      experience: body.experience,
+      motivation: body.motivation,
+      availability: body.availability,
+      has_vat: body.has_vat,
+      roleplay_think_about_it: body.roleplay_think_about_it,
+      roleplay_bundle3: body.roleplay_bundle3,
+      photo_url: body.photo_url,
+      audio_url: body.audio_url,
+      audio_uploaded: body.audio_uploaded,
+      score_total: body.score_total,
+      score_breakdown: body.score_breakdown,
+      priority: body.priority,
+      status: body.status === 'rejected' ? 'rejected' : 'new',
+      ko_reason: body.ko_reason,
+      pq_hours: body.pq_hours,
+      pq_days: body.pq_days,
+      pq_punctuality: body.pq_punctuality,
+      pq_italian: body.pq_italian,
+      consent_privacy: body.consent_privacy,
+      consent_truth: body.consent_truth,
+      consent_whatsapp: body.consent_whatsapp,
       session_id,
       ip_address,
       user_agent,
@@ -129,7 +175,7 @@ export async function POST(req: NextRequest) {
 
     if (error) {
       console.error('[submit-application] DB error:', error)
-      return NextResponse.json({ error: error.message }, { status: 500 })
+      return NextResponse.json({ error: 'Errore nel salvataggio' }, { status: 500 })
     }
 
     const candidate_id = inserted.id
@@ -162,7 +208,10 @@ export async function POST(req: NextRequest) {
     // Fire-and-forget: notifica email/SMS admin
     fetch(`${baseUrl}/api/send-notification`, {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
+      headers: {
+        'Content-Type': 'application/json',
+        Authorization: `Bearer ${process.env.SUPABASE_SERVICE_ROLE_KEY}`,
+      },
       body: JSON.stringify({
         first_name: body.first_name,
         last_name: body.last_name,

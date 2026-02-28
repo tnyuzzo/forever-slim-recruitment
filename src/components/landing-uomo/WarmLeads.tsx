@@ -1,5 +1,3 @@
-'use client'
-
 import { Flame, Target, CalendarDays, ThumbsUp } from 'lucide-react'
 
 export default function WarmLeads() {

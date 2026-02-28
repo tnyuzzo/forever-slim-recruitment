@@ -1,5 +1,7 @@
 import { NextResponse } from 'next/server';
 import { createClient } from '@supabase/supabase-js';
+import { Resend } from 'resend';
+import { escapeHtml } from '@/lib/escapeHtml';
 
 const supabase = createClient(
     process.env.NEXT_PUBLIC_SUPABASE_URL!,
@@ -87,23 +89,25 @@ export async function POST(request: Request) {
             return NextResponse.json({ error: 'Errore nella conferma. Slot già prenotato?' }, { status: 400 });
         }
 
-        // Update candidate status to 'interview_booked' now that they've actually booked
-        if (data.candidate_id) {
-            await supabase
-                .from('candidates')
-                .update({ status: 'interview_booked' })
-                .eq('id', data.candidate_id);
-        }
+        // Parallelize: update candidate status + mark fb_event_sent (independent operations)
+        const [, capiResult] = await Promise.all([
+            data.candidate_id
+                ? supabase
+                      .from('candidates')
+                      .update({ status: 'interview_booked' })
+                      .eq('id', data.candidate_id)
+                : Promise.resolve(null),
+            supabase
+                .from('interviews')
+                .update({ fb_event_sent: true })
+                .eq('id', data.id)
+                .eq('fb_event_sent', false)
+                .select('id')
+                .single(),
+        ]);
 
         // CAPI: invia evento Schedule (idempotente su fb_event_sent)
-        const { data: interviewUpdated } = await supabase
-            .from('interviews')
-            .update({ fb_event_sent: true })
-            .eq('id', data.id)
-            .eq('fb_event_sent', false)
-            .select('id')
-            .single();
-
+        const interviewUpdated = capiResult?.data;
         if (interviewUpdated && data.candidate_id) {
             const fb_schedule_event_id = crypto.randomUUID();
             await supabase
@@ -137,51 +141,59 @@ export async function POST(request: Request) {
             }).catch((e) => console.error('[booking] fb-event error:', e));
         }
 
-        // Send notification to admin
-        try {
-            const adminPhone = process.env.ADMIN_PHONE;
-            const clicksendUser = process.env.CLICKSEND_USERNAME;
-            const clicksendKey = process.env.CLICKSEND_API_KEY;
-            const candidateName = `${data.candidates?.first_name} ${data.candidates?.last_name}`;
-            const slotDate = new Date(scheduled_at).toLocaleString('it-IT', { timeZone: 'Europe/Rome', dateStyle: 'full', timeStyle: 'short' });
+        // Collect data needed for admin notifications before returning
+        const candidateName = `${data.candidates?.first_name} ${data.candidates?.last_name}`;
+        const slotDate = new Date(scheduled_at).toLocaleString('it-IT', { timeZone: 'Europe/Rome', dateStyle: 'full', timeStyle: 'short' });
+        const candidateEmail = data.candidates?.email;
+        const candidatePhone = data.candidates?.whatsapp;
 
-            // SMS to admin
-            if (adminPhone && clicksendUser && clicksendKey) {
-                await fetch('https://rest.clicksend.com/v3/sms/send', {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json',
-                        Authorization: 'Basic ' + Buffer.from(`${clicksendUser}:${clicksendKey}`).toString('base64'),
-                    },
-                    body: JSON.stringify({
-                        messages: [{ source: 'nodejs', body: `${candidateName} ha confermato il colloquio per: ${slotDate}`, to: adminPhone }],
-                    }),
-                });
-            }
+        // Respond immediately to the candidate
+        const response = NextResponse.json({ success: true, scheduled_at });
 
-            // Email to admin
-            const { Resend } = await import('resend');
-            const resend = new Resend(process.env.RESEND_API_KEY);
-            const adminEmail = process.env.ADMIN_NOTIFICATION_EMAIL || 'admin@forever-slim.com';
+        // Fire-and-forget: admin notifications (SMS + Email) — don't block the response
+        void (async () => {
+            try {
+                const adminPhone = process.env.ADMIN_PHONE;
+                const clicksendUser = process.env.CLICKSEND_USERNAME;
+                const clicksendKey = process.env.CLICKSEND_API_KEY;
 
-            await resend.emails.send({
-                from: 'onboarding@resend.dev',
-                to: adminEmail,
-                subject: `📅 Colloquio Confermato — ${candidateName}`,
-                html: `
+                // SMS to admin
+                if (adminPhone && clicksendUser && clicksendKey) {
+                    await fetch('https://rest.clicksend.com/v3/sms/send', {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json',
+                            Authorization: 'Basic ' + Buffer.from(`${clicksendUser}:${clicksendKey}`).toString('base64'),
+                        },
+                        body: JSON.stringify({
+                            messages: [{ source: 'nodejs', body: `${candidateName} ha confermato il colloquio per: ${slotDate}`, to: adminPhone }],
+                        }),
+                    });
+                }
+
+                // Email to admin
+                const resend = new Resend(process.env.RESEND_API_KEY);
+                const adminEmail = process.env.ADMIN_NOTIFICATION_EMAIL || 'admin@forever-slim.com';
+
+                await resend.emails.send({
+                    from: 'onboarding@resend.dev',
+                    to: adminEmail,
+                    subject: `📅 Colloquio Confermato — ${candidateName}`,
+                    html: `
           <div style="font-family: sans-serif; padding: 24px;">
             <h2>Colloquio Confermato! 🎉</h2>
-            <p><strong>${candidateName}</strong> ha scelto il seguente slot:</p>
-            <p style="font-size: 18px; font-weight: bold; color: #4f46e5;">${slotDate}</p>
-            <p>Email: ${data.candidates?.email}<br/>Tel: ${data.candidates?.whatsapp}</p>
+            <p><strong>${escapeHtml(candidateName)}</strong> ha scelto il seguente slot:</p>
+            <p style="font-size: 18px; font-weight: bold; color: #4f46e5;">${escapeHtml(slotDate)}</p>
+            <p>Email: ${escapeHtml(candidateEmail)}<br/>Tel: ${escapeHtml(candidatePhone)}</p>
           </div>
         `,
-            });
-        } catch (notifErr) {
-            console.error('Admin notification error:', notifErr);
-        }
+                });
+            } catch (notifErr) {
+                console.error('Admin notification error:', notifErr);
+            }
+        })();
 
-        return NextResponse.json({ success: true, scheduled_at });
+        return response;
     } catch (error) {
         console.error('Booking POST error:', error);
         return NextResponse.json({ error: 'Errore interno' }, { status: 500 });

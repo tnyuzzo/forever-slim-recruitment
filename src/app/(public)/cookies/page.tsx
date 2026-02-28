@@ -1,7 +1,5 @@
 import Link from 'next/link'
 
-export const dynamic = 'force-dynamic'
-
 export default function CookiesPage() {
     return (
         <div className="min-h-screen bg-bg-alt py-12 px-4">

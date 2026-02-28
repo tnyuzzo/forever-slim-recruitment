@@ -36,7 +36,7 @@ export async function updateSession(request: NextRequest) {
   const isLoginPage = request.nextUrl.pathname === '/admin/login'
 
   // Dev bypass for local development
-  const devBypass = process.env.DEV_BYPASS_AUTH === 'true'
+  const devBypass = process.env.DEV_BYPASS_AUTH === 'true' && process.env.NODE_ENV !== 'production'
 
   if (isAdminRoute && !isLoginPage && !user && !devBypass) {
     const url = request.nextUrl.clone()

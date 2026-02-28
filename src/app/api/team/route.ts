@@ -1,4 +1,5 @@
 import { createClient } from '@supabase/supabase-js'
+import { createClient as createServerClient } from '@/lib/supabase/server'
 import { NextRequest, NextResponse } from 'next/server'
 
 const supabaseAdmin = createClient(
@@ -8,6 +9,12 @@ const supabaseAdmin = createClient(
 
 export async function POST(req: NextRequest) {
     try {
+        const authClient = await createServerClient()
+        const { data: { user } } = await authClient.auth.getUser()
+        if (!user) {
+            return NextResponse.json({ error: 'Non autorizzato' }, { status: 401 })
+        }
+
         const { email, role } = await req.json()
 
         if (!email || !role) {
@@ -76,6 +83,12 @@ export async function POST(req: NextRequest) {
 // GET: List all team members
 export async function GET() {
     try {
+        const authClient = await createServerClient()
+        const { data: { user } } = await authClient.auth.getUser()
+        if (!user) {
+            return NextResponse.json({ error: 'Non autorizzato' }, { status: 401 })
+        }
+
         // Get all roles
         const { data: roles, error: rolesError } = await supabaseAdmin
             .from('user_roles')
@@ -110,6 +123,12 @@ export async function GET() {
 // DELETE: Remove a team member
 export async function DELETE(req: NextRequest) {
     try {
+        const authClient = await createServerClient()
+        const { data: { user } } = await authClient.auth.getUser()
+        if (!user) {
+            return NextResponse.json({ error: 'Non autorizzato' }, { status: 401 })
+        }
+
         const { user_id } = await req.json()
 
         if (!user_id) {

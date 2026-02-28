@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server';
 import { createClient } from '@supabase/supabase-js';
 import { Resend } from 'resend';
+import { escapeHtml } from '@/lib/escapeHtml';
 
 const supabase = createClient(
     process.env.NEXT_PUBLIC_SUPABASE_URL!,
@@ -64,7 +65,7 @@ const REMINDER_CONFIG = [
 
 export async function GET(request: Request) {
     const authHeader = request.headers.get('authorization');
-    if (CRON_SECRET && authHeader !== `Bearer ${CRON_SECRET}`) {
+    if (!CRON_SECRET || authHeader !== `Bearer ${CRON_SECRET}`) {
         return NextResponse.json({ error: 'Non autorizzato' }, { status: 401 });
     }
 
@@ -127,6 +128,7 @@ export async function GET(request: Request) {
             const config = REMINDER_CONFIG[reminderCount];
             const bookingLink = candidate.interview_link || `${baseUrl}/book/${interview.slot_token}`;
             const firstName = candidate.first_name;
+            const safeFirstName = escapeHtml(firstName);
             const channelsSent: string[] = [];
 
             // Invio Email
@@ -140,7 +142,7 @@ export async function GET(request: Request) {
             <div style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; max-width: 560px; margin: 0 auto; padding: 32px 24px;">
               <div style="text-align: center; margin-bottom: 32px;">
                 <h1 style="font-size: 24px; font-weight: 800; color: #1e293b; margin: 0;">
-                  ${config.emailHeading(firstName)}
+                  ${escapeHtml(config.emailHeading(firstName))}
                 </h1>
               </div>
               <p style="color: #475569; font-size: 15px; line-height: 1.7;">

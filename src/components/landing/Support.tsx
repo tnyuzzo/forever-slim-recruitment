@@ -1,5 +1,3 @@
-'use client'
-
 import { GraduationCap, LayoutDashboard, FileText, Headphones, TrendingUp } from 'lucide-react'
 
 export default function Support() {

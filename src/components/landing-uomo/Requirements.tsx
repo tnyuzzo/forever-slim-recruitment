@@ -1,5 +1,3 @@
-'use client'
-
 import { CheckCircle, XCircle } from 'lucide-react'
 
 export default function Requirements() {
