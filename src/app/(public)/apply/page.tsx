@@ -1,6 +1,6 @@
 "use client"
 
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { useForm, DefaultValues } from 'react-hook-form'
@@ -38,6 +38,22 @@ const COUNTRY_PREFIXES: Record<string, string> = {
     'Senegal': '+221', 'Serbia': '+381', 'Slovacchia': '+421', 'Slovenia': '+386', 'Spagna': '+34',
     'Sri Lanka': '+94', 'Stati Uniti': '+1', 'Svezia': '+46', 'Svizzera': '+41', 'Tunisia': '+216',
     'Turchia': '+90', 'Ucraina': '+380', 'Ungheria': '+36', 'Venezuela': '+58'
+}
+
+const ISO_TO_COUNTRY: Record<string, string> = {
+    'IT': 'Italia', 'AL': 'Albania', 'AR': 'Argentina', 'AU': 'Australia', 'AT': 'Austria',
+    'BE': 'Belgio', 'BA': 'Bosnia ed Erzegovina', 'BR': 'Brasile', 'BG': 'Bulgaria',
+    'CA': 'Canada', 'CL': 'Cile', 'CN': 'Cina', 'CO': 'Colombia', 'HR': 'Croazia',
+    'DK': 'Danimarca', 'EC': 'Ecuador', 'EG': 'Egitto', 'EE': 'Estonia', 'PH': 'Filippine',
+    'FI': 'Finlandia', 'FR': 'Francia', 'DE': 'Germania', 'JP': 'Giappone', 'GR': 'Grecia',
+    'IN': 'India', 'IE': 'Irlanda', 'XK': 'Kosovo', 'LV': 'Lettonia', 'LT': 'Lituania',
+    'LU': 'Lussemburgo', 'MK': 'Macedonia del Nord', 'MT': 'Malta', 'MA': 'Marocco',
+    'MX': 'Messico', 'MD': 'Moldova', 'ME': 'Montenegro', 'NG': 'Nigeria', 'NO': 'Norvegia',
+    'NL': 'Paesi Bassi', 'PK': 'Pakistan', 'PE': 'Perù', 'PL': 'Polonia', 'PT': 'Portogallo',
+    'GB': 'Regno Unito', 'CZ': 'Repubblica Ceca', 'RO': 'Romania', 'RU': 'Russia',
+    'SN': 'Senegal', 'RS': 'Serbia', 'SK': 'Slovacchia', 'SI': 'Slovenia', 'ES': 'Spagna',
+    'LK': 'Sri Lanka', 'US': 'Stati Uniti', 'SE': 'Svezia', 'CH': 'Svizzera', 'TN': 'Tunisia',
+    'TR': 'Turchia', 'UA': 'Ucraina', 'HU': 'Ungheria', 'VE': 'Venezuela'
 }
 
 const NATIONALITIES = [
@@ -149,6 +165,22 @@ export default function ApplyPage() {
     const [otherLanguagesText, setOtherLanguagesText] = useState('')
     const [selectedTimeSlots, setSelectedTimeSlots] = useState<string[]>([])
     const [stepSuccess, setStepSuccess] = useState(false)
+
+    useEffect(() => {
+        fetch('https://ip2c.org/s')
+            .then(r => r.text())
+            .then(text => {
+                // Format: "1;IT;ITA;Italy"
+                const parts = text.split(';')
+                if (parts[0] === '1' && parts[1]) {
+                    const country = ISO_TO_COUNTRY[parts[1]]
+                    if (country && COUNTRY_PREFIXES[country]) {
+                        setPhonePrefix(COUNTRY_PREFIXES[country])
+                    }
+                }
+            })
+            .catch(() => {})
+    }, [])
 
     const currentSchema = schemas[step]
 
@@ -333,7 +365,7 @@ export default function ApplyPage() {
                 first_name: data.first_name,
                 last_name: data.last_name,
                 email: data.email,
-                whatsapp: phonePrefix + ' ' + (data.whatsapp || '').replace(/^\+?\d+\s*/, ''),
+                whatsapp: phonePrefix + ' ' + (data.whatsapp || '').replace(/^\+\d{1,4}\s*/, ''),
                 city: data.city,
                 country: data.country,
                 birth_date: data.birth_date,
@@ -483,10 +515,10 @@ export default function ApplyPage() {
                                 <select
                                     value={phonePrefix}
                                     onChange={(e) => setPhonePrefix(e.target.value)}
-                                    className="shrink-0 w-[72px] border border-gray-300 rounded-xl px-3 py-3 bg-white focus:outline-none focus:ring-2 focus:ring-primary-main appearance-none text-sm font-medium"
+                                    className="shrink-0 w-[100px] border border-gray-300 rounded-xl px-2 py-3 bg-white focus:outline-none focus:ring-2 focus:ring-primary-main text-sm font-medium"
                                 >
                                     {COUNTRIES.filter(c => c !== 'Altro').map(c => (
-                                        <option key={c} value={COUNTRY_PREFIXES[c]}>{COUNTRY_PREFIXES[c]}</option>
+                                        <option key={c} value={COUNTRY_PREFIXES[c]}>{COUNTRY_PREFIXES[c]} {c}</option>
                                     ))}
                                 </select>
                                 <input type="tel" {...register("whatsapp")} className="flex-1 border border-gray-300 rounded-xl px-4 py-3 focus:outline-none focus:ring-2 focus:ring-primary-main" placeholder="333 000 0000" />

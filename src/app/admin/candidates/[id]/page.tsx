@@ -555,7 +555,7 @@ export default function CandidateDetailPage({ params }: { params: Promise<{ id: 
                   </div>
                   <div className="bg-gray-50 p-3 rounded-xl">
                     <div className="text-xs text-text-muted mb-1">Età</div>
-                    <div className="font-semibold text-sm">{candidate.age_range}</div>
+                    <div className="font-semibold text-sm">{candidate.birth_date ? `${Math.floor((Date.now() - new Date(candidate.birth_date).getTime()) / 31557600000)} anni` : candidate.age_range || '—'}</div>
                   </div>
                   <div className="bg-gray-50 p-3 rounded-xl">
                     <div className="text-xs text-text-muted mb-1">Nazionalità</div>
