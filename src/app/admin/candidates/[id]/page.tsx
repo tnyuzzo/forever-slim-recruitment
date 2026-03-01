@@ -99,6 +99,9 @@ export default function CandidateDetailPage({ params }: { params: Promise<{ id: 
     status: 'completed',
   })
 
+  // Photo zoom
+  const [showPhotoZoom, setShowPhotoZoom] = useState(false)
+
   function showToast(message: string, type: 'success' | 'error' = 'success') {
     setToast({ message, type })
     setTimeout(() => setToast(null), 3000)
@@ -457,7 +460,7 @@ export default function CandidateDetailPage({ params }: { params: Promise<{ id: 
               <>
                 <div className="flex items-center gap-4 mb-2">
                   {candidate.photo_url ? (
-                    <img src={candidate.photo_url} alt="Foto candidato" className="w-16 h-16 rounded-2xl object-cover border-2 border-indigo-200 shadow-sm shrink-0" />
+                    <img src={candidate.photo_url} alt="Foto candidato" className="w-16 h-16 rounded-2xl object-cover border-2 border-indigo-200 shadow-sm shrink-0 cursor-pointer hover:ring-4 hover:ring-indigo-300 transition-all" onClick={() => setShowPhotoZoom(true)} />
                   ) : (
                     <div className="w-16 h-16 rounded-2xl bg-gray-100 border-2 border-gray-200 flex items-center justify-center shrink-0">
                       <User className="w-7 h-7 text-gray-400" />
@@ -542,7 +545,7 @@ export default function CandidateDetailPage({ params }: { params: Promise<{ id: 
               <>
                 <div className="flex items-center gap-4 mb-2">
                   {candidate.photo_url ? (
-                    <img src={candidate.photo_url} alt="Foto candidato" className="w-16 h-16 rounded-2xl object-cover border-2 border-indigo-200 shadow-sm shrink-0" />
+                    <img src={candidate.photo_url} alt="Foto candidato" className="w-16 h-16 rounded-2xl object-cover border-2 border-indigo-200 shadow-sm shrink-0 cursor-pointer hover:ring-4 hover:ring-indigo-300 transition-all" onClick={() => setShowPhotoZoom(true)} />
                   ) : (
                     <div className="w-16 h-16 rounded-2xl bg-gray-100 border-2 border-gray-200 flex items-center justify-center shrink-0">
                       <User className="w-7 h-7 text-gray-400" />
@@ -1176,6 +1179,27 @@ export default function CandidateDetailPage({ params }: { params: Promise<{ id: 
               </button>
             </div>
           </div>
+        </div>
+      )}
+
+      {/* Photo Zoom Modal */}
+      {showPhotoZoom && candidate?.photo_url && (
+        <div
+          className="fixed inset-0 z-50 bg-black/70 flex items-center justify-center p-4 cursor-pointer"
+          onClick={() => setShowPhotoZoom(false)}
+        >
+          <img
+            src={candidate.photo_url}
+            alt="Foto candidato"
+            className="max-w-[80vw] max-h-[80vh] rounded-3xl shadow-2xl object-contain"
+            onClick={(e) => e.stopPropagation()}
+          />
+          <button
+            onClick={() => setShowPhotoZoom(false)}
+            className="absolute top-6 right-6 w-10 h-10 bg-white/20 hover:bg-white/40 rounded-full flex items-center justify-center transition-colors"
+          >
+            <X className="w-6 h-6 text-white" />
+          </button>
         </div>
       )}
 
