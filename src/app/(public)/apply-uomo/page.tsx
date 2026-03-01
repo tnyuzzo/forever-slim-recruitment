@@ -6,6 +6,7 @@ import { zodResolver } from '@hookform/resolvers/zod'
 import { useForm, DefaultValues } from 'react-hook-form'
 import { z } from 'zod'
 import { Check, ChevronRight, ChevronLeft, Loader2, Upload, Headphones, Camera, X } from 'lucide-react'
+import { usePostHog } from 'posthog-js/react'
 import { useTrackVisitor } from '@/hooks/useTrackVisitor'
 import { getStoredUTMs } from '@/hooks/useUTMCapture'
 import { createClient } from '@/lib/supabase/client'
@@ -132,6 +133,7 @@ const stepTitles = [
 
 export default function ApplyPage() {
     useTrackVisitor()
+    const posthog = usePostHog()
     const router = useRouter()
     const [step, setStep] = useState(0)
     const [isSubmitting, setIsSubmitting] = useState(false)
@@ -397,6 +399,18 @@ export default function ApplyPage() {
             }
 
             // Lead event inviato solo server-side via CAPI (submit-application route)
+
+            // PostHog: application_submitted con attribution
+            posthog?.capture('application_submitted', {
+                candidate_id: result.candidate_id,
+                funnel_type: 'uomo',
+                score,
+                priority,
+                is_ko: isKO,
+                ...storedUTMs,
+            })
+            // Attende invio evento prima del redirect
+            await new Promise(r => setTimeout(r, 500))
 
             // 5. Redirect based on KO
             if (isKO) {

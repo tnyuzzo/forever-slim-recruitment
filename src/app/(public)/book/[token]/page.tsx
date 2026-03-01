@@ -1,6 +1,7 @@
 'use client'
 
 import { useEffect, useState, use } from 'react'
+import { usePostHog } from 'posthog-js/react'
 import { Calendar, Clock, CheckCircle2, Loader2, Globe } from 'lucide-react'
 
 type Slot = {
@@ -41,6 +42,7 @@ function formatLocalTime(isoDatetime: string, tz: string): string {
 
 export default function BookingPage({ params }: { params: Promise<{ token: string }> }) {
     const { token } = use(params)
+    const posthog = usePostHog()
     const [candidateName, setCandidateName] = useState('')
     const [slots, setSlots] = useState<Slot[]>([])
     const [loading, setLoading] = useState(true)
@@ -107,6 +109,10 @@ export default function BookingPage({ params }: { params: Promise<{ token: strin
             if (data.success) {
                 setConfirmed(true)
                 setConfirmedDate(selectedSlot.datetime)
+                posthog?.capture('booking_completed', {
+                    candidate_id: data.candidate_id,
+                    scheduled_at: selectedSlot.datetime,
+                })
             } else {
                 setError(data.error || 'Errore nella conferma.')
             }

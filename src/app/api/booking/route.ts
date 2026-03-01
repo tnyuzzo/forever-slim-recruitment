@@ -148,7 +148,7 @@ export async function POST(request: Request) {
         const candidatePhone = data.candidates?.whatsapp;
 
         // Respond immediately to the candidate
-        const response = NextResponse.json({ success: true, scheduled_at });
+        const response = NextResponse.json({ success: true, scheduled_at, candidate_id: data.candidate_id });
 
         // Fire-and-forget: admin notifications (SMS + Email) — don't block the response
         void (async () => {

@@ -3,7 +3,7 @@
 import { useState, useEffect } from 'react'
 import Link from 'next/link'
 import { usePathname, useRouter } from 'next/navigation'
-import { Users, KanbanSquare, Calendar, Settings, LogOut, Menu, X, UsersRound, ShieldCheck, Shield } from 'lucide-react'
+import { Users, KanbanSquare, Calendar, Settings, LogOut, Menu, X, UsersRound, ShieldCheck, Shield, BarChart3 } from 'lucide-react'
 import { createClient } from '@/lib/supabase/client'
 
 export default function AdminLayout({ children }: { children: React.ReactNode }) {
@@ -35,6 +35,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
     { name: 'Candidati', href: '/admin', icon: Users, roles: ['superadmin', 'recruiter'] },
     { name: 'Pipeline', href: '/admin/pipeline', icon: KanbanSquare, roles: ['superadmin', 'recruiter'] },
     { name: 'Calendario', href: '/admin/calendar', icon: Calendar, roles: ['superadmin', 'recruiter'] },
+    { name: 'Analytics', href: '/admin/analytics', icon: BarChart3, roles: ['superadmin'] },
     { name: 'Impostazioni', href: '/admin/settings', icon: Settings, roles: ['superadmin'] },
     { name: 'Team', href: '/admin/team', icon: UsersRound, roles: ['superadmin'] },
   ]

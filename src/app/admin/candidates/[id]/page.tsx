@@ -2,6 +2,7 @@
 
 import { useEffect, useState, use } from 'react'
 import Link from 'next/link'
+import { usePostHog } from 'posthog-js/react'
 import { createClient } from '@/lib/supabase/client'
 import { format } from 'date-fns'
 import { ChevronLeft, CheckCircle2, XCircle, Play, Mail, Phone, MessageCircle, Send, Globe, Clock, Briefcase, Headphones, Shield, FileText, Save, Loader2, Video, X, AlertTriangle, BarChart3, Pencil, User } from 'lucide-react'
@@ -55,6 +56,7 @@ const SCORE_LABELS: Record<string, { label: string; max: number }> = {
 
 export default function CandidateDetailPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = use(params)
+  const posthog = usePostHog()
   const [candidate, setCandidate] = useState<any>(null)
   const [loading, setLoading] = useState(true)
   const [inviteLoading, setInviteLoading] = useState(false)
@@ -216,6 +218,20 @@ export default function CandidateDetailPage({ params }: { params: Promise<{ id: 
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ candidate_id: id }),
         }).catch((e) => console.error('[handleHire] select-candidate error:', e))
+        // PostHog: candidate_hired
+        posthog?.capture('candidate_hired', {
+          candidate_id: id,
+          funnel_type: candidate?.funnel || null,
+          score: candidate?.score_total,
+          utm_source: candidate?.utm_source,
+          utm_medium: candidate?.utm_medium,
+          utm_campaign: candidate?.utm_campaign,
+          utm_content: candidate?.utm_content,
+          utm_term: candidate?.utm_term,
+          campaign_id: candidate?.campaign_id,
+          adset_id: candidate?.adset_id,
+          ad_id: candidate?.ad_id,
+        })
         setConfirmDialog(null)
       },
     })

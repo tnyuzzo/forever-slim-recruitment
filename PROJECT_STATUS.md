@@ -122,7 +122,7 @@ recruitment-app/
 - [x] **Facebook CAPI server-side**: implementati 3 eventi Lead → Schedule → CompleteRegistration in `/api/fb-event`; idempotenza con `fb_lead_event_id` (candidates) e `fb_event_sent` (interviews)
 - [x] **Data di nascita**: tre select GG/MM/Anno in tutti i form (apply, apply-donna, apply-uomo) al posto di input date nativo
 - [x] **UTM tracking completo**: 12 parametri attribution (`utm_source/medium/campaign/content/term`, `funnel`, `campaign_id/adset_id/ad_id`, `placement`, `site_source_name`, `fbclid`) salvati su `candidates`, `page_visitors`, e `localStorage('fs_utm')`
-- [x] **Cloudflare Zaraz**: script caricato da `zaraz.closeragency.eu`; `zaraz.track('fb_pageview')` via DOMContentLoaded in fbpScript (trigger Cloudflare: `Event Name Equals fb_pageview`); `zaraz.track('Lead')` al submit form (apply + apply-uomo)
+- [x] **Cloudflare Zaraz**: script caricato da `zaraz.closeragency.eu`; `zaraz.track('fb_pageview')` via DOMContentLoaded in fbpScript (trigger Cloudflare: `Event Name Equals fb_pageview`). Solo pageview, nessun evento Lead via Zaraz.
 - [x] **page_visitors table**: nuova tabella Supabase per attribution recovery (session_id cookie HttpOnly 90gg + IP fallback)
 - [x] **DB migration**: aggiornati `candidates` (+14 colonne attribution/CAPI) e `interviews` (+3 colonne CAPI idempotenza) via Management API
 - [x] **`useUTMCapture.ts`**: nuovo hook + `getStoredUTMs()` utility per leggere UTMs da localStorage nel submit handler
@@ -131,6 +131,10 @@ recruitment-app/
 ---
 
 - [x] **Cleanup & API optimization**: booking POST notifiche admin fire-and-forget (SMS+Email non bloccano la risposta), `Promise.all` su query DB indipendenti, import `Resend` top-level. Eliminati `src/components/form/` (9 file dead code) e `public/images/closer-agency-logo.jpeg` (2.6MB inutilizzato).
+
+---
+
+- [x] **PostHog custom events**: 3 eventi analytics client-side (`application_submitted`, `booking_completed`, `candidate_hired`) con UTM attribution e candidate_id per funnel completo in PostHog. Booking API ora restituisce anche `candidate_id`.
 
 ---
 
