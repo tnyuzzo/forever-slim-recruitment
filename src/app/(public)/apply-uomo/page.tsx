@@ -257,7 +257,13 @@ export default function ApplyPage() {
                     .from('candidate-photos')
                     .upload(photoName, photoFile)
 
-                if (!photoUploadError && photoUploadData) {
+                if (photoUploadError) {
+                    console.error('Photo upload error:', photoUploadError)
+                    alert("Errore nel caricamento della foto. Riprova.")
+                    setIsSubmitting(false)
+                    return
+                }
+                if (photoUploadData) {
                     finalPhotoUrl = supabase.storage.from('candidate-photos').getPublicUrl(photoName).data.publicUrl
                 }
             }
