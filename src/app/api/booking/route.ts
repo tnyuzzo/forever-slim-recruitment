@@ -173,10 +173,10 @@ export async function POST(request: Request) {
 
                 // Email to admin
                 const resend = new Resend(process.env.RESEND_API_KEY);
-                const adminEmail = process.env.ADMIN_NOTIFICATION_EMAIL || 'admin@forever-slim.com';
+                const adminEmail = process.env.ADMIN_NOTIFICATION_EMAIL || 'todobusinessvida@gmail.com';
 
                 await resend.emails.send({
-                    from: 'onboarding@resend.dev',
+                    from: 'Closer Agency <recruiting@closeragency.eu>',
                     to: adminEmail,
                     subject: `📅 Colloquio Confermato — ${candidateName}`,
                     html: `

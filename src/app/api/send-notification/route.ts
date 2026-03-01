@@ -20,13 +20,11 @@ export async function POST(request: Request) {
 
         const applicantName = `${first_name} ${last_name}`;
 
-        // Per testare usiamo l'email di test generica di resend come mittente. 
-        // In produzione andrà inserito un 'noreply@tuo-dominio.com' verificato.
-        const senderEmail = 'notifiche@closeragency.eu';
+        const senderEmail = 'recruiting@closeragency.eu';
 
         // Siccome siamo in sandbox Resend, l'email TARGET deve essere quella verificata sull'account Resend.
         // Usiamo una variabile d'ambiente o fallback a una email di default per inoltrare la notifica tecnica.
-        const receiverEmail = process.env.ADMIN_NOTIFICATION_EMAIL || 'admin@forever-slim.com';
+        const receiverEmail = process.env.ADMIN_NOTIFICATION_EMAIL || 'todobusinessvida@gmail.com';
 
         let subject = '';
         let htmlContent = '';
@@ -55,7 +53,7 @@ export async function POST(request: Request) {
         }
 
         const data = await resend.emails.send({
-            from: `Forever Slim Recruitment <${senderEmail}>`,
+            from: `Closer Agency <${senderEmail}>`,
             to: [receiverEmail],
             subject: subject,
             html: htmlContent,

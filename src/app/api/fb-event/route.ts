@@ -46,7 +46,7 @@ export async function POST(req: NextRequest) {
     // Hashing PII
     const userData: Record<string, string | string[]> = {}
     if (email) userData.em = [await sha256(email)]
-    if (phone) userData.ph = [await sha256(phone.replace(/\s+/g, ''))]
+    if (phone) userData.ph = [await sha256(phone.replace(/[\s+\-()]/g, ''))]
     if (firstName) userData.fn = [await sha256(firstName)]
     if (lastName) userData.ln = [await sha256(lastName)]
     if (country) userData.country = [await sha256(country)]

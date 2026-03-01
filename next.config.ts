@@ -3,6 +3,15 @@ import { withSentryConfig } from "@sentry/nextjs";
 
 const nextConfig: NextConfig = {
   allowedDevOrigins: ['127.0.0.1'],
+  images: {
+    remotePatterns: [
+      {
+        protocol: 'https',
+        hostname: 'fxvnzxxioqpxrvownjag.supabase.co',
+        pathname: '/storage/v1/object/public/**',
+      },
+    ],
+  },
   async redirects() {
     return [
       {

@@ -70,8 +70,8 @@ async function handleInbound(payload: any) {
         }
     }
 
-    const adminEmail = process.env.ADMIN_NOTIFICATION_EMAIL || 'admin@forever-slim.com';
-    const senderEmail = 'notifiche@closeragency.eu';
+    const adminEmail = process.env.ADMIN_NOTIFICATION_EMAIL || 'todobusinessvida@gmail.com';
+    const senderEmail = 'recruiting@closeragency.eu';
 
     const forwardedHtml = `
       <div style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; max-width: 680px; margin: 0 auto; padding: 24px;">
@@ -91,7 +91,7 @@ async function handleInbound(payload: any) {
     `;
 
     await resend.emails.send({
-        from: `Closer Agency Inbound <${senderEmail}>`,
+        from: `Closer Agency <${senderEmail}>`,
         to: [adminEmail],
         subject: `[FWD] ${subject}`,
         html: forwardedHtml,
