@@ -18,6 +18,7 @@ type Candidate = {
   status: 'new' | 'qualified' | 'invited' | 'interview_booked' | 'offer_sent' | 'hired' | 'rejected'
   italian_level: string
   hours_per_day: number
+  birth_date: string | null
 }
 
 const statusColors: Record<string, string> = {
@@ -130,6 +131,7 @@ export default function CandidatesPage() {
             <thead>
               <tr className="bg-gray-50 border-b border-gray-100 text-sm font-semibold text-text-muted">
                 <th className="p-4 whitespace-nowrap">Nome</th>
+                <th className="p-4 whitespace-nowrap">Età</th>
                 <th className="p-4 whitespace-nowrap">Contatti</th>
                 <th className="p-4 whitespace-nowrap">Score</th>
                 <th className="p-4 whitespace-nowrap">Priorità</th>
@@ -141,13 +143,13 @@ export default function CandidatesPage() {
             <tbody className="divide-y divide-gray-100 text-sm">
               {loading ? (
                 <tr>
-                  <td colSpan={7} className="p-8 text-center text-text-muted">
+                  <td colSpan={8} className="p-8 text-center text-text-muted">
                     Caricamento candidati...
                   </td>
                 </tr>
               ) : filteredCandidates.length === 0 ? (
                 <tr>
-                  <td colSpan={7} className="p-8 text-center text-text-muted">
+                  <td colSpan={8} className="p-8 text-center text-text-muted">
                     Nessun candidato trovato.
                   </td>
                 </tr>
@@ -157,6 +159,9 @@ export default function CandidatesPage() {
                     <td className="p-4">
                       <div className="font-semibold text-text-main">{candidate.first_name} {candidate.last_name}</div>
                       <div className="text-xs text-text-muted">{format(new Date(candidate.created_at), 'dd MMM yyyy')}</div>
+                    </td>
+                    <td className="p-4">
+                      <div className="font-medium text-text-main">{candidate.birth_date ? Math.floor((Date.now() - new Date(candidate.birth_date).getTime()) / 31557600000) : '—'}</div>
                     </td>
                     <td className="p-4">
                       <div className="text-text-main">{candidate.email}</div>
