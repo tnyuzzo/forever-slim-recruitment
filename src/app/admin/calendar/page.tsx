@@ -7,7 +7,8 @@ import { format, parse, startOfWeek, getDay } from 'date-fns'
 import { it } from 'date-fns/locale'
 import { Calendar as BigCalendar, dateFnsLocalizer, type View } from 'react-big-calendar'
 import 'react-big-calendar/lib/css/react-big-calendar.css'
-import { Clock, Video, AlertCircle, Globe } from 'lucide-react'
+import { Clock, Video, AlertCircle, Globe, ChevronDown, ChevronUp, Users } from 'lucide-react'
+import { COUNTRY_TIMEZONES } from '@/lib/countryTimezones'
 
 // Timezone helpers
 function detectTimezone(): string {
@@ -65,6 +66,7 @@ type InterviewWithCandidate = {
     email: string
     whatsapp: string
     score_total: number
+    country: string | null
   } | null
 }
 
@@ -110,17 +112,50 @@ export default function CalendarPage() {
   const supabase = createClient()
 
   // Timezone state
-  const [userTz, setUserTz] = useState('Europe/Rome')
-  const [isDifferentTz, setIsDifferentTz] = useState(false)
-  const [tzConfirmed, setTzConfirmed] = useState(false)
+  const [browserTz, setBrowserTz] = useState('Europe/Rome')
+  const [selectedTz, setSelectedTz] = useState('auto') // 'auto' | 'Europe/Rome' | specific tz
+
+  // Team availability (superadmin)
+  const [userRole, setUserRole] = useState<'superadmin' | 'recruiter' | null>(null)
+  const [teamAvailability, setTeamAvailability] = useState<{ email: string; slots: { day_of_week: number; start_time: string; end_time: string }[] }[]>([])
+  const [showAvailability, setShowAvailability] = useState(false)
 
   useEffect(() => {
-    const tz = detectTimezone()
-    setUserTz(tz)
-    const isItalian = tz === 'Europe/Rome' || tz === 'Europe/Vatican'
-    setIsDifferentTz(!isItalian)
-    if (isItalian) setTzConfirmed(true)
+    setBrowserTz(detectTimezone())
+    fetchUserRole()
   }, [])
+
+  async function fetchUserRole() {
+    const { data: { user } } = await supabase.auth.getUser()
+    if (user) {
+      const { data } = await supabase.from('user_roles').select('role').eq('user_id', user.id).single()
+      if (data) setUserRole(data.role as 'superadmin' | 'recruiter')
+    }
+  }
+
+  async function fetchTeamAvailability() {
+    const res = await fetch('/api/team')
+    const teamData = await res.json()
+    if (!teamData.members) return
+
+    const { data: allSlots } = await supabase
+      .from('interview_slots')
+      .select('*')
+      .eq('is_active', true)
+      .order('day_of_week', { ascending: true })
+
+    if (!allSlots) return
+
+    const grouped = teamData.members.map((m: any) => ({
+      email: m.email,
+      slots: allSlots.filter((s: any) => s.recruiter_id === m.user_id),
+    })).filter((g: any) => g.slots.length > 0)
+
+    setTeamAvailability(grouped)
+  }
+
+  const activeTz = selectedTz === 'auto' ? browserTz : selectedTz
+  const isDifferentTz = activeTz !== 'Europe/Rome' && activeTz !== 'Europe/Vatican'
 
   useEffect(() => {
     fetchInterviews()
@@ -131,7 +166,7 @@ export default function CalendarPage() {
       setLoading(true)
       const { data, error } = await supabase
         .from('interviews')
-        .select('*, candidates(id, first_name, last_name, email, whatsapp, score_total)')
+        .select('*, candidates(id, first_name, last_name, email, whatsapp, score_total, country)')
         .not('status', 'eq', 'cancelled')
         .order('scheduled_start', { ascending: true })
 
@@ -235,62 +270,45 @@ export default function CalendarPage() {
     }
   }, [])
 
+  const candidateTimezones = useMemo(() => {
+    const tzSet = new Map<string, string>()
+    interviews.forEach(i => {
+      const country = i.candidates?.country
+      if (country && COUNTRY_TIMEZONES[country] && COUNTRY_TIMEZONES[country] !== 'Europe/Rome') {
+        tzSet.set(COUNTRY_TIMEZONES[country], country)
+      }
+    })
+    return Array.from(tzSet.entries())
+  }, [interviews])
+
   function getInterviewDate(interview: InterviewWithCandidate): string {
     const dateStr = interview.scheduled_start || interview.scheduled_at
     if (!dateStr) return 'N/D'
-    return formatDualTime(dateStr, userTz, isDifferentTz)
-  }
-
-  // Timezone popup
-  if (isDifferentTz && !tzConfirmed) {
-    return (
-      <div className="space-y-6">
-        <div className="max-w-md mx-auto mt-20">
-          <div className="bg-white p-8 rounded-3xl shadow-lg border border-indigo-100 text-center space-y-6">
-            <div className="w-16 h-16 bg-indigo-100 rounded-full flex items-center justify-center mx-auto">
-              <Globe className="w-8 h-8 text-indigo-600" />
-            </div>
-            <h2 className="text-2xl font-black text-slate-900">Fuso Orario Rilevato</h2>
-            <div className="bg-slate-50 rounded-2xl p-5 space-y-1">
-              <p className="text-lg font-bold text-slate-800">{getTimezoneCity(userTz)}</p>
-              <p className="text-sm text-slate-500">{getGMTOffset(userTz)}</p>
-            </div>
-            <p className="text-slate-500 leading-relaxed text-sm">
-              Il calendario mostrerà gli orari nel <strong>tuo fuso orario</strong> ({getTimezoneCity(userTz)}).
-              L&apos;ora italiana sarà indicata tra parentesi come riferimento.
-            </p>
-            <button
-              onClick={() => setTzConfirmed(true)}
-              className="w-full py-3 bg-indigo-600 hover:bg-indigo-700 text-white font-bold rounded-xl transition-colors"
-            >
-              Conferma e continua
-            </button>
-            <button
-              onClick={() => { setIsDifferentTz(false); setTzConfirmed(true) }}
-              className="text-sm text-slate-400 hover:text-slate-600 transition-colors"
-            >
-              Sono in Italia, mostra ora italiana
-            </button>
-          </div>
-        </div>
-      </div>
-    )
+    return formatDualTime(dateStr, activeTz, isDifferentTz)
   }
 
   return (
     <div className="space-y-6">
       <div>
-        <div className="flex items-center justify-between">
+        <div className="flex items-center justify-between flex-wrap gap-3">
           <div>
             <h1 className="text-2xl font-bold text-text-main">Calendario Colloqui</h1>
             <p className="text-text-muted text-sm mt-1">Visualizza e gestisci tutti i colloqui programmati.</p>
           </div>
-          {isDifferentTz && (
-            <div className="flex items-center gap-2 bg-indigo-50 text-indigo-700 px-3 py-1.5 rounded-full text-xs font-medium">
-              <Globe className="w-3.5 h-3.5" />
-              {getTimezoneCity(userTz)} ({getGMTOffset(userTz)}) — ora italiana tra parentesi
-            </div>
-          )}
+          <div className="flex items-center gap-2">
+            <Globe className="w-4 h-4 text-indigo-500" />
+            <select
+              value={selectedTz}
+              onChange={(e) => setSelectedTz(e.target.value)}
+              className="border border-gray-200 rounded-xl px-3 py-1.5 text-xs bg-white focus:outline-none focus:ring-2 focus:ring-indigo-500 font-medium"
+            >
+              <option value="auto">Ora locale — {getTimezoneCity(browserTz)} ({getGMTOffset(browserTz)})</option>
+              <option value="Europe/Rome">Ora italiana — Roma ({getGMTOffset('Europe/Rome')})</option>
+              {candidateTimezones.map(([tz, country]) => (
+                <option key={tz} value={tz}>{country} — {getTimezoneCity(tz)} ({getGMTOffset(tz)})</option>
+              ))}
+            </select>
+          </div>
         </div>
       </div>
 
@@ -382,6 +400,43 @@ export default function CalendarPage() {
                     </Link>
                   ))}
                 </div>
+              </div>
+            )}
+
+            {/* Team Availability (superadmin only) */}
+            {userRole === 'superadmin' && (
+              <div className="bg-indigo-50 p-5 rounded-3xl border border-indigo-100">
+                <button
+                  onClick={() => { setShowAvailability(!showAvailability); if (!showAvailability && teamAvailability.length === 0) fetchTeamAvailability() }}
+                  className="flex items-center justify-between w-full"
+                >
+                  <div className="flex items-center gap-3">
+                    <div className="w-9 h-9 bg-indigo-200 text-indigo-700 rounded-full flex items-center justify-center">
+                      <Users className="w-4 h-4" />
+                    </div>
+                    <h2 className="text-sm font-bold text-indigo-900">Disponibilità Team</h2>
+                  </div>
+                  {showAvailability ? <ChevronUp className="w-4 h-4 text-indigo-500" /> : <ChevronDown className="w-4 h-4 text-indigo-500" />}
+                </button>
+                {showAvailability && (
+                  <div className="mt-4 space-y-3">
+                    {teamAvailability.length === 0 ? (
+                      <p className="text-indigo-600/60 text-xs">Nessuna disponibilità configurata.</p>
+                    ) : teamAvailability.map(member => (
+                      <div key={member.email} className="bg-white p-3 rounded-xl border border-indigo-100">
+                        <div className="font-bold text-xs text-text-main mb-2">{member.email.split('@')[0]}</div>
+                        <div className="space-y-0.5">
+                          {member.slots.map((slot, i) => (
+                            <div key={i} className="flex items-center justify-between text-[11px] text-text-muted">
+                              <span className="font-medium">{['Dom', 'Lun', 'Mar', 'Mer', 'Gio', 'Ven', 'Sab'][slot.day_of_week]}</span>
+                              <span>{slot.start_time.slice(0, 5)} - {slot.end_time.slice(0, 5)}</span>
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                )}
               </div>
             )}
           </div>

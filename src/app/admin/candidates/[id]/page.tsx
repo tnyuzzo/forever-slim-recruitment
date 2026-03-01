@@ -5,7 +5,7 @@ import Link from 'next/link'
 import { usePostHog } from 'posthog-js/react'
 import { createClient } from '@/lib/supabase/client'
 import { format } from 'date-fns'
-import { ChevronLeft, CheckCircle2, XCircle, Play, Mail, Phone, MessageCircle, Send, Globe, Clock, Briefcase, Headphones, Shield, FileText, Save, Loader2, Video, X, AlertTriangle, BarChart3, Pencil, User } from 'lucide-react'
+import { ChevronLeft, CheckCircle2, XCircle, Play, Mail, Phone, MessageCircle, Send, Globe, Clock, Briefcase, Headphones, Shield, FileText, Save, Loader2, Video, X, AlertTriangle, BarChart3, Pencil, User, Trash2 } from 'lucide-react'
 import { notFound } from 'next/navigation'
 
 const OUTCOME_STYLES: Record<string, string> = {
@@ -87,6 +87,9 @@ export default function CandidateDetailPage({ params }: { params: Promise<{ id: 
   const [editData, setEditData] = useState<Record<string, any>>({})
   const [editSaving, setEditSaving] = useState(false)
 
+  // User role
+  const [userRole, setUserRole] = useState<'superadmin' | 'recruiter' | null>(null)
+
   // Outcome modal
   const [showOutcomeModal, setShowOutcomeModal] = useState(false)
   const [outcomeData, setOutcomeData] = useState({
@@ -106,7 +109,16 @@ export default function CandidateDetailPage({ params }: { params: Promise<{ id: 
   useEffect(() => {
     fetchCandidate()
     fetchInterviews()
+    fetchUserRole()
   }, [id])
+
+  async function fetchUserRole() {
+    const { data: { user } } = await supabase.auth.getUser()
+    if (user) {
+      const { data } = await supabase.from('user_roles').select('role').eq('user_id', user.id).single()
+      if (data) setUserRole(data.role as 'superadmin' | 'recruiter')
+    }
+  }
 
   async function fetchCandidate() {
     try {
@@ -233,6 +245,37 @@ export default function CandidateDetailPage({ params }: { params: Promise<{ id: 
           ad_id: candidate?.ad_id,
         })
         setConfirmDialog(null)
+      },
+    })
+  }
+
+  function handleDelete() {
+    setConfirmDialog({
+      title: 'Eliminazione Definitiva',
+      message: `Sei sicuro di voler ELIMINARE DEFINITIVAMENTE ${candidate?.first_name} ${candidate?.last_name}? Verranno rimossi: record candidato, colloqui, foto e audio. Questa azione è IRREVERSIBILE.`,
+      onConfirm: async () => {
+        try {
+          // 1. Delete storage files
+          if (candidate?.photo_url) {
+            const photoPath = candidate.photo_url.split('/storage/v1/object/public/candidate-photos/')[1]
+            if (photoPath) await supabase.storage.from('candidate-photos').remove([photoPath])
+          }
+          if (candidate?.audio_url) {
+            const audioPath = candidate.audio_url.split('/storage/v1/object/public/candidate-audio/')[1]
+            if (audioPath) await supabase.storage.from('candidate-audio').remove([audioPath])
+          }
+          // 2. Delete related interviews
+          await supabase.from('interviews').delete().eq('candidate_id', id)
+          // 3. Delete candidate record
+          const { error } = await supabase.from('candidates').delete().eq('id', id)
+          if (error) throw error
+          setConfirmDialog(null)
+          window.location.href = '/admin'
+        } catch (error) {
+          console.error('Error deleting candidate:', error)
+          showToast('Errore nella cancellazione', 'error')
+          setConfirmDialog(null)
+        }
       },
     })
   }
@@ -386,6 +429,15 @@ export default function CandidateDetailPage({ params }: { params: Promise<{ id: 
           {/* Header Card */}
           <div className="bg-white p-6 md:p-8 rounded-3xl shadow-sm border border-gray-100 relative overflow-hidden">
             <div className="absolute top-0 right-0 p-4 flex items-start gap-3">
+              {!isEditing && userRole === 'superadmin' && (
+                <button
+                  onClick={handleDelete}
+                  className="p-2 rounded-xl border border-red-200 hover:bg-red-50 text-red-400 hover:text-red-600 transition-colors"
+                  title="Elimina candidato"
+                >
+                  <Trash2 className="w-4 h-4" />
+                </button>
+              )}
               {!isEditing && (
                 <button
                   onClick={startEditing}
