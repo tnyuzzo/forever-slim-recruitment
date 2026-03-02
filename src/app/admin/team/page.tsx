@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from 'react'
 import { createClient } from '@/lib/supabase/client'
-import { UserPlus, Trash2, Shield, ShieldCheck, Loader2, Mail, Clock, ChevronDown, ChevronUp, Save, Copy, Plus, CheckCircle2, Link2, Check } from 'lucide-react'
+import { UserPlus, Trash2, Shield, ShieldCheck, Loader2, Mail, Clock, ChevronDown, ChevronUp, Save, Copy, Plus, CheckCircle2, Link2, Check, RefreshCw, AlertCircle } from 'lucide-react'
 
 interface TeamMember {
     id: string
@@ -40,6 +40,10 @@ export default function TeamManagement() {
     const [slotSaved, setSlotSaved] = useState<string | null>(null)
     const [inviteLink, setInviteLink] = useState<string | null>(null)
     const [linkCopied, setLinkCopied] = useState(false)
+    // Per-member reinvite state
+    const [resendingMember, setResendingMember] = useState<string | null>(null)
+    const [memberInviteLinks, setMemberInviteLinks] = useState<Record<string, string>>({})
+    const [memberLinkCopied, setMemberLinkCopied] = useState<string | null>(null)
     const supabase = createClient()
 
     const fetchMembers = async () => {
@@ -106,6 +110,55 @@ export default function TeamManagement() {
             setLinkCopied(true)
             setTimeout(() => setLinkCopied(false), 3000)
         }
+    }
+
+    const handleResendInvite = async (member: TeamMember) => {
+        setResendingMember(member.user_id)
+        setMessage(null)
+
+        try {
+            const res = await fetch('/api/team', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ email: member.email, role: member.role })
+            })
+            const data = await res.json()
+
+            if (data.success) {
+                setMessage({
+                    text: data.emailSent === false
+                        ? `Link generato per ${member.email} ma email non inviata.`
+                        : `Invito reinviato a ${member.email}.`,
+                    type: data.emailSent === false ? 'error' : 'success'
+                })
+                if (data.inviteLink) {
+                    setMemberInviteLinks(prev => ({ ...prev, [member.user_id]: data.inviteLink }))
+                }
+            } else {
+                setMessage({ text: data.error || 'Errore nel reinvio.', type: 'error' })
+            }
+        } catch {
+            setMessage({ text: 'Errore di rete.', type: 'error' })
+        } finally {
+            setResendingMember(null)
+        }
+    }
+
+    const copyMemberInviteLink = async (userId: string) => {
+        const link = memberInviteLinks[userId]
+        if (!link) return
+        try {
+            await navigator.clipboard.writeText(link)
+        } catch {
+            const textarea = document.createElement('textarea')
+            textarea.value = link
+            document.body.appendChild(textarea)
+            textarea.select()
+            document.execCommand('copy')
+            document.body.removeChild(textarea)
+        }
+        setMemberLinkCopied(userId)
+        setTimeout(() => setMemberLinkCopied(null), 3000)
     }
 
     const handleRemove = async (userId: string, email: string) => {
@@ -377,37 +430,67 @@ export default function TeamManagement() {
                             const slots = memberSlots[member.user_id] || []
                             const activeDays = new Set(slots.map(s => s.day_of_week))
 
+                            const isPending = !member.last_sign_in
+                            const isResending = resendingMember === member.user_id
+                            const memberLink = memberInviteLinks[member.user_id]
+                            const isMemberLinkCopied = memberLinkCopied === member.user_id
+
                             return (
                                 <div key={member.id}>
                                     <div className="flex items-center justify-between p-5 hover:bg-gray-50/50 transition-colors">
                                         <div className="flex items-center gap-4">
-                                            <div className={`w-10 h-10 rounded-full flex items-center justify-center ${member.role === 'superadmin'
-                                                    ? 'bg-amber-100 text-amber-600'
-                                                    : 'bg-blue-100 text-blue-600'
+                                            <div className={`w-10 h-10 rounded-full flex items-center justify-center ${
+                                                isPending
+                                                    ? 'bg-orange-100 text-orange-500'
+                                                    : member.role === 'superadmin'
+                                                        ? 'bg-amber-100 text-amber-600'
+                                                        : 'bg-blue-100 text-blue-600'
                                                 }`}>
-                                                {member.role === 'superadmin'
-                                                    ? <ShieldCheck className="w-5 h-5" />
-                                                    : <Shield className="w-5 h-5" />
+                                                {isPending
+                                                    ? <AlertCircle className="w-5 h-5" />
+                                                    : member.role === 'superadmin'
+                                                        ? <ShieldCheck className="w-5 h-5" />
+                                                        : <Shield className="w-5 h-5" />
                                                 }
                                             </div>
                                             <div>
                                                 <div className="font-semibold text-text-main">{member.email}</div>
-                                                <div className="flex items-center gap-3 text-xs text-text-muted mt-0.5">
+                                                <div className="flex items-center gap-3 text-xs text-text-muted mt-0.5 flex-wrap">
                                                     <span className={`px-2 py-0.5 rounded-full font-medium ${member.role === 'superadmin'
                                                             ? 'bg-amber-50 text-amber-700'
                                                             : 'bg-blue-50 text-blue-700'
                                                         }`}>
                                                         {member.role === 'superadmin' ? 'Super Admin' : 'Recruiter'}
                                                     </span>
-                                                    <span className="flex items-center gap-1">
-                                                        <Clock className="w-3 h-3" />
-                                                        Ultimo accesso: {formatDate(member.last_sign_in)}
-                                                    </span>
+                                                    {isPending ? (
+                                                        <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full font-semibold bg-orange-50 text-orange-600">
+                                                            <Clock className="w-3 h-3" />
+                                                            Invito Pendente
+                                                        </span>
+                                                    ) : (
+                                                        <span className="flex items-center gap-1">
+                                                            <Clock className="w-3 h-3" />
+                                                            Ultimo accesso: {formatDate(member.last_sign_in)}
+                                                        </span>
+                                                    )}
                                                 </div>
                                             </div>
                                         </div>
 
                                         <div className="flex items-center gap-2">
+                                            <button
+                                                onClick={() => handleResendInvite(member)}
+                                                disabled={isResending}
+                                                className={`inline-flex items-center gap-1.5 px-3 py-2 rounded-xl text-xs font-semibold transition-colors disabled:opacity-50 ${
+                                                    isPending
+                                                        ? 'bg-orange-100 text-orange-700 hover:bg-orange-200'
+                                                        : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
+                                                }`}
+                                                title="Reinvia email di invito"
+                                            >
+                                                {isResending ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <RefreshCw className="w-3.5 h-3.5" />}
+                                                {isPending ? 'Reinvia Invito' : 'Reinvia Accesso'}
+                                            </button>
                                             <button
                                                 onClick={() => toggleMemberSlots(member.user_id)}
                                                 className={`inline-flex items-center gap-1.5 px-3 py-2 rounded-xl text-xs font-semibold transition-colors ${
@@ -429,6 +512,38 @@ export default function TeamManagement() {
                                             )}
                                         </div>
                                     </div>
+
+                                    {/* Per-member invite link (shown after resend) */}
+                                    {memberLink && (
+                                        <div className="px-5 pb-4">
+                                            <div className="p-3 rounded-xl border border-indigo-100 bg-indigo-50/50 space-y-2">
+                                                <div className="flex items-center gap-2 text-xs font-semibold text-indigo-700">
+                                                    <Link2 className="w-3.5 h-3.5" />
+                                                    Link di invito per {member.email}
+                                                </div>
+                                                <div className="flex items-center gap-2">
+                                                    <input
+                                                        type="text"
+                                                        readOnly
+                                                        value={memberLink}
+                                                        className="flex-1 text-xs bg-white border border-indigo-200 rounded-lg px-3 py-2 text-gray-600 font-mono truncate"
+                                                        onClick={(e) => (e.target as HTMLInputElement).select()}
+                                                    />
+                                                    <button
+                                                        onClick={() => copyMemberInviteLink(member.user_id)}
+                                                        className={`flex items-center gap-1.5 px-3 py-2 rounded-lg text-xs font-bold transition-all whitespace-nowrap ${
+                                                            isMemberLinkCopied
+                                                                ? 'bg-green-600 text-white'
+                                                                : 'bg-indigo-600 hover:bg-indigo-700 text-white'
+                                                        }`}
+                                                    >
+                                                        {isMemberLinkCopied ? <Check className="w-3 h-3" /> : <Copy className="w-3 h-3" />}
+                                                        {isMemberLinkCopied ? 'Copiato!' : 'Copia'}
+                                                    </button>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    )}
 
                                     {/* Availability Editor */}
                                     {isExpanded && (
