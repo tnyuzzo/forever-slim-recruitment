@@ -15,25 +15,18 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
   const supabase = createClient()
 
   useEffect(() => {
-    const fetchUserInfo = async () => {
-      const { data: { user } } = await supabase.auth.getUser()
-      if (user) {
-        setUserEmail(user.email || null)
-        // Fetch role via dedicated API (uses service_role, bypasses RLS — always works)
-        try {
-          const res = await fetch('/api/my-role')
-          if (res.ok) {
-            const { role } = await res.json()
-            if (role === 'superadmin' || role === 'recruiter') {
-              setUserRole(role)
-            }
+    // Single API call to get both email and role (server-side, reliable)
+    fetch('/api/my-role')
+      .then(res => res.ok ? res.json() : null)
+      .then(data => {
+        if (data) {
+          if (data.email) setUserEmail(data.email)
+          if (data.role === 'superadmin' || data.role === 'recruiter') {
+            setUserRole(data.role)
           }
-        } catch (e) {
-          console.error('[layout] Failed to fetch role:', e)
         }
-      }
-    }
-    fetchUserInfo()
+      })
+      .catch(e => console.error('[layout] Failed to fetch user info:', e))
   }, [])
 
   const navigation = [
@@ -45,8 +38,9 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
     { name: 'Team', href: '/admin/team', icon: UsersRound, roles: ['superadmin'] },
   ]
 
+  // While loading (userRole null), show only common items; once loaded, filter by role
   const visibleNavigation = navigation.filter(item =>
-    !userRole || item.roles.includes(userRole)
+    userRole ? item.roles.includes(userRole) : item.roles.includes('recruiter')
   )
 
   const handleLogout = async () => {

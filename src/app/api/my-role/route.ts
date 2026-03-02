@@ -22,7 +22,7 @@ export async function GET() {
             .eq('user_id', user.id)
             .single()
 
-        return NextResponse.json({ role: data?.role || null })
+        return NextResponse.json({ role: data?.role || null, email: user.email || null })
     } catch {
         return NextResponse.json({ role: null }, { status: 500 })
     }
