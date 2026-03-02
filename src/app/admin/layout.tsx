@@ -19,27 +19,33 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
       const { data: { user } } = await supabase.auth.getUser()
       if (user) {
         setUserEmail(user.email || null)
-        // Fetch user role — try DB first, fallback to user metadata
-        const { data, error } = await supabase
-          .from('user_roles')
-          .select('role')
-          .eq('user_id', user.id)
-          .single()
-        if (data) {
-          setUserRole(data.role as 'superadmin' | 'recruiter')
+        // Fetch user role — priority: metadata > DB (RLS) > API
+        // 1. User metadata (most reliable — set via admin API)
+        const metaRole = user.user_metadata?.role
+        if (metaRole === 'superadmin' || metaRole === 'recruiter') {
+          setUserRole(metaRole)
         } else {
-          console.warn('[layout] user_roles query failed, trying metadata fallback:', error?.message)
-          // Fallback: read from user metadata (set during invite)
-          const metaRole = user.user_metadata?.role
-          if (metaRole === 'superadmin' || metaRole === 'recruiter') {
-            setUserRole(metaRole)
+          // 2. Direct DB query (may fail due to RLS)
+          const { data, error } = await supabase
+            .from('user_roles')
+            .select('role')
+            .eq('user_id', user.id)
+            .single()
+          if (data) {
+            setUserRole(data.role as 'superadmin' | 'recruiter')
           } else {
-            // Last resort: fetch via API (uses service_role, bypasses RLS)
+            console.warn('[layout] RLS query failed, trying API fallback:', error?.message)
+            // 3. API fallback (uses service_role, bypasses RLS)
             try {
               const res = await fetch('/api/team')
-              const teamData = await res.json()
-              const me = teamData.members?.find((m: any) => m.user_id === user.id)
-              if (me) setUserRole(me.role as 'superadmin' | 'recruiter')
+              if (res.ok) {
+                const teamData = await res.json()
+                const me = teamData.members?.find((m: any) => m.user_id === user.id)
+                if (me) setUserRole(me.role as 'superadmin' | 'recruiter')
+                else console.error('[layout] User not found in team members')
+              } else {
+                console.error('[layout] API /api/team returned', res.status)
+              }
             } catch (e) {
               console.error('[layout] All role fetch methods failed:', e)
             }
