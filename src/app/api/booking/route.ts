@@ -1,4 +1,4 @@
-import { NextResponse } from 'next/server';
+import { NextResponse, after } from 'next/server';
 import { createClient } from '@supabase/supabase-js';
 import { Resend } from 'resend';
 import { escapeHtml } from '@/lib/escapeHtml';
@@ -108,56 +108,66 @@ export async function POST(request: Request) {
 
         // CAPI: invia evento Schedule (idempotente su fb_event_sent)
         const interviewUpdated = capiResult?.data;
+        const baseUrl = process.env.NEXT_PUBLIC_SITE_URL || 'https://closeragency.eu';
+        const candidate = data.candidates as Record<string, string | null> | null;
+        let fb_schedule_event_id: string | null = null;
+
         if (interviewUpdated && data.candidate_id) {
-            const fb_schedule_event_id = crypto.randomUUID();
+            fb_schedule_event_id = crypto.randomUUID();
             await supabase
                 .from('candidates')
                 .update({ fb_schedule_event_id, schedule_sent_at: new Date().toISOString() })
                 .eq('id', data.candidate_id);
-
-            const baseUrl = process.env.NEXT_PUBLIC_SITE_URL || 'https://closeragency.eu';
-            const candidate = data.candidates as Record<string, string | null> | null;
-            fetch(`${baseUrl}/api/fb-event`, {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                    Authorization: `Bearer ${process.env.SUPABASE_SERVICE_ROLE_KEY}`,
-                },
-                body: JSON.stringify({
-                    event_name: 'Schedule',
-                    event_id: fb_schedule_event_id,
-                    event_source_url: `${baseUrl}/booking`,
-                    email: candidate?.email,
-                    phone: candidate?.whatsapp,
-                    firstName: candidate?.first_name,
-                    lastName: candidate?.last_name,
-                    fbp: candidate?.fbp,
-                    fbc: candidate?.fbc,
-                    ip_address: candidate?.ip_address,
-                    user_agent: candidate?.user_agent,
-                    country: candidate?.country ?? 'it',
-                    external_id: data.candidate_id,
-                }),
-            }).catch((e) => console.error('[booking] fb-event error:', e));
         }
 
-        // Collect data needed for admin notifications before returning
+        // Collect data needed for admin notifications
         const candidateName = `${data.candidates?.first_name} ${data.candidates?.last_name}`;
         const slotDate = new Date(scheduled_at).toLocaleString('it-IT', { timeZone: 'Europe/Rome', dateStyle: 'full', timeStyle: 'short' });
         const candidateEmail = data.candidates?.email;
         const candidatePhone = data.candidates?.whatsapp;
 
-        // Respond immediately to the candidate
-        const response = NextResponse.json({ success: true, scheduled_at, candidate_id: data.candidate_id });
+        // after(): esegue dopo la response ma mantiene la Lambda attiva
+        after(async () => {
+            // FB CAPI Schedule event
+            if (fb_schedule_event_id && data.candidate_id) {
+                try {
+                    const fbRes = await fetch(`${baseUrl}/api/fb-event`, {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json',
+                            Authorization: `Bearer ${process.env.SUPABASE_SERVICE_ROLE_KEY}`,
+                        },
+                        body: JSON.stringify({
+                            event_name: 'Schedule',
+                            event_id: fb_schedule_event_id,
+                            event_source_url: `${baseUrl}/booking`,
+                            email: candidate?.email,
+                            phone: candidate?.whatsapp,
+                            firstName: candidate?.first_name,
+                            lastName: candidate?.last_name,
+                            fbp: candidate?.fbp,
+                            fbc: candidate?.fbc,
+                            ip_address: candidate?.ip_address,
+                            user_agent: candidate?.user_agent,
+                            country: candidate?.country ?? 'it',
+                            external_id: data.candidate_id,
+                        }),
+                    });
+                    if (!fbRes.ok) {
+                        const fbData = await fbRes.json();
+                        console.error('[booking] fb-event error:', fbData);
+                    }
+                } catch (e) {
+                    console.error('[booking] fb-event error:', e);
+                }
+            }
 
-        // Fire-and-forget: admin notifications (SMS + Email) — don't block the response
-        void (async () => {
+            // Admin notifications (SMS + Email)
             try {
                 const adminPhone = process.env.ADMIN_PHONE;
                 const clicksendUser = process.env.CLICKSEND_USERNAME;
                 const clicksendKey = process.env.CLICKSEND_API_KEY;
 
-                // SMS to admin
                 if (adminPhone && clicksendUser && clicksendKey) {
                     await fetch('https://rest.clicksend.com/v3/sms/send', {
                         method: 'POST',
@@ -171,7 +181,6 @@ export async function POST(request: Request) {
                     });
                 }
 
-                // Email to admin
                 const resend = new Resend(process.env.RESEND_API_KEY);
                 const adminEmail = process.env.ADMIN_NOTIFICATION_EMAIL || 'todobusinessvida@gmail.com';
 
@@ -191,9 +200,9 @@ export async function POST(request: Request) {
             } catch (notifErr) {
                 console.error('Admin notification error:', notifErr);
             }
-        })();
+        });
 
-        return response;
+        return NextResponse.json({ success: true, scheduled_at, candidate_id: data.candidate_id });
     } catch (error) {
         console.error('Booking POST error:', error);
         return NextResponse.json({ error: 'Errore interno' }, { status: 500 });

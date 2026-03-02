@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
+import { after } from 'next/server'
 import { createClient } from '@supabase/supabase-js'
 import { ATTRIBUTION_PARAMS } from '@/lib/attribution'
 
@@ -180,48 +181,62 @@ export async function POST(req: NextRequest) {
 
     const candidate_id = inserted.id
 
-    // Fire-and-forget: invia evento Lead a Facebook CAPI
     const baseUrl = process.env.NEXT_PUBLIC_SITE_URL || 'https://closeragency.eu'
-    fetch(`${baseUrl}/api/fb-event`, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        Authorization: `Bearer ${process.env.SUPABASE_SERVICE_ROLE_KEY}`,
-      },
-      body: JSON.stringify({
-        event_name: 'Lead',
-        event_id: fb_lead_event_id,
-        event_source_url: page_url ?? `${baseUrl}/apply`,
-        email: body.email,
-        phone: body.whatsapp,
-        firstName: body.first_name,
-        lastName: body.last_name,
-        fbp,
-        fbc,
-        ip_address,
-        user_agent,
-        country: body.country ?? 'it',
-        external_id: candidate_id,
-      }),
-    }).catch((e) => console.error('[submit-application] fb-event error:', e))
 
-    // Fire-and-forget: notifica email/SMS admin
-    fetch(`${baseUrl}/api/send-notification`, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        Authorization: `Bearer ${process.env.SUPABASE_SERVICE_ROLE_KEY}`,
-      },
-      body: JSON.stringify({
-        first_name: body.first_name,
-        last_name: body.last_name,
-        email: body.email,
-        whatsapp: body.whatsapp,
-        score_total: body.score_total,
-        priority: body.priority,
-        isKO: body.status === 'rejected',
-      }),
-    }).catch((e) => console.error('[submit-application] send-notification error:', e))
+    // after(): esegue dopo la response ma mantiene la Lambda attiva
+    after(async () => {
+      try {
+        const fbRes = await fetch(`${baseUrl}/api/fb-event`, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            Authorization: `Bearer ${process.env.SUPABASE_SERVICE_ROLE_KEY}`,
+          },
+          body: JSON.stringify({
+            event_name: 'Lead',
+            event_id: fb_lead_event_id,
+            event_source_url: page_url ?? `${baseUrl}/apply`,
+            email: body.email,
+            phone: body.whatsapp,
+            firstName: body.first_name,
+            lastName: body.last_name,
+            fbp,
+            fbc,
+            ip_address,
+            user_agent,
+            country: body.country ?? 'it',
+            external_id: candidate_id,
+          }),
+        })
+        if (!fbRes.ok) {
+          const fbData = await fbRes.json()
+          console.error('[submit-application] fb-event error:', fbData)
+        }
+      } catch (e) {
+        console.error('[submit-application] fb-event error:', e)
+      }
+
+      try {
+        await fetch(`${baseUrl}/api/send-notification`, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            Authorization: `Bearer ${process.env.SUPABASE_SERVICE_ROLE_KEY}`,
+          },
+          body: JSON.stringify({
+            first_name: body.first_name,
+            last_name: body.last_name,
+            email: body.email,
+            whatsapp: body.whatsapp,
+            score_total: body.score_total,
+            priority: body.priority,
+            isKO: body.status === 'rejected',
+          }),
+        })
+      } catch (e) {
+        console.error('[submit-application] send-notification error:', e)
+      }
+    })
 
     return NextResponse.json({ candidate_id, status: body.status ?? 'new' })
   } catch (err) {

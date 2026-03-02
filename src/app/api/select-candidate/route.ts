@@ -1,4 +1,4 @@
-import { NextRequest, NextResponse } from 'next/server'
+import { NextRequest, NextResponse, after } from 'next/server'
 import { createClient } from '@supabase/supabase-js'
 import { createClient as createServerClient } from '@/lib/supabase/server'
 
@@ -40,28 +40,39 @@ export async function POST(req: NextRequest) {
     }
 
     const baseUrl = process.env.NEXT_PUBLIC_SITE_URL || 'https://closeragency.eu'
-    fetch(`${baseUrl}/api/fb-event`, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        Authorization: `Bearer ${process.env.SUPABASE_SERVICE_ROLE_KEY}`,
-      },
-      body: JSON.stringify({
-        event_name: 'CompleteRegistration',
-        event_id: fb_complete_event_id,
-        event_source_url: `${baseUrl}/admin`,
-        email: updated.email,
-        phone: updated.whatsapp,
-        firstName: updated.first_name,
-        lastName: updated.last_name,
-        fbp: updated.fbp,
-        fbc: updated.fbc,
-        ip_address: updated.ip_address,
-        user_agent: updated.user_agent,
-        country: updated.country ?? 'it',
-        external_id: candidate_id,
-      }),
-    }).catch((e) => console.error('[select-candidate] fb-event error:', e))
+
+    after(async () => {
+      try {
+        const fbRes = await fetch(`${baseUrl}/api/fb-event`, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            Authorization: `Bearer ${process.env.SUPABASE_SERVICE_ROLE_KEY}`,
+          },
+          body: JSON.stringify({
+            event_name: 'CompleteRegistration',
+            event_id: fb_complete_event_id,
+            event_source_url: `${baseUrl}/admin`,
+            email: updated.email,
+            phone: updated.whatsapp,
+            firstName: updated.first_name,
+            lastName: updated.last_name,
+            fbp: updated.fbp,
+            fbc: updated.fbc,
+            ip_address: updated.ip_address,
+            user_agent: updated.user_agent,
+            country: updated.country ?? 'it',
+            external_id: candidate_id,
+          }),
+        })
+        if (!fbRes.ok) {
+          const fbData = await fbRes.json()
+          console.error('[select-candidate] fb-event error:', fbData)
+        }
+      } catch (e) {
+        console.error('[select-candidate] fb-event error:', e)
+      }
+    })
 
     return NextResponse.json({ ok: true, candidate_id })
   } catch (err) {
