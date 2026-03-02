@@ -96,7 +96,7 @@ export async function POST(req: NextRequest) {
             const { data: linkData, error: linkError } = await supabaseAdmin.auth.admin.generateLink({
                 type: 'magiclink',
                 email,
-                options: { redirectTo: `${siteUrl}/admin` }
+                options: { redirectTo: `${siteUrl}/auth/callback` }
             })
 
             if (linkError) {
@@ -113,7 +113,7 @@ export async function POST(req: NextRequest) {
                 email,
                 options: {
                     data: { role },
-                    redirectTo: `${siteUrl}/admin/login`
+                    redirectTo: `${siteUrl}/auth/callback`
                 }
             })
 
@@ -130,6 +130,14 @@ export async function POST(req: NextRequest) {
         if (!actionLink) {
             console.error('[team-invite] actionLink is empty/undefined')
             return NextResponse.json({ error: 'Link di invito non generato.' }, { status: 500 })
+        }
+
+        // Ensure redirect_to is in the action link (generateLink may ignore redirectTo option)
+        const callbackUrl = `${siteUrl}/auth/callback`
+        if (!actionLink.includes('redirect_to=')) {
+            actionLink += `&redirect_to=${encodeURIComponent(callbackUrl)}`
+        } else if (!actionLink.includes('/auth/callback')) {
+            actionLink = actionLink.replace(/redirect_to=[^&]+/, `redirect_to=${encodeURIComponent(callbackUrl)}`)
         }
 
         // ── Step 2: Assign role ──
