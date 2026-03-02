@@ -3,6 +3,7 @@ import { Inter } from 'next/font/google'
 import Script from 'next/script'
 import './globals.css'
 import { PostHogProvider } from './providers'
+import { AuthRedirector } from '@/components/AuthRedirector'
 
 const fbpScript = `
 (function() {
@@ -81,6 +82,7 @@ export default function RootLayout({
       </head>
       <body className={`${inter.variable} font-sans antialiased bg-[#FFFFFF] text-[#1A1A1A] min-h-screen flex flex-col`}>
         <PostHogProvider>
+          <AuthRedirector />
           <main className="flex-1 flex flex-col">
             {children}
           </main>
