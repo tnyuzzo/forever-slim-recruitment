@@ -437,9 +437,10 @@ export default function TeamManagement() {
 
                             return (
                                 <div key={member.id}>
-                                    <div className="flex items-center justify-between p-5 hover:bg-gray-50/50 transition-colors">
-                                        <div className="flex items-center gap-4">
-                                            <div className={`w-10 h-10 rounded-full flex items-center justify-center ${
+                                    <div className="p-5 hover:bg-gray-50/50 transition-colors space-y-3">
+                                        {/* Top row: avatar + info */}
+                                        <div className="flex items-center gap-3">
+                                            <div className={`w-10 h-10 shrink-0 rounded-full flex items-center justify-center ${
                                                 isPending
                                                     ? 'bg-orange-100 text-orange-500'
                                                     : member.role === 'superadmin'
@@ -453,9 +454,9 @@ export default function TeamManagement() {
                                                         : <Shield className="w-5 h-5" />
                                                 }
                                             </div>
-                                            <div>
-                                                <div className="font-semibold text-text-main">{member.email}</div>
-                                                <div className="flex items-center gap-3 text-xs text-text-muted mt-0.5 flex-wrap">
+                                            <div className="min-w-0 flex-1">
+                                                <div className="font-semibold text-text-main truncate">{member.email}</div>
+                                                <div className="flex items-center gap-2 text-xs text-text-muted mt-0.5 flex-wrap">
                                                     <span className={`px-2 py-0.5 rounded-full font-medium ${member.role === 'superadmin'
                                                             ? 'bg-amber-50 text-amber-700'
                                                             : 'bg-blue-50 text-blue-700'
@@ -477,7 +478,8 @@ export default function TeamManagement() {
                                             </div>
                                         </div>
 
-                                        <div className="flex items-center gap-2">
+                                        {/* Bottom row: action buttons */}
+                                        <div className="flex items-center gap-2 flex-wrap pl-[52px]">
                                             <button
                                                 onClick={() => handleResendInvite(member)}
                                                 disabled={isResending}
