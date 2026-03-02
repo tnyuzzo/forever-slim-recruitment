@@ -108,7 +108,7 @@ export async function POST(request: Request) {
 
         // CAPI: invia evento Schedule (idempotente su fb_event_sent)
         const interviewUpdated = capiResult?.data;
-        const baseUrl = process.env.NEXT_PUBLIC_SITE_URL || 'https://closeragency.eu';
+        const baseUrl = (process.env.NEXT_PUBLIC_SITE_URL || 'https://closeragency.eu').trim();
         const candidate = data.candidates as Record<string, string | null> | null;
         let fb_schedule_event_id: string | null = null;
 

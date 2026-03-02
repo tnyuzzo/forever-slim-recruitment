@@ -61,7 +61,7 @@ export async function POST(request: Request) {
 
         // 4. Build booking link
         // Usa sempre l'URL stabile (alias Vercel o dominio custom), MAI il VERCEL_URL che è deployment-specific
-        const baseUrl = process.env.NEXT_PUBLIC_SITE_URL || 'https://recruitment-app-sage.vercel.app';
+        const baseUrl = (process.env.NEXT_PUBLIC_SITE_URL || 'https://closeragency.eu').trim();
         const bookingLink = `${baseUrl}/book/${token}`;
 
         const results: { email?: { success: boolean; detail?: string }; sms?: { success: boolean; detail?: string } } = {};

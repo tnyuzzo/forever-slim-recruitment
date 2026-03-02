@@ -8,7 +8,7 @@ const supabaseAdmin = createClient(
     process.env.SUPABASE_SERVICE_ROLE_KEY!
 )
 const resend = new Resend(process.env.RESEND_API_KEY)
-const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || 'https://closeragency.eu'
+const siteUrl = (process.env.NEXT_PUBLIC_SITE_URL || 'https://closeragency.eu').trim()
 
 function buildInviteHtml(roleLabel: string, actionLink: string, isExisting: boolean) {
     const ctaText = isExisting ? 'Accedi al Pannello' : 'Accetta Invito'

@@ -39,7 +39,7 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ skipped: true })
     }
 
-    const baseUrl = process.env.NEXT_PUBLIC_SITE_URL || 'https://closeragency.eu'
+    const baseUrl = (process.env.NEXT_PUBLIC_SITE_URL || 'https://closeragency.eu').trim()
 
     after(async () => {
       try {

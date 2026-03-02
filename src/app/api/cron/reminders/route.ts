@@ -90,7 +90,7 @@ export async function GET(request: Request) {
             return NextResponse.json({ message: 'Nessun reminder da inviare', sent: 0 });
         }
 
-        const baseUrl = process.env.NEXT_PUBLIC_SITE_URL || 'https://recruitment-app-sage.vercel.app';
+        const baseUrl = (process.env.NEXT_PUBLIC_SITE_URL || 'https://closeragency.eu').trim();
         let sentCount = 0;
         const results: { candidate: string; reminder: number; channels: string[] }[] = [];
 

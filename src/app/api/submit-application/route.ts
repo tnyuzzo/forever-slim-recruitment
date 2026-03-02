@@ -181,7 +181,7 @@ export async function POST(req: NextRequest) {
 
     const candidate_id = inserted.id
 
-    const baseUrl = process.env.NEXT_PUBLIC_SITE_URL || 'https://closeragency.eu'
+    const baseUrl = (process.env.NEXT_PUBLIC_SITE_URL || 'https://closeragency.eu').trim()
 
     // after(): esegue dopo la response ma mantiene la Lambda attiva
     after(async () => {
