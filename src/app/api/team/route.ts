@@ -1,11 +1,14 @@
 import { createClient } from '@supabase/supabase-js'
 import { createClient as createServerClient } from '@/lib/supabase/server'
 import { NextRequest, NextResponse } from 'next/server'
+import { Resend } from 'resend'
 
 const supabaseAdmin = createClient(
     process.env.NEXT_PUBLIC_SUPABASE_URL!,
     process.env.SUPABASE_SERVICE_ROLE_KEY!
 )
+const resend = new Resend(process.env.RESEND_API_KEY)
+const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || 'https://closeragency.eu'
 
 export async function POST(req: NextRequest) {
     try {
@@ -25,15 +28,19 @@ export async function POST(req: NextRequest) {
             return NextResponse.json({ error: 'Ruolo non valido.' }, { status: 400 })
         }
 
-        // 1. Invite the user via Supabase Auth (sends a magic link email)
-        const { data: inviteData, error: inviteError } = await supabaseAdmin.auth.admin.inviteUserByEmail(email, {
-            data: { role }
+        // 1. Try to invite via Supabase Auth (creates user + generates invite link)
+        const { data: inviteData, error: inviteError } = await supabaseAdmin.auth.admin.generateLink({
+            type: 'invite',
+            email,
+            options: {
+                data: { role },
+                redirectTo: `${siteUrl}/admin/login`
+            }
         })
 
         if (inviteError) {
             // If user already exists, just update the role
             if (inviteError.message.includes('already been registered') || inviteError.message.includes('already exists')) {
-                // Find the user
                 const { data: { users } } = await supabaseAdmin.auth.admin.listUsers()
                 const existingUser = users.find(u => u.email === email)
 
@@ -65,8 +72,67 @@ export async function POST(req: NextRequest) {
             }, { onConflict: 'user_id' })
 
             if (roleError) {
-                return NextResponse.json({ error: 'Utente invitato ma errore assegnazione ruolo: ' + roleError.message }, { status: 500 })
+                console.error('Errore assegnazione ruolo:', roleError)
             }
+        }
+
+        // 3. Send invite email via Resend (reliable delivery)
+        const confirmUrl = inviteData.properties?.action_link
+        if (!confirmUrl) {
+            return NextResponse.json({ error: 'Errore generazione link di invito.' }, { status: 500 })
+        }
+
+        const roleLabel = role === 'superadmin' ? 'Super Admin' : 'Recruiter'
+
+        const { error: emailError } = await resend.emails.send({
+            from: 'Closer Agency <recruiting@closeragency.eu>',
+            to: email,
+            subject: `Sei stato invitato come ${roleLabel} — Closer Agency`,
+            html: `
+<!DOCTYPE html>
+<html>
+<head><meta charset="utf-8"></head>
+<body style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; max-width: 560px; margin: 0 auto; padding: 40px 20px; color: #1a1a1a;">
+    <div style="text-align: center; margin-bottom: 32px;">
+        <h1 style="font-size: 24px; font-weight: 700; color: #7c3aed; margin: 0;">Closer Agency</h1>
+    </div>
+
+    <h2 style="font-size: 20px; margin-bottom: 16px;">Sei stato invitato nel team!</h2>
+
+    <p style="font-size: 15px; line-height: 1.6; color: #4a4a4a;">
+        Sei stato invitato a unirti al pannello di gestione di <strong>Closer Agency</strong> con il ruolo di <strong>${roleLabel}</strong>.
+    </p>
+
+    <p style="font-size: 15px; line-height: 1.6; color: #4a4a4a;">
+        Clicca il pulsante qui sotto per accettare l'invito e impostare la tua password:
+    </p>
+
+    <div style="text-align: center; margin: 32px 0;">
+        <a href="${confirmUrl}" style="display: inline-block; background: #7c3aed; color: white; padding: 14px 32px; border-radius: 12px; text-decoration: none; font-weight: 600; font-size: 15px;">
+            Accetta Invito
+        </a>
+    </div>
+
+    <p style="font-size: 13px; color: #888; line-height: 1.5;">
+        Se non riesci a cliccare il pulsante, copia e incolla questo link nel browser:<br>
+        <a href="${confirmUrl}" style="color: #7c3aed; word-break: break-all;">${confirmUrl}</a>
+    </p>
+
+    <hr style="border: none; border-top: 1px solid #eee; margin: 32px 0;">
+
+    <p style="font-size: 12px; color: #aaa; text-align: center;">
+        Closer Agency — Pannello Recruiting
+    </p>
+</body>
+</html>
+            `.trim()
+        })
+
+        if (emailError) {
+            console.error('Errore invio email invito:', emailError)
+            return NextResponse.json({
+                error: `Utente creato ma errore invio email: ${emailError.message}. Riprova.`,
+            }, { status: 500 })
         }
 
         return NextResponse.json({
@@ -76,6 +142,7 @@ export async function POST(req: NextRequest) {
         })
 
     } catch (err: any) {
+        console.error('Errore team invite:', err)
         return NextResponse.json({ error: 'Errore server: ' + err.message }, { status: 500 })
     }
 }
