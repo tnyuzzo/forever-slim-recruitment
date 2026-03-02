@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from 'react'
 import { createClient } from '@/lib/supabase/client'
-import { UserPlus, Trash2, Shield, ShieldCheck, Loader2, Mail, Clock, ChevronDown, ChevronUp, Save, Copy, Plus, CheckCircle2 } from 'lucide-react'
+import { UserPlus, Trash2, Shield, ShieldCheck, Loader2, Mail, Clock, ChevronDown, ChevronUp, Save, Copy, Plus, CheckCircle2, Link2, Check } from 'lucide-react'
 
 interface TeamMember {
     id: string
@@ -38,6 +38,8 @@ export default function TeamManagement() {
     const [memberSlots, setMemberSlots] = useState<Record<string, SlotRow[]>>({})
     const [slotSaving, setSlotSaving] = useState<string | null>(null)
     const [slotSaved, setSlotSaved] = useState<string | null>(null)
+    const [inviteLink, setInviteLink] = useState<string | null>(null)
+    const [linkCopied, setLinkCopied] = useState(false)
     const supabase = createClient()
 
     const fetchMembers = async () => {
@@ -58,6 +60,8 @@ export default function TeamManagement() {
         e.preventDefault()
         setIsInviting(true)
         setMessage(null)
+        setInviteLink(null)
+        setLinkCopied(false)
 
         try {
             const res = await fetch('/api/team', {
@@ -68,7 +72,11 @@ export default function TeamManagement() {
             const data = await res.json()
 
             if (data.success) {
-                setMessage({ text: data.message, type: 'success' })
+                setMessage({
+                    text: data.message,
+                    type: data.emailSent === false ? 'error' : 'success'
+                })
+                if (data.inviteLink) setInviteLink(data.inviteLink)
                 setInviteEmail('')
                 fetchMembers()
             } else {
@@ -78,6 +86,25 @@ export default function TeamManagement() {
             setMessage({ text: 'Errore di rete.', type: 'error' })
         } finally {
             setIsInviting(false)
+        }
+    }
+
+    const copyInviteLink = async () => {
+        if (!inviteLink) return
+        try {
+            await navigator.clipboard.writeText(inviteLink)
+            setLinkCopied(true)
+            setTimeout(() => setLinkCopied(false), 3000)
+        } catch {
+            // Fallback for older browsers
+            const textarea = document.createElement('textarea')
+            textarea.value = inviteLink
+            document.body.appendChild(textarea)
+            textarea.select()
+            document.execCommand('copy')
+            document.body.removeChild(textarea)
+            setLinkCopied(true)
+            setTimeout(() => setLinkCopied(false), 3000)
         }
     }
 
@@ -257,6 +284,38 @@ export default function TeamManagement() {
                         : 'bg-red-50 text-red-600 border-red-100'
                     }`}>
                     {message.text}
+                </div>
+            )}
+
+            {inviteLink && (
+                <div className="p-4 rounded-xl border border-indigo-100 bg-indigo-50/50 space-y-2">
+                    <div className="flex items-center gap-2 text-sm font-semibold text-indigo-700">
+                        <Link2 className="w-4 h-4" />
+                        Link di invito
+                    </div>
+                    <div className="flex items-center gap-2">
+                        <input
+                            type="text"
+                            readOnly
+                            value={inviteLink}
+                            className="flex-1 text-xs bg-white border border-indigo-200 rounded-lg px-3 py-2 text-gray-600 font-mono truncate"
+                            onClick={(e) => (e.target as HTMLInputElement).select()}
+                        />
+                        <button
+                            onClick={copyInviteLink}
+                            className={`flex items-center gap-1.5 px-4 py-2 rounded-lg text-xs font-bold transition-all whitespace-nowrap ${
+                                linkCopied
+                                    ? 'bg-green-600 text-white'
+                                    : 'bg-indigo-600 hover:bg-indigo-700 text-white'
+                            }`}
+                        >
+                            {linkCopied ? <Check className="w-3.5 h-3.5" /> : <Copy className="w-3.5 h-3.5" />}
+                            {linkCopied ? 'Copiato!' : 'Copia Link'}
+                        </button>
+                    </div>
+                    <p className="text-xs text-indigo-600/70">
+                        Condividi questo link con il membro del team per dargli accesso al pannello.
+                    </p>
                 </div>
             )}
 

@@ -155,9 +155,14 @@ export async function POST(req: NextRequest) {
 
         if (emailError) {
             console.error('[team-invite] Resend FAILED:', JSON.stringify(emailError))
+            // Return link anyway so admin can share it manually
             return NextResponse.json({
-                error: `Errore invio email: ${emailError.message}`,
-            }, { status: 500 })
+                success: true,
+                message: `Utente creato ma email non inviata: ${emailError.message}. Usa il link qui sotto.`,
+                inviteLink: actionLink,
+                emailSent: false,
+                isExistingUser
+            })
         }
 
         console.log('[team-invite] Resend SUCCESS. ID:', emailData?.id)
@@ -167,6 +172,8 @@ export async function POST(req: NextRequest) {
             message: isExistingUser
                 ? `Email di accesso inviata a ${email}. Ruolo: ${roleLabel}.`
                 : `Invito inviato a ${email} con ruolo "${roleLabel}".`,
+            inviteLink: actionLink,
+            emailSent: true,
             isExistingUser
         })
 
