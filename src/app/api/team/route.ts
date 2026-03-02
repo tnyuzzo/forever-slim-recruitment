@@ -10,6 +10,39 @@ const supabaseAdmin = createClient(
 const resend = new Resend(process.env.RESEND_API_KEY)
 const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || 'https://closeragency.eu'
 
+function buildInviteHtml(roleLabel: string, actionLink: string, isExisting: boolean) {
+    const ctaText = isExisting ? 'Accedi al Pannello' : 'Accetta Invito'
+    const instruction = isExisting
+        ? 'Clicca il pulsante qui sotto per accedere al pannello:'
+        : "Clicca il pulsante qui sotto per accettare l'invito e impostare la tua password:"
+
+    return `<!DOCTYPE html>
+<html>
+<head><meta charset="utf-8"></head>
+<body style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; max-width: 560px; margin: 0 auto; padding: 40px 20px; color: #1a1a1a;">
+    <div style="text-align: center; margin-bottom: 32px;">
+        <h1 style="font-size: 24px; font-weight: 700; color: #7c3aed; margin: 0;">Closer Agency</h1>
+    </div>
+    <h2 style="font-size: 20px; margin-bottom: 16px;">Sei stato invitato nel team!</h2>
+    <p style="font-size: 15px; line-height: 1.6; color: #4a4a4a;">
+        Sei stato invitato a unirti al pannello di gestione di <strong>Closer Agency</strong> con il ruolo di <strong>${roleLabel}</strong>.
+    </p>
+    <p style="font-size: 15px; line-height: 1.6; color: #4a4a4a;">${instruction}</p>
+    <div style="text-align: center; margin: 32px 0;">
+        <a href="${actionLink}" style="display: inline-block; background: #7c3aed; color: white; padding: 14px 32px; border-radius: 12px; text-decoration: none; font-weight: 600; font-size: 15px;">
+            ${ctaText}
+        </a>
+    </div>
+    <p style="font-size: 13px; color: #888; line-height: 1.5;">
+        Se non riesci a cliccare il pulsante, copia e incolla questo link nel browser:<br>
+        <a href="${actionLink}" style="color: #7c3aed; word-break: break-all;">${actionLink}</a>
+    </p>
+    <hr style="border: none; border-top: 1px solid #eee; margin: 32px 0;">
+    <p style="font-size: 12px; color: #aaa; text-align: center;">Closer Agency — Pannello Recruiting</p>
+</body>
+</html>`
+}
+
 export async function POST(req: NextRequest) {
     try {
         const authClient = await createServerClient()
@@ -28,145 +61,117 @@ export async function POST(req: NextRequest) {
             return NextResponse.json({ error: 'Ruolo non valido.' }, { status: 400 })
         }
 
-        // 1. Try to generate invite link via Supabase Auth
-        let confirmUrl: string | undefined
-        let userId: string | undefined
-        let isExistingUser = false
-
-        const { data: inviteData, error: inviteError } = await supabaseAdmin.auth.admin.generateLink({
-            type: 'invite',
-            email,
-            options: {
-                data: { role },
-                redirectTo: `${siteUrl}/admin/login`
-            }
-        })
-
-        if (inviteError) {
-            // User already exists — generate a magic link instead
-            if (inviteError.message.includes('already been registered') || inviteError.message.includes('already exists')) {
-                isExistingUser = true
-
-                const { data: { users } } = await supabaseAdmin.auth.admin.listUsers()
-                const existingUser = users.find(u => u.email === email)
-
-                if (!existingUser) {
-                    return NextResponse.json({ error: 'Utente non trovato.' }, { status: 404 })
-                }
-
-                userId = existingUser.id
-
-                // Update role
-                const { error: roleError } = await supabaseAdmin.from('user_roles').upsert({
-                    user_id: existingUser.id,
-                    role
-                }, { onConflict: 'user_id' })
-
-                if (roleError) {
-                    return NextResponse.json({ error: 'Errore aggiornamento ruolo: ' + roleError.message }, { status: 500 })
-                }
-
-                // Generate magic link for existing user
-                const { data: magicData, error: magicError } = await supabaseAdmin.auth.admin.generateLink({
-                    type: 'magiclink',
-                    email,
-                    options: { redirectTo: `${siteUrl}/admin/login` }
-                })
-
-                if (magicError) {
-                    console.error('Errore generazione magic link:', magicError)
-                    return NextResponse.json({ error: 'Errore generazione link: ' + magicError.message }, { status: 500 })
-                }
-
-                confirmUrl = magicData.properties?.action_link
-            } else {
-                return NextResponse.json({ error: 'Errore invito: ' + inviteError.message }, { status: 500 })
-            }
-        } else {
-            // New user — save role
-            confirmUrl = inviteData.properties?.action_link
-            userId = inviteData.user?.id
-
-            if (userId) {
-                const { error: roleError } = await supabaseAdmin.from('user_roles').upsert({
-                    user_id: userId,
-                    role
-                }, { onConflict: 'user_id' })
-
-                if (roleError) {
-                    console.error('Errore assegnazione ruolo:', roleError)
-                }
-            }
-        }
-        if (!confirmUrl) {
-            return NextResponse.json({ error: 'Errore generazione link di invito.' }, { status: 500 })
-        }
-
         const roleLabel = role === 'superadmin' ? 'Super Admin' : 'Recruiter'
 
-        const { error: emailError } = await resend.emails.send({
+        // ── Step 1: Check if user already exists in Supabase Auth ──
+        const { data: { users }, error: listError } = await supabaseAdmin.auth.admin.listUsers()
+        if (listError) {
+            console.error('[team-invite] listUsers failed:', listError)
+            return NextResponse.json({ error: 'Errore interno listUsers.' }, { status: 500 })
+        }
+
+        const existingUser = users.find(u => u.email?.toLowerCase() === email.toLowerCase())
+        let targetUserId: string
+        let actionLink: string
+        const isExistingUser = !!existingUser
+
+        console.log(`[team-invite] email=${email} role=${role} exists=${isExistingUser}`)
+
+        if (existingUser) {
+            // ── Existing user: confirm email + generate magic link ──
+            targetUserId = existingUser.id
+
+            // Ensure email is confirmed (zombie users from failed inviteUserByEmail)
+            if (!existingUser.email_confirmed_at) {
+                console.log('[team-invite] Confirming email for zombie user:', email)
+                const { error: confirmErr } = await supabaseAdmin.auth.admin.updateUserById(targetUserId, {
+                    email_confirm: true
+                })
+                if (confirmErr) {
+                    console.error('[team-invite] updateUser confirm failed:', confirmErr)
+                }
+            }
+
+            // Generate magic link
+            const { data: linkData, error: linkError } = await supabaseAdmin.auth.admin.generateLink({
+                type: 'magiclink',
+                email,
+                options: { redirectTo: `${siteUrl}/admin` }
+            })
+
+            if (linkError) {
+                console.error('[team-invite] generateLink magiclink failed:', linkError)
+                return NextResponse.json({ error: 'Errore generazione link: ' + linkError.message }, { status: 500 })
+            }
+
+            actionLink = linkData.properties.action_link
+            console.log('[team-invite] Magic link generated OK, length:', actionLink?.length)
+        } else {
+            // ── New user: generate invite link (creates user + link in one call) ──
+            const { data: linkData, error: linkError } = await supabaseAdmin.auth.admin.generateLink({
+                type: 'invite',
+                email,
+                options: {
+                    data: { role },
+                    redirectTo: `${siteUrl}/admin/login`
+                }
+            })
+
+            if (linkError) {
+                console.error('[team-invite] generateLink invite failed:', linkError)
+                return NextResponse.json({ error: 'Errore creazione invito: ' + linkError.message }, { status: 500 })
+            }
+
+            targetUserId = linkData.user.id
+            actionLink = linkData.properties.action_link
+            console.log('[team-invite] Invite link generated OK, userId:', targetUserId, 'linkLength:', actionLink?.length)
+        }
+
+        if (!actionLink) {
+            console.error('[team-invite] actionLink is empty/undefined')
+            return NextResponse.json({ error: 'Link di invito non generato.' }, { status: 500 })
+        }
+
+        // ── Step 2: Assign role ──
+        const { error: roleError } = await supabaseAdmin.from('user_roles').upsert({
+            user_id: targetUserId,
+            role
+        }, { onConflict: 'user_id' })
+
+        if (roleError) {
+            console.error('[team-invite] role upsert failed:', roleError)
+            // Don't fail entirely — email is more important
+        }
+
+        // ── Step 3: Send email via Resend ──
+        console.log('[team-invite] Sending via Resend to:', email)
+
+        const { data: emailData, error: emailError } = await resend.emails.send({
             from: 'Closer Agency <recruiting@closeragency.eu>',
             to: email,
             subject: `Sei stato invitato come ${roleLabel} — Closer Agency`,
-            html: `
-<!DOCTYPE html>
-<html>
-<head><meta charset="utf-8"></head>
-<body style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; max-width: 560px; margin: 0 auto; padding: 40px 20px; color: #1a1a1a;">
-    <div style="text-align: center; margin-bottom: 32px;">
-        <h1 style="font-size: 24px; font-weight: 700; color: #7c3aed; margin: 0;">Closer Agency</h1>
-    </div>
-
-    <h2 style="font-size: 20px; margin-bottom: 16px;">Sei stato invitato nel team!</h2>
-
-    <p style="font-size: 15px; line-height: 1.6; color: #4a4a4a;">
-        Sei stato invitato a unirti al pannello di gestione di <strong>Closer Agency</strong> con il ruolo di <strong>${roleLabel}</strong>.
-    </p>
-
-    <p style="font-size: 15px; line-height: 1.6; color: #4a4a4a;">
-        ${isExistingUser
-                    ? 'Clicca il pulsante qui sotto per accedere al pannello:'
-                    : "Clicca il pulsante qui sotto per accettare l'invito e impostare la tua password:"}
-    </p>
-
-    <div style="text-align: center; margin: 32px 0;">
-        <a href="${confirmUrl}" style="display: inline-block; background: #7c3aed; color: white; padding: 14px 32px; border-radius: 12px; text-decoration: none; font-weight: 600; font-size: 15px;">
-            ${isExistingUser ? 'Accedi al Pannello' : 'Accetta Invito'}
-        </a>
-    </div>
-
-    <p style="font-size: 13px; color: #888; line-height: 1.5;">
-        Se non riesci a cliccare il pulsante, copia e incolla questo link nel browser:<br>
-        <a href="${confirmUrl}" style="color: #7c3aed; word-break: break-all;">${confirmUrl}</a>
-    </p>
-
-    <hr style="border: none; border-top: 1px solid #eee; margin: 32px 0;">
-
-    <p style="font-size: 12px; color: #aaa; text-align: center;">
-        Closer Agency — Pannello Recruiting
-    </p>
-</body>
-</html>
-            `.trim()
+            html: buildInviteHtml(roleLabel, actionLink, isExistingUser)
         })
 
         if (emailError) {
-            console.error('Errore invio email invito:', emailError)
+            console.error('[team-invite] Resend FAILED:', JSON.stringify(emailError))
             return NextResponse.json({
-                error: `Utente creato ma errore invio email: ${emailError.message}. Riprova.`,
+                error: `Errore invio email: ${emailError.message}`,
             }, { status: 500 })
         }
+
+        console.log('[team-invite] Resend SUCCESS. ID:', emailData?.id)
 
         return NextResponse.json({
             success: true,
             message: isExistingUser
-                ? `Ruolo aggiornato a "${role}" per ${email}. Email di accesso inviata.`
-                : `Invito inviato a ${email} con ruolo "${role}".`,
+                ? `Email di accesso inviata a ${email}. Ruolo: ${roleLabel}.`
+                : `Invito inviato a ${email} con ruolo "${roleLabel}".`,
             isExistingUser
         })
 
     } catch (err: any) {
-        console.error('Errore team invite:', err)
+        console.error('[team-invite] UNEXPECTED ERROR:', err)
         return NextResponse.json({ error: 'Errore server: ' + err.message }, { status: 500 })
     }
 }
@@ -180,7 +185,6 @@ export async function GET() {
             return NextResponse.json({ error: 'Non autorizzato' }, { status: 401 })
         }
 
-        // Get all roles
         const { data: roles, error: rolesError } = await supabaseAdmin
             .from('user_roles')
             .select('*')
@@ -190,7 +194,6 @@ export async function GET() {
             return NextResponse.json({ error: rolesError.message }, { status: 500 })
         }
 
-        // Get user details from auth
         const { data: { users } } = await supabaseAdmin.auth.admin.listUsers()
 
         const teamMembers = roles.map(r => {
@@ -226,7 +229,6 @@ export async function DELETE(req: NextRequest) {
             return NextResponse.json({ error: 'user_id obbligatorio.' }, { status: 400 })
         }
 
-        // Remove role
         const { error: deleteError } = await supabaseAdmin
             .from('user_roles')
             .delete()
