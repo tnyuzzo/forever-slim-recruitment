@@ -28,7 +28,11 @@ export async function POST(req: NextRequest) {
             return NextResponse.json({ error: 'Ruolo non valido.' }, { status: 400 })
         }
 
-        // 1. Try to invite via Supabase Auth (creates user + generates invite link)
+        // 1. Try to generate invite link via Supabase Auth
+        let confirmUrl: string | undefined
+        let userId: string | undefined
+        let isExistingUser = false
+
         const { data: inviteData, error: inviteError } = await supabaseAdmin.auth.admin.generateLink({
             type: 'invite',
             email,
@@ -39,45 +43,61 @@ export async function POST(req: NextRequest) {
         })
 
         if (inviteError) {
-            // If user already exists, just update the role
+            // User already exists — generate a magic link instead
             if (inviteError.message.includes('already been registered') || inviteError.message.includes('already exists')) {
+                isExistingUser = true
+
                 const { data: { users } } = await supabaseAdmin.auth.admin.listUsers()
                 const existingUser = users.find(u => u.email === email)
 
-                if (existingUser) {
-                    const { error: roleError } = await supabaseAdmin.from('user_roles').upsert({
-                        user_id: existingUser.id,
-                        role
-                    }, { onConflict: 'user_id' })
+                if (!existingUser) {
+                    return NextResponse.json({ error: 'Utente non trovato.' }, { status: 404 })
+                }
 
-                    if (roleError) {
-                        return NextResponse.json({ error: 'Errore aggiornamento ruolo: ' + roleError.message }, { status: 500 })
-                    }
+                userId = existingUser.id
 
-                    return NextResponse.json({
-                        success: true,
-                        message: `Ruolo aggiornato a "${role}" per ${email}.`,
-                        isExistingUser: true
-                    })
+                // Update role
+                const { error: roleError } = await supabaseAdmin.from('user_roles').upsert({
+                    user_id: existingUser.id,
+                    role
+                }, { onConflict: 'user_id' })
+
+                if (roleError) {
+                    return NextResponse.json({ error: 'Errore aggiornamento ruolo: ' + roleError.message }, { status: 500 })
+                }
+
+                // Generate magic link for existing user
+                const { data: magicData, error: magicError } = await supabaseAdmin.auth.admin.generateLink({
+                    type: 'magiclink',
+                    email,
+                    options: { redirectTo: `${siteUrl}/admin/login` }
+                })
+
+                if (magicError) {
+                    console.error('Errore generazione magic link:', magicError)
+                    return NextResponse.json({ error: 'Errore generazione link: ' + magicError.message }, { status: 500 })
+                }
+
+                confirmUrl = magicData.properties?.action_link
+            } else {
+                return NextResponse.json({ error: 'Errore invito: ' + inviteError.message }, { status: 500 })
+            }
+        } else {
+            // New user — save role
+            confirmUrl = inviteData.properties?.action_link
+            userId = inviteData.user?.id
+
+            if (userId) {
+                const { error: roleError } = await supabaseAdmin.from('user_roles').upsert({
+                    user_id: userId,
+                    role
+                }, { onConflict: 'user_id' })
+
+                if (roleError) {
+                    console.error('Errore assegnazione ruolo:', roleError)
                 }
             }
-            return NextResponse.json({ error: 'Errore invito: ' + inviteError.message }, { status: 500 })
         }
-
-        // 2. Add the role to user_roles table
-        if (inviteData?.user) {
-            const { error: roleError } = await supabaseAdmin.from('user_roles').upsert({
-                user_id: inviteData.user.id,
-                role
-            }, { onConflict: 'user_id' })
-
-            if (roleError) {
-                console.error('Errore assegnazione ruolo:', roleError)
-            }
-        }
-
-        // 3. Send invite email via Resend (reliable delivery)
-        const confirmUrl = inviteData.properties?.action_link
         if (!confirmUrl) {
             return NextResponse.json({ error: 'Errore generazione link di invito.' }, { status: 500 })
         }
@@ -104,12 +124,14 @@ export async function POST(req: NextRequest) {
     </p>
 
     <p style="font-size: 15px; line-height: 1.6; color: #4a4a4a;">
-        Clicca il pulsante qui sotto per accettare l'invito e impostare la tua password:
+        ${isExistingUser
+                    ? 'Clicca il pulsante qui sotto per accedere al pannello:'
+                    : "Clicca il pulsante qui sotto per accettare l'invito e impostare la tua password:"}
     </p>
 
     <div style="text-align: center; margin: 32px 0;">
         <a href="${confirmUrl}" style="display: inline-block; background: #7c3aed; color: white; padding: 14px 32px; border-radius: 12px; text-decoration: none; font-weight: 600; font-size: 15px;">
-            Accetta Invito
+            ${isExistingUser ? 'Accedi al Pannello' : 'Accetta Invito'}
         </a>
     </div>
 
@@ -137,8 +159,10 @@ export async function POST(req: NextRequest) {
 
         return NextResponse.json({
             success: true,
-            message: `Invito inviato a ${email} con ruolo "${role}".`,
-            isExistingUser: false
+            message: isExistingUser
+                ? `Ruolo aggiornato a "${role}" per ${email}. Email di accesso inviata.`
+                : `Invito inviato a ${email} con ruolo "${role}".`,
+            isExistingUser
         })
 
     } catch (err: any) {
