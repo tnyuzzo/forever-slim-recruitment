@@ -17,7 +17,7 @@ type Candidate = {
   whatsapp: string
   score_total: number
   priority: 'low' | 'medium' | 'high'
-  status: 'new' | 'qualified' | 'invited' | 'interview_booked' | 'offer_sent' | 'hired' | 'rejected'
+  status: 'new' | 'invited' | 'interview_booked' | 'idoneo' | 'hired' | 'rejected'
   italian_level: string
   hours_per_day: number
   birth_date: string | null
@@ -27,20 +27,18 @@ type Candidate = {
 
 const statusColors: Record<string, string> = {
   new: 'bg-blue-100 text-blue-700',
-  qualified: 'bg-amber-100 text-amber-700',
   invited: 'bg-indigo-100 text-indigo-700',
   interview_booked: 'bg-purple-100 text-purple-700',
-  offer_sent: 'bg-cyan-100 text-cyan-700',
+  idoneo: 'bg-cyan-100 text-cyan-700',
   hired: 'bg-green-100 text-green-700',
   rejected: 'bg-red-100 text-red-700'
 }
 
 const statusLabels: Record<string, string> = {
   new: 'Nuovo',
-  qualified: 'Qualificato',
   invited: 'Invitato',
   interview_booked: 'Colloquio Fissato',
-  offer_sent: 'Proposta Inviata',
+  idoneo: 'Idoneo',
   hired: 'Assunto',
   rejected: 'Rifiutato'
 }
@@ -58,6 +56,8 @@ export default function CandidatesPage() {
   const [statusFilter, setStatusFilter] = useState<string>('all')
   const [userRole, setUserRole] = useState<'superadmin' | 'recruiter' | null>(null)
   const [confirmDialog, setConfirmDialog] = useState<{ title: string; message: string; onConfirm: () => void } | null>(null)
+  const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set())
+  const [bulkDeleting, setBulkDeleting] = useState(false)
   const router = useRouter()
   const supabase = createClient()
 
@@ -97,6 +97,58 @@ export default function CandidatesPage() {
           console.error('Error deleting candidate:', error)
           alert('Errore nella cancellazione del candidato')
           setConfirmDialog(null)
+        }
+      },
+    })
+  }
+
+  function toggleSelect(id: string) {
+    setSelectedIds(prev => {
+      const next = new Set(prev)
+      if (next.has(id)) next.delete(id)
+      else next.add(id)
+      return next
+    })
+  }
+
+  function toggleSelectAll() {
+    if (selectedIds.size === filteredCandidates.length) {
+      setSelectedIds(new Set())
+    } else {
+      setSelectedIds(new Set(filteredCandidates.map(c => c.id)))
+    }
+  }
+
+  function handleBulkDelete() {
+    const count = selectedIds.size
+    const selected = candidates.filter(c => selectedIds.has(c.id))
+    setConfirmDialog({
+      title: `Eliminazione di ${count} candidat${count === 1 ? 'o' : 'i'}`,
+      message: `Sei sicuro di voler ELIMINARE DEFINITIVAMENTE ${count} candidat${count === 1 ? 'o' : 'i'}? Verranno eliminati anche foto, audio e colloqui associati. Questa azione è IRREVERSIBILE.`,
+      onConfirm: async () => {
+        setBulkDeleting(true)
+        try {
+          for (const candidate of selected) {
+            if (candidate.photo_url) {
+              const photoPath = candidate.photo_url.split('/storage/v1/object/public/candidate-photos/')[1]
+              if (photoPath) await supabase.storage.from('candidate-photos').remove([photoPath])
+            }
+            if (candidate.audio_url) {
+              const audioPath = candidate.audio_url.split('/storage/v1/object/public/candidate-audio/')[1]
+              if (audioPath) await supabase.storage.from('candidate-audio').remove([audioPath])
+            }
+            await supabase.from('interviews').delete().eq('candidate_id', candidate.id)
+            await supabase.from('candidates').delete().eq('id', candidate.id)
+          }
+          setCandidates(prev => prev.filter(c => !selectedIds.has(c.id)))
+          setSelectedIds(new Set())
+          setConfirmDialog(null)
+        } catch (error) {
+          console.error('Error bulk deleting candidates:', error)
+          alert('Errore nella cancellazione di alcuni candidati')
+          setConfirmDialog(null)
+        } finally {
+          setBulkDeleting(false)
         }
       },
     })
@@ -159,21 +211,52 @@ export default function CandidatesPage() {
           >
             <option value="all">Tutti gli stati</option>
             <option value="new">Nuovi</option>
-            <option value="qualified">Qualificati</option>
             <option value="invited">Invitati</option>
             <option value="interview_booked">Colloquio Fissato</option>
-            <option value="offer_sent">Proposta Inviata</option>
+            <option value="idoneo">Idonei</option>
             <option value="hired">Assunti</option>
             <option value="rejected">Rifiutati KO</option>
           </select>
         </div>
       </div>
 
+      {userRole === 'superadmin' && selectedIds.size > 0 && (
+        <div className="flex items-center gap-3 bg-red-50 border border-red-200 rounded-2xl px-5 py-3">
+          <span className="text-sm font-semibold text-red-700">
+            {selectedIds.size} selezionat{selectedIds.size === 1 ? 'o' : 'i'}
+          </span>
+          <button
+            onClick={handleBulkDelete}
+            disabled={bulkDeleting}
+            className="ml-auto inline-flex items-center gap-2 px-4 py-2 rounded-xl bg-red-500 text-white text-sm font-medium hover:bg-red-600 transition-colors disabled:opacity-50"
+          >
+            <Trash2 className="w-4 h-4" />
+            {bulkDeleting ? 'Eliminazione...' : 'Elimina selezionati'}
+          </button>
+          <button
+            onClick={() => setSelectedIds(new Set())}
+            className="px-4 py-2 rounded-xl border border-red-200 text-red-600 text-sm font-medium hover:bg-red-100 transition-colors"
+          >
+            Deseleziona
+          </button>
+        </div>
+      )}
+
       <div className="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden">
         <div className="overflow-x-auto">
           <table className="w-full text-left border-collapse">
             <thead>
               <tr className="bg-gray-50 border-b border-gray-100 text-sm font-semibold text-text-muted">
+                {userRole === 'superadmin' && (
+                  <th className="p-4 w-10">
+                    <input
+                      type="checkbox"
+                      checked={filteredCandidates.length > 0 && selectedIds.size === filteredCandidates.length}
+                      onChange={toggleSelectAll}
+                      className="w-4 h-4 rounded border-gray-300 text-red-500 focus:ring-red-500 cursor-pointer"
+                    />
+                  </th>
+                )}
                 <th className="p-4 whitespace-nowrap w-12"></th>
                 <th className="p-4 whitespace-nowrap">Nome</th>
                 <th className="p-4 whitespace-nowrap">Età</th>
@@ -188,13 +271,13 @@ export default function CandidatesPage() {
             <tbody className="divide-y divide-gray-100 text-sm">
               {loading ? (
                 <tr>
-                  <td colSpan={9} className="p-8 text-center text-text-muted">
+                  <td colSpan={userRole === 'superadmin' ? 10 : 9} className="p-8 text-center text-text-muted">
                     Caricamento candidati...
                   </td>
                 </tr>
               ) : filteredCandidates.length === 0 ? (
                 <tr>
-                  <td colSpan={9} className="p-8 text-center text-text-muted">
+                  <td colSpan={userRole === 'superadmin' ? 10 : 9} className="p-8 text-center text-text-muted">
                     Nessun candidato trovato.
                   </td>
                 </tr>
@@ -202,9 +285,19 @@ export default function CandidatesPage() {
                 filteredCandidates.map((candidate) => (
                   <tr
                     key={candidate.id}
-                    className="hover:bg-gray-50 transition-colors cursor-pointer"
+                    className={`hover:bg-gray-50 transition-colors cursor-pointer ${selectedIds.has(candidate.id) ? 'bg-red-50/50' : ''}`}
                     onClick={() => router.push(`/admin/candidates/${candidate.id}`)}
                   >
+                    {userRole === 'superadmin' && (
+                      <td className="p-4" onClick={(e) => e.stopPropagation()}>
+                        <input
+                          type="checkbox"
+                          checked={selectedIds.has(candidate.id)}
+                          onChange={() => toggleSelect(candidate.id)}
+                          className="w-4 h-4 rounded border-gray-300 text-red-500 focus:ring-red-500 cursor-pointer"
+                        />
+                      </td>
+                    )}
                     <td className="p-4" onClick={(e) => e.stopPropagation()}>
                       {candidate.photo_url ? (
                         <Image

@@ -39,10 +39,9 @@ const FUNNEL_COLORS = {
 
 const STATUS_LABELS: Record<string, string> = {
   new: 'Nuovo',
-  qualified: 'Qualificato',
   invited: 'Invitato',
   interview_booked: 'Colloquio',
-  offer_sent: 'Offerta',
+  idoneo: 'Idoneo',
   hired: 'Assunto',
   rejected: 'Scartato',
 }

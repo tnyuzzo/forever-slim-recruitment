@@ -8,7 +8,7 @@ type TrackEventName =
   | 'prequal_fail'
   | 'step_complete'
   | 'submit_application'
-  | 'qualified'
+  | 'idoneo'
   | 'ko_rejected'
   | 'interview_scheduled'
   | 'interview_completed'
