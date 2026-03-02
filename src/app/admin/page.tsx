@@ -69,8 +69,23 @@ export default function CandidatesPage() {
   async function fetchUserRole() {
     const { data: { user } } = await supabase.auth.getUser()
     if (user) {
-      const { data } = await supabase.from('user_roles').select('role').eq('user_id', user.id).single()
-      if (data) setUserRole(data.role as 'superadmin' | 'recruiter')
+      const { data, error } = await supabase.from('user_roles').select('role').eq('user_id', user.id).single()
+      if (data) {
+        setUserRole(data.role as 'superadmin' | 'recruiter')
+      } else {
+        // Fallback: user metadata or API
+        const metaRole = user.user_metadata?.role
+        if (metaRole === 'superadmin' || metaRole === 'recruiter') {
+          setUserRole(metaRole)
+        } else {
+          try {
+            const res = await fetch('/api/team')
+            const teamData = await res.json()
+            const me = teamData.members?.find((m: any) => m.user_id === user.id)
+            if (me) setUserRole(me.role as 'superadmin' | 'recruiter')
+          } catch {}
+        }
+      }
     }
   }
 

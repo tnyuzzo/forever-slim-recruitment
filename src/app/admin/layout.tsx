@@ -19,13 +19,32 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
       const { data: { user } } = await supabase.auth.getUser()
       if (user) {
         setUserEmail(user.email || null)
-        // Fetch user role
-        const { data } = await supabase
+        // Fetch user role — try DB first, fallback to user metadata
+        const { data, error } = await supabase
           .from('user_roles')
           .select('role')
           .eq('user_id', user.id)
           .single()
-        if (data) setUserRole(data.role as 'superadmin' | 'recruiter')
+        if (data) {
+          setUserRole(data.role as 'superadmin' | 'recruiter')
+        } else {
+          console.warn('[layout] user_roles query failed, trying metadata fallback:', error?.message)
+          // Fallback: read from user metadata (set during invite)
+          const metaRole = user.user_metadata?.role
+          if (metaRole === 'superadmin' || metaRole === 'recruiter') {
+            setUserRole(metaRole)
+          } else {
+            // Last resort: fetch via API (uses service_role, bypasses RLS)
+            try {
+              const res = await fetch('/api/team')
+              const teamData = await res.json()
+              const me = teamData.members?.find((m: any) => m.user_id === user.id)
+              if (me) setUserRole(me.role as 'superadmin' | 'recruiter')
+            } catch (e) {
+              console.error('[layout] All role fetch methods failed:', e)
+            }
+          }
+        }
       }
     }
     fetchUserInfo()
