@@ -3,6 +3,7 @@ import { createClient } from '@supabase/supabase-js';
 import { createClient as createServerClient } from '@/lib/supabase/server';
 import { Resend } from 'resend';
 import { escapeHtml } from '@/lib/escapeHtml';
+import { inviteSchema } from '@/lib/server-validation';
 
 const supabase = createClient(
     process.env.NEXT_PUBLIC_SUPABASE_URL!,
@@ -30,7 +31,12 @@ export async function POST(request: Request) {
             return NextResponse.json({ error: 'Non autorizzato' }, { status: 401 });
         }
 
-        const { candidate_id, channels } = await request.json();
+        const body = await request.json();
+        const parsed = inviteSchema.safeParse(body);
+        if (!parsed.success) {
+            return NextResponse.json({ error: 'Dati non validi', details: parsed.error.flatten().fieldErrors }, { status: 400 });
+        }
+        const { candidate_id, channels } = parsed.data;
 
         // 1. Fetch candidate
         const { data: candidate, error: candidateError } = await supabase

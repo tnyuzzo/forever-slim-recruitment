@@ -2,6 +2,8 @@ import { NextRequest, NextResponse } from 'next/server'
 import { after } from 'next/server'
 import { createClient } from '@supabase/supabase-js'
 import { ATTRIBUTION_PARAMS } from '@/lib/attribution'
+import { rateLimit, getClientIp } from '@/lib/rate-limit'
+import { submitApplicationSchema } from '@/lib/server-validation'
 
 const supabase = createClient(
   process.env.NEXT_PUBLIC_SUPABASE_URL!,
@@ -40,24 +42,37 @@ async function recoverAttribution(
 
 export async function POST(req: NextRequest) {
   try {
+    // Rate limiting
+    const ip_address = getClientIp(req.headers)
+    const rateLimitResult = rateLimit('submit:' + ip_address, { maxRequests: 5, windowMs: 60_000 })
+    if (!rateLimitResult.success) {
+      return NextResponse.json(
+        { error: 'Troppe richieste. Riprova tra qualche minuto.' },
+        {
+          status: 429,
+          headers: { 'Retry-After': String(Math.ceil((rateLimitResult.resetAt - Date.now()) / 1000)) },
+        }
+      )
+    }
+
     const body = await req.json()
 
-    const ip_address =
-      req.headers.get('x-forwarded-for')?.split(',')[0]?.trim() ??
-      req.headers.get('x-real-ip') ??
-      null
+    // Zod validation
+    const parsed = submitApplicationSchema.safeParse(body)
+    if (!parsed.success) {
+      return NextResponse.json(
+        { error: 'Dati non validi', details: parsed.error.flatten().fieldErrors },
+        { status: 400 }
+      )
+    }
+
+    const { email, first_name, last_name } = parsed.data
 
     const user_agent = req.headers.get('user-agent') ?? null
 
     // Legge session_id da cookie HttpOnly o da body
     const cookieSid = req.cookies.get('fs_sid')?.value ?? null
     const session_id: string | null = cookieSid ?? body.session_id ?? null
-
-    // Campi obbligatori
-    const { email, first_name, last_name } = body
-    if (!email || !first_name || !last_name) {
-      return NextResponse.json({ error: 'Campi obbligatori mancanti' }, { status: 400 })
-    }
 
     // Idempotenza: se esiste già una candidatura con stesso email + evento Lead già inviato → skip
     const { data: existing } = await supabase

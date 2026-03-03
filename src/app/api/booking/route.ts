@@ -2,6 +2,8 @@ import { NextResponse, after } from 'next/server';
 import { createClient } from '@supabase/supabase-js';
 import { Resend } from 'resend';
 import { escapeHtml } from '@/lib/escapeHtml';
+import { rateLimit, getClientIp } from '@/lib/rate-limit';
+import { bookingSchema } from '@/lib/server-validation';
 
 const supabase = createClient(
     process.env.NEXT_PUBLIC_SUPABASE_URL!,
@@ -11,6 +13,15 @@ const supabase = createClient(
 // GET — Get available slots for a given token
 export async function GET(request: Request) {
     try {
+        const ip = getClientIp(request.headers);
+        const rlResult = rateLimit('booking-get:' + ip, { maxRequests: 20, windowMs: 60_000 });
+        if (!rlResult.success) {
+            return NextResponse.json(
+                { error: 'Troppe richieste. Riprova tra qualche minuto.' },
+                { status: 429, headers: { 'Retry-After': String(Math.ceil((rlResult.resetAt - Date.now()) / 1000)) } }
+            );
+        }
+
         const { searchParams } = new URL(request.url);
         const token = searchParams.get('token');
 
@@ -61,11 +72,25 @@ export async function GET(request: Request) {
 // POST — Candidate confirms a slot
 export async function POST(request: Request) {
     try {
-        const { token, scheduled_at } = await request.json();
-
-        if (!token || !scheduled_at) {
-            return NextResponse.json({ error: 'Dati mancanti' }, { status: 400 });
+        const ip = getClientIp(request.headers);
+        const rlResult = rateLimit('booking:' + ip, { maxRequests: 10, windowMs: 60_000 });
+        if (!rlResult.success) {
+            return NextResponse.json(
+                { error: 'Troppe richieste. Riprova tra qualche minuto.' },
+                { status: 429, headers: { 'Retry-After': String(Math.ceil((rlResult.resetAt - Date.now()) / 1000)) } }
+            );
         }
+
+        const body = await request.json();
+        const parsed = bookingSchema.safeParse(body);
+        if (!parsed.success) {
+            return NextResponse.json(
+                { error: 'Dati non validi', details: parsed.error.flatten().fieldErrors },
+                { status: 400 }
+            );
+        }
+
+        const { token, scheduled_at } = parsed.data;
 
         // Update the interview record
         const scheduledDate = new Date(scheduled_at);

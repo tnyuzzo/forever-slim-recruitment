@@ -2,6 +2,7 @@ import { createClient } from '@supabase/supabase-js'
 import { createClient as createServerClient } from '@/lib/supabase/server'
 import { NextRequest, NextResponse } from 'next/server'
 import { Resend } from 'resend'
+import { teamInviteSchema, teamDeleteSchema } from '@/lib/server-validation'
 
 const supabaseAdmin = createClient(
     process.env.NEXT_PUBLIC_SUPABASE_URL!,
@@ -66,15 +67,12 @@ export async function POST(req: NextRequest) {
             return NextResponse.json({ error: 'Solo i Super Admin possono gestire il team.' }, { status: 403 })
         }
 
-        const { email, role } = await req.json()
-
-        if (!email || !role) {
-            return NextResponse.json({ error: 'Email e ruolo sono obbligatori.' }, { status: 400 })
+        const body = await req.json()
+        const parsed = teamInviteSchema.safeParse(body)
+        if (!parsed.success) {
+            return NextResponse.json({ error: 'Dati non validi', details: parsed.error.flatten().fieldErrors }, { status: 400 })
         }
-
-        if (!['recruiter', 'superadmin'].includes(role)) {
-            return NextResponse.json({ error: 'Ruolo non valido.' }, { status: 400 })
-        }
+        const { email, role } = parsed.data
 
         const roleLabel = role === 'superadmin' ? 'Super Admin' : 'Recruiter'
 
@@ -275,11 +273,12 @@ export async function DELETE(req: NextRequest) {
             return NextResponse.json({ error: 'Solo i Super Admin possono gestire il team.' }, { status: 403 })
         }
 
-        const { user_id } = await req.json()
-
-        if (!user_id) {
-            return NextResponse.json({ error: 'user_id obbligatorio.' }, { status: 400 })
+        const body = await req.json()
+        const parsed = teamDeleteSchema.safeParse(body)
+        if (!parsed.success) {
+            return NextResponse.json({ error: 'Dati non validi', details: parsed.error.flatten().fieldErrors }, { status: 400 })
         }
+        const { user_id } = parsed.data
 
         // Impedisci auto-eliminazione
         if (user_id === user.id) {
