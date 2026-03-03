@@ -1,14 +1,14 @@
 # PROJECT_STATUS.md — Recruitment App (closeragency.eu)
 
 > Fonte di verità condivisa per Claude e Gemini.
-> Aggiornato il: 2026-02-28
+> Aggiornato il: 2026-03-03
 
 ---
 
 ## Current State
 
 - **Branch attivo:** main
-- **Ultimo deploy:** Vercel (produzione) — commit `f3f89ed`
+- **Ultimo deploy:** Vercel (produzione) — commit `f902e40`
 - **Dominio:** https://closeragency.eu
 - **Stato build:** ✅ stabile
 - **Dev server:** `npm run dev` → porta 3001
@@ -58,22 +58,28 @@ recruitment-app/
 │   │   │   ├── candidates/[id]/page.tsx # Dettaglio candidato
 │   │   │   ├── calendar/page.tsx       # Calendario colloqui
 │   │   │   ├── team/page.tsx           # Gestione team
+│   │   │   ├── login/page.tsx          # Login (password + magic link)
 │   │   │   └── settings/page.tsx       # Impostazioni
+│   │   ├── auth/
+│   │   │   └── callback/page.tsx       # Auth callback (processa #access_token hash)
 │   │   ├── api/
 │   │   │   ├── booking/route.ts        # Prenotazione colloquio
 │   │   │   ├── send-notification/route.ts  # Notifiche (email/WhatsApp)
 │   │   │   ├── invite/route.ts         # Invito colloquio
 │   │   │   ├── inbound/route.ts        # Webhook email inbound Resend
 │   │   │   ├── team/route.ts           # API gestione team
+│   │   │   ├── my-role/route.ts        # Role detection (service_role)
+│   │   │   ├── fb-event/route.ts       # Facebook CAPI events
 │   │   │   └── cron/reminders/route.ts # Reminder automatici (4 livelli)
 │   │   └── layout.tsx
 │   ├── components/
+│   │   ├── AuthRedirector.tsx    # Intercetta #access_token su qualsiasi pagina → /admin
 │   │   ├── landing/            # Componenti landing donna
 │   │   ├── landing-uomo/       # Componenti landing uomo
 │   │   ├── layout/             # Footer (accordion disclaimers)
 │   │   └── ui/                 # Componenti UI base
 │   ├── lib/
-│   │   ├── supabase/           # Client, server, middleware, roles
+│   │   ├── supabase/           # Client (flowType implicit), server, middleware, roles
 │   │   ├── scoring.ts          # Sistema di scoring candidati
 │   │   ├── tracking.ts         # Facebook Pixel / tracking
 │   │   └── validation.ts       # Zod schemas
@@ -91,17 +97,48 @@ recruitment-app/
 ## Architecture Decisions
 
 - **Routing:** App Router Next.js. Pubblico in `(public)/`, admin protetto da middleware Supabase.
+- **Auth flow:** Supabase browser client con `flowType: 'implicit'` (non PKCE) per supportare hash fragments da invite/magic link
+- **AuthRedirector:** componente globale nel root layout che intercetta `#access_token` su qualsiasi pagina e redirige a `/admin`
+- **Auth callback:** `/auth/callback/page.tsx` parsing manuale hash + `setSession()` come metodo primario, fallback `onAuthStateChange`
 - **Landing duplicata:** `/donna` = copia di `/` per tracking separato Facebook Ads (pixel custom).
 - **Form multi-step:** 8 step (FormStep0–7) con scoring automatico al submit.
-- **Pipeline candidati:** stati: `new → qualified → invited → interview_booked → offer_sent → hired | rejected`
+- **Pipeline candidati:** stati: `new → invited → interview_booked → idoneo → hired | rejected` (6 stage, senza `qualified`)
 - **Email:** Resend per invio, webhook inbound per ricevere risposte candidate via `reply@closeragency.eu`
 - **Cron reminder:** 4 livelli (T-48h, T-24h, T-2h, T+0 no-show), timezone-aware, ogni 15 min
 - **Redirect:** www.closeragency.eu → closeragency.eu (301 in next.config.ts)
-- **Sender email:** `noreply@closeragency.eu` / `reply@closeragency.eu`
+- **Sender email:** `recruiting@closeragency.eu` (mittente unificato) / `reply@closeragency.eu` (inbound webhook)
+- **Supabase site_url:** `https://closeragency.eu` (aggiornato da localhost)
+- **Env vars:** `.trim()` su `NEXT_PUBLIC_SITE_URL` in tutte le API routes (Vercel env aveva newline trailing)
 
 ---
 
 ## Recently Completed
+
+### Sessione 2026-03-03
+
+- [x] **Fix redirect invito team**: root cause era `%0A` (newline) nella env var `NEXT_PUBLIC_SITE_URL` su Vercel che rompeva il redirect_to nell'invite link. Aggiunto `.trim()` a tutte le 6 API routes che leggono SITE_URL
+- [x] **Fix auth flow (flowType implicit)**: `@supabase/ssr` usa `flowType: 'pkce'` di default che IGNORA `#access_token` nell'URL hash. Cambiato a `flowType: 'implicit'` in `client.ts` + parsing manuale hash con `setSession()` in callback e AuthRedirector
+- [x] **AuthRedirector globale**: nuovo componente nel root layout che intercetta `#access_token` su qualsiasi pagina (gestisce vecchi link che arrivano in homepage)
+- [x] **Auth callback migliorato**: `/auth/callback/page.tsx` con parsing manuale hash come metodo primario, `window.location.href` per redirect pulito
+- [x] **Login admin Magic Link**: pagina login ora ha due modalità: password (come prima) + "Accedi senza password" (magic link via `signInWithOtp`). Per utenti invitati che non hanno password. `shouldCreateUser: false` per sicurezza
+- [x] **Reinvite team members**: bottone "Reinvia Invito"/"Reinvia Accesso" per ogni membro + badge "Invito Pendente" per chi non ha ancora fatto login + link copiabile dopo reinvio
+- [x] **Fix responsive team page**: layout mobile a due righe (info + bottoni) invece che overflow
+- [x] **Fix superadmin role detection**: `/api/my-role` endpoint dedicato con service_role key (bypass RLS), admin layout semplificato
+- [x] **Middleware temp disabled/restored**: disabilitato per workaround incident Vercel dxb1, poi ripristinato dopo che Vercel ha escluso dxb1 dai deploy target
+- [x] **Storage bucket fix**: `candidate-audio` cambiato da privato a pubblico per permettere playback audio candidati
+
+### Sessione 2026-03-02
+
+- [x] **Pipeline semplificata (6 stage)**: rimosso `qualified` (ridondante con auto-scoring), rinominato `offer_sent` → `idoneo`. Migrazione DB enum + dati. File aggiornati: `database.ts`, `admin/page.tsx`, `pipeline/page.tsx`, `candidates/[id]/page.tsx`, `analytics/page.tsx`, `tracking.ts`
+- [x] **Bulk delete candidati (superadmin)**: checkbox multi-selezione + bottone "Elimina selezionati" con conferma, visibile solo per superadmin
+- [x] **Team invite via Resend**: riscritta `api/team/route.ts` — check esplicito utente esistente via `listUsers()`, magic link per utenti esistenti, invite link per nuovi, email via Resend API (non più Supabase mailer limitato a 3/h)
+- [x] **Copy invite link UI**: bottone "Copia Link" con clipboard API nella pagina team, mostrato dopo ogni invito
+- [x] **Fix superadmin role detection**: fallback a 3 livelli (RLS query → user_metadata → API `/api/team`) in `layout.tsx` e `admin/page.tsx` per risolvere race condition JWT/RLS
+- [x] **Supabase site_url fix**: aggiornato da `http://localhost:3000` a `https://closeragency.eu` via Management API
+- [x] **Email sender unificato**: tutti i mittenti cambiati a `Closer Agency <recruiting@closeragency.eu>`
+- [x] **FB CAPI phone hash fix**: corretto hashing telefono per Facebook Conversions API
+
+### Precedenti
 
 - [x] Hero mobile: immagine 16:9 sopra H1 per donna e uomo
 - [x] UX mobile: sticky CTA, progress bar %, micro-feedback, checkbox fasce orarie, footer accordion
@@ -109,32 +146,13 @@ recruitment-app/
 - [x] Email sender domain: closeragency.eu (Resend verified)
 - [x] Cron reminder 4 livelli (T-48h, T-24h, T-2h, T+0)
 - [x] Webhook inbound email con Svix signature verification
-- [x] Status `offer_sent` aggiunto al pipeline candidati
 - [x] Route `/donna` e `/apply-donna` per tracking FB Ads genere donna
 - [x] Admin dashboard URL aggiornato al dominio produzione
-- [x] **Ads recruiting batch 1**: generate 6 creatività (bonifico-provvigioni, typography-bold, confronto-ufficio × donna/uomo)
-- [x] **Organizzazione ads/recruiting/**: suddivisa in `donna/` (31), `uomo/` (24), `unisex/` (16) — inclusi file da "Recruting old". Preview HTML aggiornato.
-- [x] **Ads recruiting batch 2+3**: generate 12 immagini (dm-instagram, certificato-top-performer, meme-lunedi, countdown-posti, daylife-collage, lettera-futuro × donna/uomo)
-- [x] **Gap analysis donna/uomo**: identificate 9 asimmetrie di stile e generate creatività mancanti (6 donna: pattern-interrupt, lifestyle, split-confronto, prima/dopo, whatsapp-mockup, candid; 3 uomo: identity, income, ugc-pov)
-- [x] **Ads fascia 45-55**: generate 8 creatività age-specific (4 donna: testimonial-52, figli-grandi, split-20anni, typography-50; 4 uomo: piano-b, testimonial-51, checklist, calcolo-reddito). Preview aggiornato: donna 47, uomo 37, unisex 16 = 100 totali.
-- [x] **Pulizia watermark Gemini**: rigenerati 16 file `Gemini_Generated_Image_*` senza stella/watermark → rinominati con nomi descrittivi (7 donna, 8 unisex, 1 uomo). Vecchi file eliminati. Preview HTML aggiornato.
-- [x] **Fix testo duplicato coppia**: rigenerata `unisex-coppia-da-casa.jpg` (era `ws-10x-07-coppia.png`, lista bullet appariva due volte). Vecchio file eliminato.
-- [x] **Facebook CAPI server-side**: implementati 3 eventi Lead → Schedule → CompleteRegistration in `/api/fb-event`; idempotenza con `fb_lead_event_id` (candidates) e `fb_event_sent` (interviews)
-- [x] **Data di nascita**: tre select GG/MM/Anno in tutti i form (apply, apply-donna, apply-uomo) al posto di input date nativo
-- [x] **UTM tracking completo**: 12 parametri attribution (`utm_source/medium/campaign/content/term`, `funnel`, `campaign_id/adset_id/ad_id`, `placement`, `site_source_name`, `fbclid`) salvati su `candidates`, `page_visitors`, e `localStorage('fs_utm')`
-- [x] **Cloudflare Zaraz**: script caricato da `zaraz.closeragency.eu`; `zaraz.track('fb_pageview')` via DOMContentLoaded in fbpScript (trigger Cloudflare: `Event Name Equals fb_pageview`). Solo pageview, nessun evento Lead via Zaraz.
-- [x] **page_visitors table**: nuova tabella Supabase per attribution recovery (session_id cookie HttpOnly 90gg + IP fallback)
-- [x] **DB migration**: aggiornati `candidates` (+14 colonne attribution/CAPI) e `interviews` (+3 colonne CAPI idempotenza) via Management API
-- [x] **`useUTMCapture.ts`**: nuovo hook + `getStoredUTMs()` utility per leggere UTMs da localStorage nel submit handler
-- [x] **`/api/track-visitor`**: migliorato con idempotenza session_id (cookie `fs_sid`), fire-and-forget DB insert, sempre 200
-
----
-
-- [x] **Cleanup & API optimization**: booking POST notifiche admin fire-and-forget (SMS+Email non bloccano la risposta), `Promise.all` su query DB indipendenti, import `Resend` top-level. Eliminati `src/components/form/` (9 file dead code) e `public/images/closer-agency-logo.jpeg` (2.6MB inutilizzato).
-
----
-
-- [x] **PostHog custom events**: 3 eventi analytics client-side (`application_submitted`, `booking_completed`, `candidate_hired`) con UTM attribution e candidate_id per funnel completo in PostHog. Booking API ora restituisce anche `candidate_id`.
+- [x] **Facebook CAPI server-side**: 3 eventi Lead → Schedule → CompleteRegistration
+- [x] **Data di nascita**: tre select GG/MM/Anno in tutti i form
+- [x] **UTM tracking completo**: 12 parametri attribution salvati su candidates, page_visitors, localStorage
+- [x] **Cloudflare Zaraz**: pageview tracciato server-side
+- [x] **PostHog custom events**: 3 eventi analytics client-side
 
 ---
 
@@ -146,22 +164,11 @@ recruitment-app/
 
 ## TODO / Planned
 
-- [ ] **Vercel env vars produzione**: aggiungere `FB_PIXEL_ID`, `FB_ACCESS_TOKEN`, `NEXT_PUBLIC_SITE_URL` tramite `vercel env add` (presenti in `.env.local` ma non su Vercel)
-- [ ] Verifica funzionamento webhook inbound in produzione (corpo email nelle notifiche)
+- [ ] Verifica funzionamento webhook inbound in produzione
 - [ ] Landing uomo `/uomo` (esiste ma da verificare parità con donna)
 - [ ] A/B test headline landing donna
 - [ ] Form uomo `/apply-uomo`: eventuali differenze copy rispetto a donna
-- [ ] Valutare ads unisex fascia 45-55 (stili già coperti per donna/uomo)
-
-### Sicurezza (completati 2026-02-28)
-- [x] **`escapeHtml` utility**: creato `src/lib/escapeHtml.ts` per sanitizzare dati utente in template HTML email
-- [x] **Auth server-side API admin**: aggiunto auth check con `createClient()` (cookie-based) in `team`, `invite`, `select-candidate` routes
-- [x] **Auth Bearer send-notification**: protetto con `SUPABASE_SERVICE_ROLE_KEY` (chiamata interna da submit-application)
-- [x] **Cron auth bypass fix**: `reminders/route.ts` ora richiede `CRON_SECRET` obbligatorio (`!CRON_SECRET` = 401)
-- [x] **DEV_BYPASS_AUTH produzione**: aggiunto check `NODE_ENV !== 'production'` in `middleware.ts` e `supabase/middleware.ts`
-- [x] **Whitelist submit-application**: sostituito spread operator con whitelist esplicita dei campi, `status` accetta solo `'rejected' | 'new'`
-- [x] **escapeHtml email**: applicato a `send-notification`, `booking`, `invite`, `cron/reminders`, `inbound` routes
-- [x] **Error message leak**: `submit-application` non espone più `error.message` al client
+- [ ] Valutare ads unisex fascia 45-55
 
 ---
 
@@ -169,6 +176,7 @@ recruitment-app/
 
 - `src/middleware.ts` — auth guard admin, modificare con cautela
 - `src/lib/supabase/roles.ts` — gestione ruoli, testare prima di cambiare
+- `src/lib/supabase/client.ts` — `flowType: 'implicit'` necessario per invite/magic link, NON tornare a PKCE
 - `vercel.json` — cron config, modifiche rompono reminder
 - `src/types/database.ts` — allineato con schema Supabase, sincronizzare con migrazioni
 
@@ -181,3 +189,4 @@ recruitment-app/
 - Nomi file route: kebab-case dove possibile
 - Tailwind v4 (no config JS, usa CSS variables)
 - `"use client"` solo dove necessario (preferire Server Components)
+- Env vars: sempre `.trim()` quando si legge `NEXT_PUBLIC_SITE_URL`
