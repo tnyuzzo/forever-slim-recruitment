@@ -16,7 +16,6 @@ type Candidate = {
   first_name: string
   last_name: string
   email: string
-  phone: string | null
   whatsapp: string
   score_total: number
   priority: 'low' | 'medium' | 'high'
@@ -73,7 +72,7 @@ export default function CandidatesPage() {
   const fetchCandidates = useCallback(async () => {
     try {
       setLoading(true)
-      const columns = 'id,first_name,last_name,email,phone,whatsapp,status,priority,score_total,photo_url,audio_url,audio_uploaded,created_at,birth_date,nationality,city,country,italian_level,hours_per_day'
+      const columns = 'id,first_name,last_name,email,whatsapp,status,priority,score_total,photo_url,audio_url,audio_uploaded,created_at,birth_date,nationality,city,country,italian_level,hours_per_day'
       const from = currentPage * PAGE_SIZE
       const to = from + PAGE_SIZE - 1
 
