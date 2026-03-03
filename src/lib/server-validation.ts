@@ -19,7 +19,7 @@ export const submitApplicationSchema = z.object({
   birth_date: z.string().optional().nullable(),
   age_range: z.string().max(20).optional().nullable(),
   city: z.string().max(100).optional().nullable(),
-  country: z.string().max(5).optional().nullable().default('it'),
+  country: z.string().max(100).optional().nullable(),
   nationality: z.string().max(100).optional().nullable(),
   native_language: z.string().max(50).optional().nullable(),
   italian_level: z.enum(['low', 'medium', 'high']).optional().nullable(),
