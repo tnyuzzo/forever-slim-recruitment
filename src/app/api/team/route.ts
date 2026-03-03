@@ -10,6 +10,16 @@ const supabaseAdmin = createClient(
 const resend = new Resend(process.env.RESEND_API_KEY)
 const siteUrl = (process.env.NEXT_PUBLIC_SITE_URL || 'https://closeragency.eu').trim()
 
+/** Verifica che l'utente autenticato sia superadmin. Usa service_role per bypassare RLS. */
+async function requireSuperadmin(userId: string): Promise<boolean> {
+    const { data } = await supabaseAdmin
+        .from('user_roles')
+        .select('role')
+        .eq('user_id', userId)
+        .single()
+    return data?.role === 'superadmin'
+}
+
 function buildInviteHtml(roleLabel: string, actionLink: string, isExisting: boolean) {
     const ctaText = isExisting ? 'Accedi al Pannello' : 'Accetta Invito'
     const instruction = isExisting
@@ -49,6 +59,11 @@ export async function POST(req: NextRequest) {
         const { data: { user } } = await authClient.auth.getUser()
         if (!user) {
             return NextResponse.json({ error: 'Non autorizzato' }, { status: 401 })
+        }
+
+        // Solo superadmin può invitare/reinvitare membri
+        if (!await requireSuperadmin(user.id)) {
+            return NextResponse.json({ error: 'Solo i Super Admin possono gestire il team.' }, { status: 403 })
         }
 
         const { email, role } = await req.json()
@@ -140,30 +155,45 @@ export async function POST(req: NextRequest) {
             actionLink = actionLink.replace(/redirect_to=[^&]+/, `redirect_to=${encodeURIComponent(callbackUrl)}`)
         }
 
-        // ── Step 2: Assign role ──
-        const { error: roleError } = await supabaseAdmin.from('user_roles').upsert({
-            user_id: targetUserId,
-            role
-        }, { onConflict: 'user_id' })
-
-        if (roleError) {
-            console.error('[team-invite] role upsert failed:', roleError)
-            // Don't fail entirely — email is more important
-        }
-
-        // ── Step 3: Send email via Resend ──
+        // ── Step 2 & 3: Assign role + Send email in parallel ──
         console.log('[team-invite] Sending via Resend to:', email)
 
-        const { data: emailData, error: emailError } = await resend.emails.send({
-            from: 'Closer Agency <recruiting@closeragency.eu>',
-            to: email,
-            subject: `Sei stato invitato come ${roleLabel} — Closer Agency`,
-            html: buildInviteHtml(roleLabel, actionLink, isExistingUser)
-        })
+        const [roleResult, emailResult] = await Promise.allSettled([
+            supabaseAdmin.from('user_roles').upsert({
+                user_id: targetUserId,
+                role
+            }, { onConflict: 'user_id' }),
+            resend.emails.send({
+                from: 'Closer Agency <recruiting@closeragency.eu>',
+                to: email,
+                subject: `Sei stato invitato come ${roleLabel} — Closer Agency`,
+                html: buildInviteHtml(roleLabel, actionLink, isExistingUser)
+            })
+        ])
+
+        // Handle role upsert result
+        if (roleResult.status === 'rejected') {
+            console.error('[team-invite] role upsert failed:', roleResult.reason)
+        } else if (roleResult.value.error) {
+            console.error('[team-invite] role upsert failed:', roleResult.value.error)
+        }
+
+        // Handle email result
+        if (emailResult.status === 'rejected') {
+            console.error('[team-invite] Resend FAILED:', emailResult.reason)
+            return NextResponse.json({
+                success: true,
+                message: `Utente creato ma email non inviata: ${emailResult.reason}. Usa il link qui sotto.`,
+                inviteLink: actionLink,
+                emailSent: false,
+                isExistingUser
+            })
+        }
+
+        const { data: emailData, error: emailError } = emailResult.value
 
         if (emailError) {
             console.error('[team-invite] Resend FAILED:', JSON.stringify(emailError))
-            // Return link anyway so admin can share it manually
             return NextResponse.json({
                 success: true,
                 message: `Utente creato ma email non inviata: ${emailError.message}. Usa il link qui sotto.`,
@@ -202,7 +232,7 @@ export async function GET() {
 
         const { data: roles, error: rolesError } = await supabaseAdmin
             .from('user_roles')
-            .select('*')
+            .select('user_id, role, created_at')
             .order('created_at', { ascending: true })
 
         if (rolesError) {
@@ -211,15 +241,17 @@ export async function GET() {
 
         const { data: { users } } = await supabaseAdmin.auth.admin.listUsers()
 
+        // O(1) lookup by user id instead of O(n) .find() per role
+        const usersMap = new Map(users.map(u => [u.id, u]))
+
         const teamMembers = roles.map(r => {
-            const user = users.find(u => u.id === r.user_id)
+            const authUser = usersMap.get(r.user_id)
             return {
-                id: r.id,
                 user_id: r.user_id,
-                email: user?.email || 'Sconosciuto',
+                email: authUser?.email || 'Sconosciuto',
                 role: r.role,
                 created_at: r.created_at,
-                last_sign_in: user?.last_sign_in_at || null
+                last_sign_in: authUser?.last_sign_in_at || null
             }
         })
 
@@ -238,10 +270,20 @@ export async function DELETE(req: NextRequest) {
             return NextResponse.json({ error: 'Non autorizzato' }, { status: 401 })
         }
 
+        // Solo superadmin può rimuovere membri
+        if (!await requireSuperadmin(user.id)) {
+            return NextResponse.json({ error: 'Solo i Super Admin possono gestire il team.' }, { status: 403 })
+        }
+
         const { user_id } = await req.json()
 
         if (!user_id) {
             return NextResponse.json({ error: 'user_id obbligatorio.' }, { status: 400 })
+        }
+
+        // Impedisci auto-eliminazione
+        if (user_id === user.id) {
+            return NextResponse.json({ error: 'Non puoi rimuovere te stesso dal team.' }, { status: 400 })
         }
 
         const { error: deleteError } = await supabaseAdmin

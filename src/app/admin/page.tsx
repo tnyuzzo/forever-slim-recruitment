@@ -1,12 +1,14 @@
 'use client'
 
-import { useEffect, useState } from 'react'
+import { useEffect, useMemo, useState, useCallback } from 'react'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
 import { createClient } from '@/lib/supabase/client'
 import { format } from 'date-fns'
-import { Filter, Search, ChevronRight, Trash2, User } from 'lucide-react'
+import { Filter, Search, ChevronLeft, ChevronRight, Trash2, User } from 'lucide-react'
 import Image from 'next/image'
+
+const PAGE_SIZE = 25
 
 type Candidate = {
   id: string
@@ -14,6 +16,7 @@ type Candidate = {
   first_name: string
   last_name: string
   email: string
+  phone: string | null
   whatsapp: string
   score_total: number
   priority: 'low' | 'medium' | 'high'
@@ -21,8 +24,12 @@ type Candidate = {
   italian_level: string
   hours_per_day: number
   birth_date: string | null
+  nationality: string | null
+  city: string | null
+  country: string | null
   photo_url: string | null
   audio_url: string | null
+  audio_uploaded: boolean | null
 }
 
 const statusColors: Record<string, string> = {
@@ -58,13 +65,49 @@ export default function CandidatesPage() {
   const [confirmDialog, setConfirmDialog] = useState<{ title: string; message: string; onConfirm: () => void } | null>(null)
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set())
   const [bulkDeleting, setBulkDeleting] = useState(false)
+  const [currentPage, setCurrentPage] = useState(0)
+  const [totalCount, setTotalCount] = useState(0)
   const router = useRouter()
   const supabase = createClient()
 
+  const fetchCandidates = useCallback(async () => {
+    try {
+      setLoading(true)
+      const columns = 'id,first_name,last_name,email,phone,whatsapp,status,priority,score_total,photo_url,audio_url,audio_uploaded,created_at,birth_date,nationality,city,country,italian_level,hours_per_day'
+      const from = currentPage * PAGE_SIZE
+      const to = from + PAGE_SIZE - 1
+
+      let query = supabase
+        .from('candidates')
+        .select(columns, { count: 'exact' })
+        .order('created_at', { ascending: false })
+
+      if (statusFilter !== 'all') {
+        query = query.eq('status', statusFilter)
+      }
+
+      query = query.range(from, to)
+
+      const { data, error, count } = await query
+
+      if (error) throw error
+      if (data) setCandidates(data)
+      if (count !== null) setTotalCount(count)
+    } catch (error) {
+      console.error('Error fetching candidates:', error)
+    } finally {
+      setLoading(false)
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [currentPage, statusFilter])
+
   useEffect(() => {
-    fetchCandidates()
     fetchUserRole()
   }, [])
+
+  useEffect(() => {
+    fetchCandidates()
+  }, [fetchCandidates])
 
   async function fetchUserRole() {
     try {
@@ -97,6 +140,7 @@ export default function CandidatesPage() {
           if (error) throw error
           setConfirmDialog(null)
           setCandidates(prev => prev.filter(c => c.id !== candidate.id))
+          setTotalCount(prev => Math.max(0, prev - 1))
         } catch (error) {
           console.error('Error deleting candidate:', error)
           alert('Errore nella cancellazione del candidato')
@@ -144,7 +188,9 @@ export default function CandidatesPage() {
             await supabase.from('interviews').delete().eq('candidate_id', candidate.id)
             await supabase.from('candidates').delete().eq('id', candidate.id)
           }
+          const deletedCount = selectedIds.size
           setCandidates(prev => prev.filter(c => !selectedIds.has(c.id)))
+          setTotalCount(prev => Math.max(0, prev - deletedCount))
           setSelectedIds(new Set())
           setConfirmDialog(null)
         } catch (error) {
@@ -158,32 +204,18 @@ export default function CandidatesPage() {
     })
   }
 
-  async function fetchCandidates() {
-    try {
-      setLoading(true)
-      const { data, error } = await supabase
-        .from('candidates')
-        .select('*')
-        .order('created_at', { ascending: false })
+  const filteredCandidates = useMemo(() => {
+    if (!searchTerm.trim()) return candidates
+    const term = searchTerm.toLowerCase()
+    return candidates.filter(c => {
+      return (
+        `${c.first_name} ${c.last_name}`.toLowerCase().includes(term) ||
+        c.email.toLowerCase().includes(term)
+      )
+    })
+  }, [candidates, searchTerm])
 
-      if (error) throw error
-      if (data) setCandidates(data)
-    } catch (error) {
-      console.error('Error fetching candidates:', error)
-    } finally {
-      setLoading(false)
-    }
-  }
-
-  const filteredCandidates = candidates.filter(c => {
-    const matchesSearch =
-      `${c.first_name} ${c.last_name}`.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      c.email.toLowerCase().includes(searchTerm.toLowerCase())
-
-    const matchesStatus = statusFilter === 'all' || c.status === statusFilter
-
-    return matchesSearch && matchesStatus
-  })
+  const totalPages = Math.max(1, Math.ceil(totalCount / PAGE_SIZE))
 
   return (
     <div className="space-y-6">
@@ -211,7 +243,7 @@ export default function CandidatesPage() {
           <select
             className="w-full md:w-auto p-2 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-primary-main bg-white"
             value={statusFilter}
-            onChange={(e) => setStatusFilter(e.target.value)}
+            onChange={(e) => { setStatusFilter(e.target.value); setCurrentPage(0) }}
           >
             <option value="all">Tutti gli stati</option>
             <option value="new">Nuovi</option>
@@ -366,6 +398,33 @@ export default function CandidatesPage() {
           </table>
         </div>
       </div>
+      {/* Pagination */}
+      {totalPages > 1 && (
+        <div className="flex items-center justify-between bg-white px-5 py-3 rounded-2xl shadow-sm border border-gray-100">
+          <span className="text-sm text-text-muted">
+            Pagina {currentPage + 1} di {totalPages} &middot; {totalCount} candidat{totalCount === 1 ? 'o' : 'i'}
+          </span>
+          <div className="flex items-center gap-2">
+            <button
+              onClick={() => setCurrentPage(p => Math.max(0, p - 1))}
+              disabled={currentPage === 0}
+              className="inline-flex items-center gap-1 px-3 py-1.5 rounded-lg border border-gray-200 text-sm font-medium hover:bg-gray-50 transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
+            >
+              <ChevronLeft className="w-4 h-4" />
+              Precedente
+            </button>
+            <button
+              onClick={() => setCurrentPage(p => Math.min(totalPages - 1, p + 1))}
+              disabled={currentPage >= totalPages - 1}
+              className="inline-flex items-center gap-1 px-3 py-1.5 rounded-lg border border-gray-200 text-sm font-medium hover:bg-gray-50 transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
+            >
+              Successiva
+              <ChevronRight className="w-4 h-4" />
+            </button>
+          </div>
+        </div>
+      )}
+
       {confirmDialog && (
         <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4">
           <div className="bg-white rounded-2xl p-6 max-w-md w-full shadow-xl">

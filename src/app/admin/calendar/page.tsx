@@ -2,12 +2,25 @@
 
 import { useEffect, useState, useMemo, useCallback } from 'react'
 import Link from 'next/link'
+import dynamic from 'next/dynamic'
 import { createClient } from '@/lib/supabase/client'
-import { format, parse, startOfWeek, getDay } from 'date-fns'
+import { format, parse, startOfWeek, getDay, startOfMonth, endOfMonth, addMonths, subMonths } from 'date-fns'
 import { it } from 'date-fns/locale'
-import { Calendar as BigCalendar, dateFnsLocalizer, type View } from 'react-big-calendar'
+import { dateFnsLocalizer, type View, type CalendarProps } from 'react-big-calendar'
 import 'react-big-calendar/lib/css/react-big-calendar.css'
-import { Clock, Video, AlertCircle, Globe, ChevronDown, ChevronUp, Users } from 'lucide-react'
+import { Clock, Video, AlertCircle, Globe, ChevronDown, ChevronUp, Users, Loader2 } from 'lucide-react'
+
+const BigCalendar = dynamic(
+  () => import('react-big-calendar').then(mod => mod.Calendar),
+  {
+    ssr: false,
+    loading: () => (
+      <div className="h-[600px] flex items-center justify-center">
+        <Loader2 className="w-8 h-8 animate-spin text-gray-400" />
+      </div>
+    ),
+  }
+) as React.ComponentType<CalendarProps<CalendarEvent, object>>
 import { COUNTRY_TIMEZONES } from '@/lib/countryTimezones'
 
 // Timezone helpers
@@ -157,17 +170,28 @@ export default function CalendarPage() {
   const activeTz = selectedTz === 'auto' ? browserTz : selectedTz
   const isDifferentTz = activeTz !== 'Europe/Rome' && activeTz !== 'Europe/Vatican'
 
-  useEffect(() => {
-    fetchInterviews()
-  }, [])
+  // Visible date range for filtering
+  const [visibleRange, setVisibleRange] = useState(() => {
+    const now = new Date()
+    return {
+      start: subMonths(startOfMonth(now), 1).toISOString(),
+      end: addMonths(endOfMonth(now), 1).toISOString(),
+    }
+  })
 
-  async function fetchInterviews() {
+  useEffect(() => {
+    fetchInterviews(visibleRange.start, visibleRange.end)
+  }, [visibleRange])
+
+  async function fetchInterviews(rangeStart: string, rangeEnd: string) {
     try {
       setLoading(true)
       const { data, error } = await supabase
         .from('interviews')
         .select('*, candidates(id, first_name, last_name, email, whatsapp, score_total, country)')
         .not('status', 'eq', 'cancelled')
+        .gte('scheduled_start', rangeStart)
+        .lte('scheduled_start', rangeEnd)
         .order('scheduled_start', { ascending: true })
 
       if (error) throw error
@@ -262,6 +286,13 @@ export default function CalendarPage() {
         padding: '2px 6px',
       },
     }
+  }, [])
+
+  const handleNavigate = useCallback((newDate: Date) => {
+    setDate(newDate)
+    const rangeStart = subMonths(startOfMonth(newDate), 1).toISOString()
+    const rangeEnd = addMonths(endOfMonth(newDate), 1).toISOString()
+    setVisibleRange({ start: rangeStart, end: rangeEnd })
   }, [])
 
   const handleSelectEvent = useCallback((event: CalendarEvent) => {
@@ -454,7 +485,7 @@ export default function CalendarPage() {
                   view={view}
                   onView={setView}
                   date={date}
-                  onNavigate={setDate}
+                  onNavigate={handleNavigate}
                   eventPropGetter={eventStyleGetter}
                   onSelectEvent={handleSelectEvent}
                   messages={MESSAGES}

@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect, useState, useCallback } from 'react'
+import { useEffect, useState, useCallback, useMemo } from 'react'
 import Link from 'next/link'
 import { createClient } from '@/lib/supabase/client'
 import { ChevronRight, GripVertical, Calendar } from 'lucide-react'
@@ -49,7 +49,7 @@ export default function PipelinePage() {
     try {
       const { data, error } = await supabase
         .from('candidates')
-        .select('*')
+        .select('id, first_name, last_name, score_total, priority, status, whatsapp, hours_per_day, created_at')
         .order('score_total', { ascending: false })
 
       if (error) throw error
@@ -130,7 +130,14 @@ export default function PipelinePage() {
     setDragOverColumn(null)
   }
 
-  const getColumnCandidates = (status: string) => candidates.filter(c => c.status === status)
+  const candidatesByStatus = useMemo(() => {
+    const map: Record<string, typeof candidates> = {}
+    candidates.forEach(c => {
+      if (!map[c.status]) map[c.status] = []
+      map[c.status].push(c)
+    })
+    return map
+  }, [candidates])
 
   return (
     <div className="space-y-6">
@@ -144,7 +151,7 @@ export default function PipelinePage() {
       ) : (
         <div className="flex gap-4 overflow-x-auto pb-4 -mx-2 px-2">
           {COLUMNS.map(col => {
-            const colCandidates = getColumnCandidates(col.id)
+            const colCandidates = candidatesByStatus[col.id] || []
             const isOver = dragOverColumn === col.id
 
             return (

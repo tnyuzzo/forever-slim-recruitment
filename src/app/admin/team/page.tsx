@@ -5,7 +5,6 @@ import { createClient } from '@/lib/supabase/client'
 import { UserPlus, Trash2, Shield, ShieldCheck, Loader2, Mail, Clock, ChevronDown, ChevronUp, Save, Copy, Plus, CheckCircle2, Link2, Check, RefreshCw, AlertCircle } from 'lucide-react'
 
 interface TeamMember {
-    id: string
     user_id: string
     email: string
     role: 'superadmin' | 'recruiter'
@@ -436,7 +435,7 @@ export default function TeamManagement() {
                             const isMemberLinkCopied = memberLinkCopied === member.user_id
 
                             return (
-                                <div key={member.id}>
+                                <div key={member.user_id}>
                                     <div className="p-5 hover:bg-gray-50/50 transition-colors space-y-3">
                                         {/* Top row: avatar + info */}
                                         <div className="flex items-center gap-3">
