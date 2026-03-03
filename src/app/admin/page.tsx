@@ -335,13 +335,15 @@ export default function CandidatesPage() {
                     )}
                     <td className="p-4" onClick={(e) => e.stopPropagation()}>
                       {candidate.photo_url ? (
-                        <Image
-                          src={candidate.photo_url}
-                          alt={`${candidate.first_name} ${candidate.last_name}`}
-                          width={36}
-                          height={36}
-                          className="w-9 h-9 rounded-full object-cover"
-                        />
+                        <div className="relative w-9 h-9 rounded-full overflow-hidden shrink-0">
+                          <Image
+                            src={candidate.photo_url}
+                            alt={`${candidate.first_name} ${candidate.last_name}`}
+                            fill
+                            sizes="36px"
+                            className="object-cover"
+                          />
+                        </div>
                       ) : (
                         <div className="w-9 h-9 rounded-full bg-gray-100 flex items-center justify-center">
                           <User className="w-5 h-5 text-gray-400" />
