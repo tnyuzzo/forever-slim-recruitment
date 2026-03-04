@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import { useRouter } from 'next/navigation'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { useForm, DefaultValues } from 'react-hook-form'
@@ -157,6 +157,8 @@ export default function ApplyPage() {
     const [audioUrl, setAudioUrl] = useState<string | null>(null)
     const [photoFile, setPhotoFile] = useState<File | null>(null)
     const [photoPreview, setPhotoPreview] = useState<string | null>(null)
+    const photoInputRef = useRef<HTMLInputElement>(null)
+    const audioInputRef = useRef<HTMLInputElement>(null)
     const [phonePrefix, setPhonePrefix] = useState('+39')
     const [birthDay, setBirthDay] = useState('')
     const [birthMonth, setBirthMonth] = useState('')
@@ -863,11 +865,13 @@ export default function ApplyPage() {
                                     </div>
                                 </div>
                             ) : (
-                                <label className="flex items-center justify-center gap-3 px-4 py-6 bg-white border-2 border-dashed border-gray-300 rounded-2xl cursor-pointer hover:bg-gray-50 hover:border-blue-600 transition-colors">
-                                    <input type="file" accept="image/jpeg,image/png,image/webp" className="hidden" onChange={handlePhotoChange} />
-                                    <Camera className="w-6 h-6 text-gray-400" />
-                                    <span className="text-sm font-medium text-text-muted">Tocca per caricare la tua foto</span>
-                                </label>
+                                <>
+                                    <input ref={photoInputRef} type="file" accept="image/jpeg,image/png,image/webp" className="absolute w-0 h-0 opacity-0 overflow-hidden" onChange={handlePhotoChange} />
+                                    <button type="button" onClick={() => photoInputRef.current?.click()} className="flex items-center justify-center gap-3 px-4 py-6 w-full bg-white border-2 border-dashed border-gray-300 rounded-2xl cursor-pointer hover:bg-gray-50 hover:border-blue-600 transition-colors">
+                                        <Camera className="w-6 h-6 text-gray-400" />
+                                        <span className="text-sm font-medium text-text-muted">Tocca per caricare la tua foto</span>
+                                    </button>
+                                </>
                             )}
                         </div>
 
@@ -882,8 +886,8 @@ export default function ApplyPage() {
                                     Il tuo strumento di lavoro è la voce. Un breve audio in cui ti presenti (chi sei, perché dovremmo sceglierti) di 30-45 secondi vale più di mille parole scritte e accelera nettamente la valutazione.
                                 </p>
                                 <div className="w-full max-w-md mt-4">
-                                    <label className="w-full flex justify-center items-center px-4 py-6 bg-white border-2 border-dashed border-gray-300 rounded-2xl cursor-pointer hover:bg-gray-50 hover:border-blue-600 transition-colors">
-                                        <input type="file" accept="audio/*" className="hidden" onChange={handleAudioChange} />
+                                    <input ref={audioInputRef} type="file" accept="audio/*" className="absolute w-0 h-0 opacity-0 overflow-hidden" onChange={handleAudioChange} />
+                                    <button type="button" onClick={() => audioInputRef.current?.click()} className="w-full flex justify-center items-center px-4 py-6 bg-white border-2 border-dashed border-gray-300 rounded-2xl cursor-pointer hover:bg-gray-50 hover:border-blue-600 transition-colors">
                                         <div className="flex flex-col items-center gap-2">
                                             <Upload className="w-6 h-6 text-gray-400" />
                                             {audioFile ? (
@@ -892,7 +896,7 @@ export default function ApplyPage() {
                                                 <span className="text-sm font-medium text-text-muted">Tocca per caricare un file audio (.mp3, .m4a)</span>
                                             )}
                                         </div>
-                                    </label>
+                                    </button>
                                 </div>
                                 <p className="text-xs text-text-muted uppercase font-semibold tracking-wider">L'audio è facoltativo ma consigliatissimo</p>
                             </div>
