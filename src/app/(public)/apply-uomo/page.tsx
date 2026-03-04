@@ -435,6 +435,7 @@ export default function ApplyPage() {
             if (!res.ok) {
                 console.error("DB Error", result)
                 alert("Si è verificato un errore durante l'invio. Riprova più tardi.")
+                setIsSubmitting(false)
                 return
             }
 
