@@ -29,8 +29,8 @@ export const submitApplicationSchema = z.object({
   bio_short: z.string().max(500).optional().nullable(),
 
   // Disponibilita
-  hours_per_day: z.number().min(0).max(24).optional().nullable(),
-  days_per_week: z.number().min(0).max(7).optional().nullable(),
+  hours_per_day: z.coerce.number().min(0).max(24).optional().nullable(),
+  days_per_week: z.coerce.number().min(0).max(7).optional().nullable(),
   time_slots: z.string().max(200).optional().nullable(),
   start_date: z.string().max(50).optional().nullable(),
   weekend_sat: z.boolean().optional().nullable(),
@@ -39,7 +39,7 @@ export const submitApplicationSchema = z.object({
   holidays: z.boolean().optional().nullable(),
 
   // Esperienza
-  sales_years: z.number().min(0).max(50).optional().nullable(),
+  sales_years: z.coerce.number().min(0).max(50).optional().nullable(),
   inbound_outbound: z.string().max(20).optional().nullable(),
   sectors: z.string().max(500).optional().nullable(),
   close_rate_range: z.string().max(20).optional().nullable(),
@@ -58,8 +58,8 @@ export const submitApplicationSchema = z.object({
   audio_uploaded: z.boolean().optional().nullable(),
 
   // Score (calcolato client-side, validato range)
-  score_total: z.number().min(0).max(100).optional().nullable(),
-  score_breakdown: z.record(z.string(), z.number()).optional().nullable(),
+  score_total: z.coerce.number().min(0).max(100).optional().nullable(),
+  score_breakdown: z.record(z.string(), z.coerce.number()).optional().nullable(),
   priority: z.string().max(20).optional().nullable(),
   status: z.string().max(20).optional().nullable(),
   ko_reason: z.string().max(200).optional().nullable(),

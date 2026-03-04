@@ -473,7 +473,7 @@ export default function ApplyPage() {
 
             if (!res.ok) {
                 console.error("DB Error", result)
-                posthog?.capture('form_submit_error', { status: res.status, error: result?.error || 'unknown', funnel_type: 'donna' })
+                posthog?.capture('form_submit_error', { status: res.status, error: result?.error || 'unknown', details: result?.details || null, funnel_type: 'donna' })
                 alert("Si è verificato un errore durante l'invio. Riprova più tardi.")
                 setIsSubmitting(false)
                 return
