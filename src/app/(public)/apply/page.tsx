@@ -263,7 +263,7 @@ export default function ApplyPage() {
 
             // 0. Validate photo
             if (!photoFile) {
-                alert("La foto è obbligatoria. Torna allo Step 7 (Audio & Foto) e carica una tua foto.")
+                alert("La foto è obbligatoria. Torna allo step 'Audio & Foto' e carica una tua foto.")
                 setIsSubmitting(false)
                 return
             }
@@ -846,55 +846,55 @@ export default function ApplyPage() {
             case 6:
                 return (
                     <div className="space-y-8">
-                        {/* Audio */}
-                        <div className="flex flex-col items-center space-y-4">
-                            <div className="w-16 h-16 bg-blue-100 rounded-full flex items-center justify-center text-blue-600 mb-2">
-                                <Headphones className="w-8 h-8" />
-                            </div>
-                            <h3 className="text-2xl font-bold text-center">Inviaci un breve memo vocale</h3>
-                            <p className="text-text-muted text-center max-w-md">
-                                Il tuo strumento di lavoro è la voce. Un breve audio in cui ti presenti (chi sei, perché dovremmo sceglierti) di 30-45 secondi vale più di mille parole scritte e accelera nettamente la valutazione.
-                            </p>
-                            <div className="w-full max-w-md mt-4">
-                                <label className="w-full flex justify-center items-center px-4 py-6 bg-white border-2 border-dashed border-gray-300 rounded-2xl cursor-pointer hover:bg-gray-50 hover:border-primary-main transition-colors">
-                                    <input type="file" accept="audio/*" className="hidden" onChange={handleAudioChange} />
-                                    <div className="flex flex-col items-center gap-2">
-                                        <Upload className="w-6 h-6 text-gray-400" />
-                                        {audioFile ? (
-                                            <span className="text-sm font-semibold text-success flex items-center gap-2"><Check className="w-4 h-4" /> {audioFile.name} (Pronto)</span>
-                                        ) : (
-                                            <span className="text-sm font-medium text-text-muted">Tocca per caricare un file audio (.mp3, .m4a)</span>
-                                        )}
+                        {/* Foto (obbligatoria — visibile subito senza scroll) */}
+                        <div className="space-y-3">
+                            <label className="text-sm font-semibold text-text-main">La tua foto *</label>
+                            <p className="text-xs text-text-muted">Carica una tua foto recente e ben visibile (volto in primo piano). Formati: JPG, PNG, WebP. Max 5MB.</p>
+                            {photoPreview ? (
+                                <div className="flex items-center gap-4">
+                                    <div className="relative">
+                                        <img src={photoPreview} alt="Anteprima foto" className="w-24 h-24 rounded-2xl object-cover border-2 border-primary-main shadow-sm" />
+                                        <button type="button" onClick={removePhoto} className="absolute -top-2 -right-2 w-6 h-6 bg-red-500 text-white rounded-full flex items-center justify-center hover:bg-red-600 transition-colors shadow-sm">
+                                            <X className="w-3.5 h-3.5" />
+                                        </button>
                                     </div>
+                                    <div className="text-sm text-green-600 font-semibold flex items-center gap-1.5">
+                                        <Check className="w-4 h-4" /> Foto caricata
+                                    </div>
+                                </div>
+                            ) : (
+                                <label className="flex items-center justify-center gap-3 px-4 py-6 bg-white border-2 border-dashed border-gray-300 rounded-2xl cursor-pointer hover:bg-gray-50 hover:border-primary-main transition-colors">
+                                    <input type="file" accept="image/jpeg,image/png,image/webp" className="hidden" onChange={handlePhotoChange} />
+                                    <Camera className="w-6 h-6 text-gray-400" />
+                                    <span className="text-sm font-medium text-text-muted">Tocca per caricare la tua foto</span>
                                 </label>
-                            </div>
-                            <p className="text-xs text-text-muted uppercase font-semibold tracking-wider">L'audio è facoltativo ma consigliatissimo</p>
+                            )}
                         </div>
 
-                        {/* Foto */}
+                        {/* Audio (facoltativo) */}
                         <div className="border-t border-gray-200 pt-8">
-                            <div className="space-y-3">
-                                <label className="text-sm font-semibold text-text-main">La tua foto *</label>
-                                <p className="text-xs text-text-muted">Carica una tua foto recente e ben visibile (volto in primo piano). Formati: JPG, PNG, WebP. Max 5MB.</p>
-                                {photoPreview ? (
-                                    <div className="flex items-center gap-4">
-                                        <div className="relative">
-                                            <img src={photoPreview} alt="Anteprima foto" className="w-24 h-24 rounded-2xl object-cover border-2 border-primary-main shadow-sm" />
-                                            <button type="button" onClick={removePhoto} className="absolute -top-2 -right-2 w-6 h-6 bg-red-500 text-white rounded-full flex items-center justify-center hover:bg-red-600 transition-colors shadow-sm">
-                                                <X className="w-3.5 h-3.5" />
-                                            </button>
+                            <div className="flex flex-col items-center space-y-4">
+                                <div className="w-16 h-16 bg-blue-100 rounded-full flex items-center justify-center text-blue-600 mb-2">
+                                    <Headphones className="w-8 h-8" />
+                                </div>
+                                <h3 className="text-2xl font-bold text-center">Inviaci un breve memo vocale</h3>
+                                <p className="text-text-muted text-center max-w-md">
+                                    Il tuo strumento di lavoro è la voce. Un breve audio in cui ti presenti (chi sei, perché dovremmo sceglierti) di 30-45 secondi vale più di mille parole scritte e accelera nettamente la valutazione.
+                                </p>
+                                <div className="w-full max-w-md mt-4">
+                                    <label className="w-full flex justify-center items-center px-4 py-6 bg-white border-2 border-dashed border-gray-300 rounded-2xl cursor-pointer hover:bg-gray-50 hover:border-primary-main transition-colors">
+                                        <input type="file" accept="audio/*" className="hidden" onChange={handleAudioChange} />
+                                        <div className="flex flex-col items-center gap-2">
+                                            <Upload className="w-6 h-6 text-gray-400" />
+                                            {audioFile ? (
+                                                <span className="text-sm font-semibold text-success flex items-center gap-2"><Check className="w-4 h-4" /> {audioFile.name} (Pronto)</span>
+                                            ) : (
+                                                <span className="text-sm font-medium text-text-muted">Tocca per caricare un file audio (.mp3, .m4a)</span>
+                                            )}
                                         </div>
-                                        <div className="text-sm text-green-600 font-semibold flex items-center gap-1.5">
-                                            <Check className="w-4 h-4" /> Foto caricata
-                                        </div>
-                                    </div>
-                                ) : (
-                                    <label className="flex items-center justify-center gap-3 px-4 py-6 bg-white border-2 border-dashed border-gray-300 rounded-2xl cursor-pointer hover:bg-gray-50 hover:border-primary-main transition-colors">
-                                        <input type="file" accept="image/jpeg,image/png,image/webp" className="hidden" onChange={handlePhotoChange} />
-                                        <Camera className="w-6 h-6 text-gray-400" />
-                                        <span className="text-sm font-medium text-text-muted">Tocca per caricare la tua foto</span>
                                     </label>
-                                )}
+                                </div>
+                                <p className="text-xs text-text-muted uppercase font-semibold tracking-wider">L'audio è facoltativo ma consigliatissimo</p>
                             </div>
                         </div>
                     </div>
