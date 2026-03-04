@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { after } from 'next/server'
 import { createClient } from '@supabase/supabase-js'
+import * as Sentry from '@sentry/nextjs'
 import { ATTRIBUTION_PARAMS } from '@/lib/attribution'
 import { rateLimit, getClientIp } from '@/lib/rate-limit'
 import { submitApplicationSchema } from '@/lib/server-validation'
@@ -60,8 +61,13 @@ export async function POST(req: NextRequest) {
     // Zod validation
     const parsed = submitApplicationSchema.safeParse(body)
     if (!parsed.success) {
+      const fieldErrors = parsed.error.flatten().fieldErrors
+      Sentry.captureMessage('Submit validation failed', {
+        level: 'warning',
+        extra: { fieldErrors, email: body.email ?? 'missing' },
+      })
       return NextResponse.json(
-        { error: 'Dati non validi', details: parsed.error.flatten().fieldErrors },
+        { error: 'Dati non validi', details: fieldErrors },
         { status: 400 }
       )
     }
@@ -191,6 +197,7 @@ export async function POST(req: NextRequest) {
 
     if (error) {
       console.error('[submit-application] DB error:', error)
+      Sentry.captureException(error, { extra: { email: parsed.data.email } })
       return NextResponse.json({ error: 'Errore nel salvataggio' }, { status: 500 })
     }
 
@@ -256,6 +263,7 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ candidate_id, status: body.status ?? 'new' })
   } catch (err) {
     console.error('[submit-application]', err)
+    Sentry.captureException(err)
     return NextResponse.json({ error: 'Internal error' }, { status: 500 })
   }
 }
