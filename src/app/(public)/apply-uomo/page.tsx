@@ -168,6 +168,28 @@ export default function ApplyPage() {
     const [selectedTimeSlots, setSelectedTimeSlots] = useState<string[]>([])
     const [stepSuccess, setStepSuccess] = useState(false)
 
+    // Track form start
+    useEffect(() => {
+        posthog?.capture('form_started', { funnel_type: 'uomo' })
+    }, []) // eslint-disable-line react-hooks/exhaustive-deps
+
+    // Track form abandonment on page leave
+    useEffect(() => {
+        const handleBeforeUnload = () => {
+            if (step < 7 && !isSubmitting) {
+                posthog?.capture('form_abandoned', {
+                    last_step_number: step,
+                    last_step_name: stepTitles[step],
+                    had_photo: !!photoFile,
+                    had_audio: !!audioFile,
+                    funnel_type: 'uomo',
+                })
+            }
+        }
+        window.addEventListener('beforeunload', handleBeforeUnload)
+        return () => window.removeEventListener('beforeunload', handleBeforeUnload)
+    }, [step, photoFile, audioFile, isSubmitting]) // eslint-disable-line react-hooks/exhaustive-deps
+
     useEffect(() => {
         fetch('https://ip2c.org/s')
             .then(r => r.text())
@@ -205,12 +227,23 @@ export default function ApplyPage() {
     const handleNext = async () => {
         const isStepValid = await trigger()
         if (isStepValid) {
+            posthog?.capture('form_step_completed', {
+                step_number: step,
+                step_name: stepTitles[step],
+                funnel_type: 'uomo',
+            })
             setStepSuccess(true)
             setTimeout(() => {
                 setStepSuccess(false)
                 setStep((p) => Math.min(schemas.length - 1, p + 1))
                 window.scrollTo(0, 0)
             }, 600)
+        } else {
+            posthog?.capture('form_step_validation_error', {
+                step_number: step,
+                step_name: stepTitles[step],
+                funnel_type: 'uomo',
+            })
         }
     }
 
@@ -223,10 +256,12 @@ export default function ApplyPage() {
         const file = e.target.files?.[0]
         if (file) {
             if (file.size > 5 * 1024 * 1024) {
+                posthog?.capture('photo_upload_rejected', { reason: 'file_too_large', file_size_mb: +(file.size / 1024 / 1024).toFixed(1), funnel_type: 'uomo' })
                 alert("La foto non può superare i 5MB.")
                 return
             }
             setPhotoFile(file)
+            posthog?.capture('photo_upload_selected', { file_type: file.type, file_size_mb: +(file.size / 1024 / 1024).toFixed(1), funnel_type: 'uomo' })
             const reader = new FileReader()
             reader.onloadend = () => setPhotoPreview(reader.result as string)
             reader.readAsDataURL(file)
@@ -242,10 +277,12 @@ export default function ApplyPage() {
         const file = e.target.files?.[0]
         if (file) {
             if (file.size > 10 * 1024 * 1024) {
+                posthog?.capture('audio_upload_rejected', { reason: 'file_too_large', file_size_mb: +(file.size / 1024 / 1024).toFixed(1), funnel_type: 'uomo' })
                 alert("Il file audio non può superare i 10MB.")
                 return
             }
             setAudioFile(file)
+            posthog?.capture('audio_upload_selected', { file_type: file.type, file_size_mb: +(file.size / 1024 / 1024).toFixed(1), funnel_type: 'uomo' })
             form.setValue('audio_uploaded', true)
         }
     }
@@ -265,6 +302,7 @@ export default function ApplyPage() {
 
             // 0. Validate photo
             if (!photoFile) {
+                posthog?.capture('form_submit_blocked', { reason: 'photo_missing', funnel_type: 'uomo' })
                 alert("La foto è obbligatoria. Torna allo step 'Audio & Foto' e carica una tua foto.")
                 setIsSubmitting(false)
                 return
@@ -293,6 +331,7 @@ export default function ApplyPage() {
 
                 if (photoUploadError) {
                     console.error('Photo upload error:', photoUploadError)
+                    posthog?.capture('photo_upload_failed', { error: photoUploadError.message, funnel_type: 'uomo' })
                     alert("Errore nel caricamento della foto. Riprova.")
                     setIsSubmitting(false)
                     return
@@ -434,6 +473,7 @@ export default function ApplyPage() {
 
             if (!res.ok) {
                 console.error("DB Error", result)
+                posthog?.capture('form_submit_error', { status: res.status, error: result?.error || 'unknown', funnel_type: 'uomo' })
                 alert("Si è verificato un errore durante l'invio. Riprova più tardi.")
                 setIsSubmitting(false)
                 return
@@ -462,6 +502,7 @@ export default function ApplyPage() {
 
         } catch (err) {
             console.error(err)
+            posthog?.capture('form_submit_exception', { error: err instanceof Error ? err.message : 'unknown', funnel_type: 'uomo' })
             alert("Errore imprevisto. Riprova.")
         } finally {
             setIsSubmitting(false)
@@ -868,7 +909,7 @@ export default function ApplyPage() {
                             ) : (
                                 <>
                                     <input ref={photoInputRef} type="file" accept="image/jpeg,image/png,image/webp" className="absolute w-0 h-0 opacity-0 overflow-hidden" onChange={handlePhotoChange} />
-                                    <button type="button" onClick={() => photoInputRef.current?.click()} className="flex items-center justify-center gap-3 px-4 py-6 w-full bg-white border-2 border-dashed border-gray-300 rounded-2xl cursor-pointer hover:bg-gray-50 hover:border-blue-600 transition-colors">
+                                    <button type="button" onClick={() => { posthog?.capture('photo_upload_clicked', { funnel_type: 'uomo' }); photoInputRef.current?.click() }} className="flex items-center justify-center gap-3 px-4 py-6 w-full bg-white border-2 border-dashed border-gray-300 rounded-2xl cursor-pointer hover:bg-gray-50 hover:border-blue-600 transition-colors">
                                         <Camera className="w-6 h-6 text-gray-400" />
                                         <span className="text-sm font-medium text-text-muted">Tocca per caricare la tua foto</span>
                                     </button>
