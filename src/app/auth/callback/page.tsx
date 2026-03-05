@@ -17,7 +17,21 @@ export default function AuthCallbackPage() {
     }
 
     const processAuth = async () => {
-      // 1. Try manual hash parsing as primary method
+      // 1. PKCE flow: exchange ?code= for session
+      const url = new URL(window.location.href)
+      const code = url.searchParams.get('code')
+      if (code) {
+        console.log('[auth/callback] Found PKCE code, exchanging for session...')
+        const { data, error } = await supabase.auth.exchangeCodeForSession(code)
+        if (data.session && !error) {
+          setStatus('Accesso confermato! Reindirizzamento...')
+          redirect('/admin')
+          return
+        }
+        console.error('[auth/callback] PKCE exchange failed:', error)
+      }
+
+      // 2. Implicit flow: parse #access_token from hash
       const hash = window.location.hash.substring(1)
       if (hash) {
         const params = new URLSearchParams(hash)
@@ -40,7 +54,7 @@ export default function AuthCallbackPage() {
         }
       }
 
-      // 2. Fallback: check if session was auto-detected by client
+      // 3. Fallback: check if session was auto-detected by client
       const { data: { session } } = await supabase.auth.getSession()
       if (session) {
         setStatus('Accesso confermato! Reindirizzamento...')
@@ -48,7 +62,7 @@ export default function AuthCallbackPage() {
         return
       }
 
-      // 3. Listen for auth state change (in case processing is async)
+      // 4. Listen for auth state change (in case processing is async)
       const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
         if (session && (event === 'SIGNED_IN' || event === 'INITIAL_SESSION')) {
           setStatus('Accesso confermato! Reindirizzamento...')
@@ -57,7 +71,7 @@ export default function AuthCallbackPage() {
         }
       })
 
-      // 4. Timeout fallback
+      // 5. Timeout fallback
       setTimeout(() => {
         subscription.unsubscribe()
         setStatus('Sessione non trovata. Reindirizzamento al login...')
