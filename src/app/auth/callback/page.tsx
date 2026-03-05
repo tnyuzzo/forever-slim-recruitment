@@ -5,6 +5,7 @@ import { createClient } from '@/lib/supabase/client'
 
 export default function AuthCallbackPage() {
   const [status, setStatus] = useState('Verifica in corso...')
+  const [isError, setIsError] = useState(false)
 
   useEffect(() => {
     let redirected = false
@@ -17,8 +18,23 @@ export default function AuthCallbackPage() {
     }
 
     const processAuth = async () => {
-      // 1. PKCE flow: exchange ?code= for session
       const url = new URL(window.location.href)
+
+      // 0. Check for error from Supabase (expired/invalid OTP)
+      const error_code = url.searchParams.get('error_code')
+      if (error_code) {
+        setIsError(true)
+        if (error_code === 'otp_expired') {
+          setStatus('Il link è scaduto o è già stato utilizzato. Accedi con email e password.')
+        } else {
+          const desc = url.searchParams.get('error_description')?.replace(/\+/g, ' ')
+          setStatus(desc || 'Errore di autenticazione. Riprova.')
+        }
+        setTimeout(() => redirect('/admin/login'), 4000)
+        return
+      }
+
+      // 1. PKCE flow: exchange ?code= for session
       const code = url.searchParams.get('code')
       if (code) {
         console.log('[auth/callback] Found PKCE code, exchanging for session...')
@@ -34,9 +50,24 @@ export default function AuthCallbackPage() {
       // 2. Implicit flow: parse #access_token from hash
       const hash = window.location.hash.substring(1)
       if (hash) {
-        const params = new URLSearchParams(hash)
-        const access_token = params.get('access_token')
-        const refresh_token = params.get('refresh_token')
+        const hashParams = new URLSearchParams(hash)
+
+        // Check for error in hash fragment too
+        const hashError = hashParams.get('error_code')
+        if (hashError) {
+          setIsError(true)
+          if (hashError === 'otp_expired') {
+            setStatus('Il link è scaduto o è già stato utilizzato. Accedi con email e password.')
+          } else {
+            const desc = hashParams.get('error_description')?.replace(/\+/g, ' ')
+            setStatus(desc || 'Errore di autenticazione. Riprova.')
+          }
+          setTimeout(() => redirect('/admin/login'), 4000)
+          return
+        }
+
+        const access_token = hashParams.get('access_token')
+        const refresh_token = hashParams.get('refresh_token')
 
         if (access_token && refresh_token) {
           console.log('[auth/callback] Found tokens in hash, setting session...')
@@ -85,8 +116,21 @@ export default function AuthCallbackPage() {
   return (
     <div className="min-h-screen flex items-center justify-center bg-gray-50">
       <div className="text-center space-y-4">
-        <div className="w-8 h-8 border-4 border-purple-600 border-t-transparent rounded-full animate-spin mx-auto" />
-        <p className="text-gray-600 font-medium">{status}</p>
+        {isError ? (
+          <div className="w-12 h-12 rounded-full bg-red-100 flex items-center justify-center mx-auto">
+            <svg className="w-6 h-6 text-red-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+            </svg>
+          </div>
+        ) : (
+          <div className="w-8 h-8 border-4 border-purple-600 border-t-transparent rounded-full animate-spin mx-auto" />
+        )}
+        <p className={`font-medium ${isError ? 'text-red-600' : 'text-gray-600'}`}>{status}</p>
+        {isError && (
+          <a href="/admin/login" className="inline-block mt-2 text-sm text-purple-600 hover:underline">
+            Vai al login
+          </a>
+        )}
       </div>
     </div>
   )
