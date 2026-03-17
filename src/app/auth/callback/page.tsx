@@ -37,14 +37,13 @@ export default function AuthCallbackPage() {
       // 1. PKCE flow: exchange ?code= for session
       const code = url.searchParams.get('code')
       if (code) {
-        console.log('[auth/callback] Found PKCE code, exchanging for session...')
         const { data, error } = await supabase.auth.exchangeCodeForSession(code)
         if (data.session && !error) {
           setStatus('Accesso confermato! Reindirizzamento...')
           redirect('/admin')
           return
         }
-        console.error('[auth/callback] PKCE exchange failed:', error)
+        // PKCE exchange failed — fall through to implicit flow
       }
 
       // 2. Implicit flow: parse #access_token from hash
@@ -70,7 +69,6 @@ export default function AuthCallbackPage() {
         const refresh_token = hashParams.get('refresh_token')
 
         if (access_token && refresh_token) {
-          console.log('[auth/callback] Found tokens in hash, setting session...')
           const { data, error } = await supabase.auth.setSession({
             access_token,
             refresh_token,
@@ -81,7 +79,7 @@ export default function AuthCallbackPage() {
             redirect('/admin')
             return
           }
-          console.error('[auth/callback] setSession failed:', error)
+          // setSession failed — fall through to getSession check
         }
       }
 
