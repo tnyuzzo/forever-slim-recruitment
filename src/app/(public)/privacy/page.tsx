@@ -12,7 +12,7 @@ export default function PrivacyPage() {
                 <p className="text-text-muted mb-4">
                     Swiss Research Labs GmbH<br />
                     Industriestrasse 47, 6300 Zug, Svizzera<br />
-                    Email di contatto: dpo@swissresearchlabs.com
+                    Email di contatto: <a href="mailto:info@closeragency.eu" className="text-primary-main underline">info@closeragency.eu</a>
                 </p>
 
                 <h2 className="text-xl font-bold mt-8 mb-4">2. Dati Raccolti</h2>
@@ -38,8 +38,11 @@ export default function PrivacyPage() {
                 <h2 className="text-xl font-bold mt-8 mb-4">5. Conservazione dei Dati</h2>
                 <p className="text-text-muted mb-4">I dati delle candidature non selezionate verranno conservati per un periodo massimo di 12 mesi dalla data di ricezione, al fine di valutazioni per future opportunità. Il file audio, se depositato, verrà eliminato dopo 6 mesi dalla conclusione della selezione odierna in caso di esito negativo.</p>
 
-                <h2 className="text-xl font-bold mt-8 mb-4">6. Diritti dell'Interessato</h2>
-                <p className="text-text-muted mb-4">In conformità al GDPR, hai il diritto di richiedere in qualsiasi momento l'accesso, la rettifica, la cancellazione dei dati, la limitazione del trattamento. Potrai esercitare questi diritti inviando una email all'indirizzo sopra indicato.</p>
+                <h2 className="text-xl font-bold mt-8 mb-4">6. Comunicazione e Trasferimento dei Dati</h2>
+                <p className="text-text-muted mb-4">I dati personali non saranno diffusi ma potranno essere comunicati a soggetti terzi necessari per l'erogazione del servizio (es. provider di hosting, strumenti di analisi, servizi email). In caso di trasferimento verso paesi extra-UE, verranno adottate le garanzie previste dal GDPR (Clausole Contrattuali Standard o equivalenti).</p>
+
+                <h2 className="text-xl font-bold mt-8 mb-4">7. Diritti dell'Interessato</h2>
+                <p className="text-text-muted mb-4">In conformità al GDPR (artt. 15-22), hai il diritto di richiedere in qualsiasi momento: l'accesso ai tuoi dati, la rettifica, la cancellazione, la limitazione del trattamento, la portabilità dei dati e l'opposizione al trattamento. Potrai esercitare questi diritti inviando una email a <a href="mailto:info@closeragency.eu" className="text-primary-main underline">info@closeragency.eu</a>. Hai inoltre il diritto di proporre reclamo all'autorità di controllo competente.</p>
 
                 <div className="mt-12 pt-6 border-t border-gray-100">
                     <Link href="/" className="text-primary-main hover:underline font-semibold">&larr; Torna alla Home</Link>

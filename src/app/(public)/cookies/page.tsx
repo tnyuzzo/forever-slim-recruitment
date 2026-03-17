@@ -19,12 +19,22 @@ export default function CookiesPage() {
 
                 <h2 className="text-xl font-bold mt-8 mb-4">3. Cookie Analitici e di Profilazione Terze Parti</h2>
                 <p className="text-text-muted mb-4">
-                    Questo sito potrebbe incorporare cookie analitici (es. Google Analytics/PostHog) per analizzare il traffico sulla landing page, al solo fine di ottimizzare la conversione della campagna di reclutamento in modo aggregato.
-                    Potremmo inoltre utilizzare pixel (es. Meta Pixel) per monitorare l'efficacia delle inserzioni pubblicitarie (chi ha completato il form). Il consenso per questi cookie è esplicitamente richiesto tramite banner al primo accesso.
+                    Questo sito utilizza i seguenti servizi di terze parti:
+                </p>
+                <ul className="list-disc pl-6 text-text-muted space-y-2 mb-4">
+                    <li><strong>PostHog</strong> — Piattaforma di analisi prodotto per comprendere come gli utenti interagiscono con il sito (pageview, funnel di candidatura). I dati sono ospitati su server nell'Unione Europea (eu.posthog.com).</li>
+                    <li><strong>Meta Pixel</strong> — Pixel di tracciamento per monitorare l'efficacia delle inserzioni pubblicitarie su Facebook e Instagram (es. completamento candidatura).</li>
+                    <li><strong>Sentry</strong> — Servizio di monitoraggio errori per garantire il corretto funzionamento tecnico del sito. Non raccoglie dati personali identificativi.</li>
+                </ul>
+                <p className="text-text-muted mb-4">
+                    Il consenso per i cookie analitici e di profilazione è richiesto tramite il banner informativo al primo accesso al sito.
                 </p>
 
                 <h2 className="text-xl font-bold mt-8 mb-4">4. Gestione delle Preferenze</h2>
-                <p className="text-text-muted mb-4">L'utente può navigare sul sito limitando l'uso dei non essenziali tramite il banner cookie iniziale o interagendo con le impostazioni del proprio browser.</p>
+                <p className="text-text-muted mb-4">L'utente può navigare sul sito limitando l'uso dei cookie non essenziali tramite il banner iniziale o interagendo con le impostazioni del proprio browser. La disattivazione dei cookie analitici non pregiudica la funzionalità del sito.</p>
+
+                <h2 className="text-xl font-bold mt-8 mb-4">5. Ulteriori Informazioni</h2>
+                <p className="text-text-muted mb-4">Per qualsiasi domanda relativa alla gestione dei cookie, contattaci all'indirizzo <a href="mailto:info@closeragency.eu" className="text-primary-main underline">info@closeragency.eu</a>.</p>
 
                 <div className="mt-12 pt-6 border-t border-gray-100">
                     <Link href="/" className="text-primary-main hover:underline font-semibold">&larr; Torna alla Home</Link>

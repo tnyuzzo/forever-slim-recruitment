@@ -43,7 +43,7 @@ export default function Hero() {
 
             {/* Subheadline */}
             <p className="text-lg md:text-xl text-slate-600 leading-relaxed font-medium">
-              Lavora da casa. Solo provvigioni. Vendita consulenziale nel settore benessere e controllo peso.
+              Lavora da casa. Solo provvigioni. Vendita consulenziale nel settore benessere e cura della persona.
             </p>
 
             {/* 3 Benefits */}

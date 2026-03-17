@@ -24,6 +24,18 @@ export default function TermsPage() {
                 <h2 className="text-xl font-bold mt-8 mb-4">5. Reiezione della Candidatura</h2>
                 <p className="text-text-muted mb-4">L'azienda si riserva il diritto insindacabile di rifiutare una candidatura in qualunque momento, inclusa la qualifica attraverso regole automatiche del questionario motivato dalla difformità ai requisiti minimi di tempo e livello linguistico.</p>
 
+                <h2 className="text-xl font-bold mt-8 mb-4">6. Proprietà Intellettuale</h2>
+                <p className="text-text-muted mb-4">Tutti i contenuti presenti su questo sito (testi, immagini, loghi, grafica, struttura) sono di proprietà di Swiss Research Labs GmbH e sono protetti dalle leggi vigenti in materia di proprietà intellettuale. È vietata la riproduzione, anche parziale, senza autorizzazione scritta.</p>
+
+                <h2 className="text-xl font-bold mt-8 mb-4">7. Limitazione di Responsabilità</h2>
+                <p className="text-text-muted mb-4">Swiss Research Labs GmbH non garantisce risultati economici specifici derivanti dalla collaborazione. Tutti gli scenari di guadagno presentati nel sito hanno finalità puramente illustrativa. L'azienda non è responsabile per eventuali decisioni prese dall'utente sulla base delle informazioni presenti nel sito.</p>
+
+                <h2 className="text-xl font-bold mt-8 mb-4">8. Legge Applicabile e Foro Competente</h2>
+                <p className="text-text-muted mb-4">I presenti Termini & Condizioni sono regolati dalla legge svizzera. Per qualsiasi controversia derivante dall'interpretazione o esecuzione dei presenti Termini sarà competente in via esclusiva il foro di Zug, Svizzera.</p>
+
+                <h2 className="text-xl font-bold mt-8 mb-4">9. Contatti</h2>
+                <p className="text-text-muted mb-4">Per qualsiasi domanda relativa ai presenti Termini, contattaci all'indirizzo: <a href="mailto:info@closeragency.eu" className="text-primary-main underline">info@closeragency.eu</a>.</p>
+
                 <div className="mt-12 pt-6 border-t border-gray-100">
                     <Link href="/" className="text-primary-main hover:underline font-semibold">&larr; Torna alla Home</Link>
                 </div>

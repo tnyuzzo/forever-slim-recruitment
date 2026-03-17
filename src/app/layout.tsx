@@ -65,7 +65,7 @@ const inter = Inter({
 
 export const metadata: Metadata = {
   title: 'Opportunità Vendita Consulenziale | Lavora da Casa',
-  description: 'Niente chiamate a freddo: solo appuntamenti già prenotati. Lavora da casa con i tuoi orari nel settore benessere e controllo peso.',
+  description: 'Niente chiamate a freddo: solo appuntamenti già prenotati. Lavora da casa con i tuoi orari nel settore benessere e cura della persona.',
   robots: 'noindex, nofollow',
 }
 

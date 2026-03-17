@@ -46,7 +46,7 @@ export default function WhatYouDo() {
             </div>
             <div className="mt-6 pt-6 border-t border-green-200">
               <p className="text-gray-700 text-sm leading-relaxed">
-                Non vendi un prodotto. Offri una consulenza. Parli con donne che hanno un problema reale — il rapporto con il proprio peso — e tu hai qualcosa di concreto da proporre. Quando il prodotto è giusto e la conversazione è onesta, la vendita è una conseguenza naturale.
+                Non vendi un prodotto. Offri una consulenza. Parli con donne che cercano una soluzione concreta per il proprio benessere — e tu hai qualcosa di valido da proporre. Quando il prodotto è giusto e la conversazione è onesta, la vendita è una conseguenza naturale.
               </p>
             </div>
           </div>

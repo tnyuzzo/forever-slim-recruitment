@@ -34,7 +34,7 @@ export default function Requirements() {
   const notForYouItems = [
     'Cerchi un fisso mensile garantito — qui si lavora a provvigione, senza rete',
     'Non puoi garantire costanza — sparire per giorni senza preavviso non è accettabile',
-    'Non ti senti a tuo agio a parlare di peso, corpo e benessere femminile',
+    'Non ti senti a tuo agio a parlare di benessere, corpo e cura della persona',
     'Pensi che vendere significhi "convincere" qualcuno a comprare qualcosa che non vuole',
     'Non hai una connessione internet stabile e un ambiente tranquillo per le chiamate',
   ]

@@ -5,7 +5,7 @@ export default function Requirements() {
     { title: 'Parli italiano in modo impeccabile.', desc: 'Nessun accento marcato straniero o dialettale troppo forte. I nostri clienti sono italiani.' },
     { title: 'Sei puntuale. Punto.', desc: 'Nessun ritardo alle consulenze, nessuna scusa. Il cliente ha prenotato il TUO tempo.' },
     { title: 'Sai ascoltare prima di parlare.', desc: 'La vendita consulenziale parte dall\'ascolto e comprensione del bisogno reale.' },
-    { title: 'Hai empatia autentica.', desc: 'Parli con uomini che spesso si portano dietro frustrazione per il loro peso e la forma fisica. Serve rispetto, fermezza e zero giudizio.' },
+    { title: 'Hai empatia autentica.', desc: 'Parli con uomini che cercano un cambiamento concreto per il proprio benessere e la forma fisica. Serve rispetto, fermezza e zero giudizio.' },
     { title: 'Hai almeno 4 ore/giorno e 3 gg/settimana.', desc: 'Questo è il minimo indispensabile per avere un flusso di clienti continuativo.' },
     { title: 'Sei autonomo e affidabile.', desc: 'Nessun capo col fiato sul collo. C\'è un sistema che ti supporta, ma la responsabilità e la costanza sono tue.' },
   ]
@@ -15,7 +15,7 @@ export default function Requirements() {
     'Non puoi garantire costanza fissa (sparire per giorni senza preavviso è inaccettabile)',
     'Pensi che vendere significhi raggirare o opprimere la persona',
     'Non hai un ambiente di lavoro silenzioso per le tue call da casa',
-    'Ti senti in imbarazzo a parlare di peso e benessere fisico femminile'
+    'Ti senti in imbarazzo a parlare di benessere e cura della persona'
   ]
 
   return (
