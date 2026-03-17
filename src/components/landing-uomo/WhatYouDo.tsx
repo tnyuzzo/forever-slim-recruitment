@@ -55,7 +55,7 @@ export default function WhatYouDo() {
 
             <div className="mt-10 p-6 bg-slate-50 rounded-2xl border border-slate-100">
               <p className="text-slate-700 text-sm leading-relaxed font-medium">
-                <span className="font-bold text-slate-900">In sintesi:</span> Non vendi a freddo. Offri consulenza. Parli con uomini che hanno un problema reale legato al controllo del peso e tu proponi loro la soluzione aziendale. Quando il prodotto è valido, la conversazione scorre liscia e naturale.
+                <span className="font-bold text-slate-900">In sintesi:</span> Non vendi a freddo. Offri consulenza. Parli con uomini che cercano soluzioni concrete per il proprio benessere e tu proponi loro la soluzione aziendale. Quando il prodotto è valido, la conversazione scorre liscia e naturale.
               </p>
             </div>
           </div>

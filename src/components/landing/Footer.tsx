@@ -43,11 +43,11 @@ export default function Footer() {
           <div className="text-xs leading-relaxed">
             <p className="text-gray-500 uppercase tracking-wider mb-2 text-[10px]">Dichiarazione sui Risultati e Salute</p>
             <p>
-              Questo prodotto non è inteso per diagnosticare, trattare, curare o prevenire alcuna malattia.
-              I risultati possono variare da persona a persona e dipendono da diversi fattori, tra cui
-              la costituzione fisica, la dieta e l&apos;esercizio fisico. Le testimonianze riportate sono
-              esperienze individuali reali e non garantiscono risultati simili per tutti. Consultare
-              sempre un medico prima di iniziare qualsiasi programma di perdita di peso.
+              I prodotti commercializzati dall&apos;azienda rientrano nella categoria benessere e cura della persona.
+              I risultati possono variare da persona a persona e dipendono da diversi fattori individuali.
+              Le testimonianze riportate sono esperienze individuali reali e non garantiscono risultati
+              simili per tutti. Consultare sempre un professionista qualificato prima di iniziare qualsiasi
+              programma di benessere.
             </p>
           </div>
         </div>
@@ -71,6 +71,9 @@ export default function Footer() {
           <div className="text-center md:text-right">
             <p className="text-sm font-medium text-gray-300">Swiss Research Labs GmbH</p>
             <p className="text-xs">Industriestrasse 47, 6300 Zug, Svizzera</p>
+            <p className="text-xs mt-1">
+              <a href="mailto:info@closeragency.eu" className="hover:text-white transition-colors">info@closeragency.eu</a>
+            </p>
           </div>
         </div>
 

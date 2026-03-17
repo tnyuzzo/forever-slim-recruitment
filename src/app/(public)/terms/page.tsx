@@ -9,7 +9,7 @@ export default function TermsPage() {
                 <p className="mb-4 text-text-muted"><strong>Ultimo aggiornamento: {new Date().toLocaleDateString('it-IT', { month: 'long', year: 'numeric' })}</strong></p>
 
                 <h2 className="text-xl font-bold mt-8 mb-4">1. Natura dell'Opportunità</h2>
-                <p className="text-text-muted mb-4">La presente pagina web promuove un'opportunità di collaborazione autonoma (freelance) per conto di Swiss Research Labs GmbH nel settore della vendita di prodotti per il controllo del peso.</p>
+                <p className="text-text-muted mb-4">La presente pagina web promuove un'opportunità di collaborazione autonoma (freelance) per conto di Swiss Research Labs GmbH nel settore del benessere e della cura della persona.</p>
                 <p className="text-text-muted mb-4">Questa candidatura NON costituisce una promessa di assunzione, né avvia un processo per l'instaurazione di un rapporto di lavoro subordinato (dipendente).</p>
 
                 <h2 className="text-xl font-bold mt-8 mb-4">2. Assenza di Esclusiva ed Etica</h2>

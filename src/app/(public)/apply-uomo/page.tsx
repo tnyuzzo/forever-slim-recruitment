@@ -959,7 +959,7 @@ export default function ApplyPage() {
 
                             <label className="flex items-start gap-3 p-4 border border-gray-200 rounded-xl hover:bg-gray-50 cursor-pointer">
                                 <input type="checkbox" {...register("consent_privacy")} className="mt-1 w-5 h-5 text-blue-600 rounded accent-blue-600" />
-                                <span className="text-text-main text-sm">Acconsento al trattamento dei miei dati personali ai fini del processo di selezione e dichiaro di aver letto la Privacy Policy.</span>
+                                <span className="text-text-main text-sm">Acconsento al trattamento dei miei dati personali ai fini del processo di selezione. Cliccando su Invia, accetto la <a href="/privacy" target="_blank" className="text-blue-600 underline hover:text-blue-500">Privacy Policy</a> e i <a href="/terms" target="_blank" className="text-blue-600 underline hover:text-blue-500">Termini &amp; Condizioni</a>.</span>
                             </label>
                             {errors.consent_privacy && <span className="text-error text-xs font-semibold">{errors.consent_privacy.message}</span>}
 

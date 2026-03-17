@@ -35,7 +35,7 @@ const faqs = [
   },
   {
     question: 'Che tipo di prodotti venderò?',
-    answer: 'Opererai nel settore cosmetici e integratori alimentari per il controllo del peso. Si tratta di prodotti di alta qualità destinati a donne adulte. Riceverai una formazione completa sul prodotto prima di iniziare.',
+    answer: 'Opererai nel fiorente settore del benessere e della cura della persona (mercato health & beauty di alta gamma). Si tratta di prodotti di alta qualità destinati a donne adulte. Riceverai una formazione completa sul prodotto prima di iniziare.',
   },
   {
     question: 'Cosa succede se una cliente non è convinta?',

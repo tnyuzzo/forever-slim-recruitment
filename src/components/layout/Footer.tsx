@@ -19,7 +19,7 @@ const DISCLAIMERS = [
     },
     {
         title: 'Disclaimer risultati e salute',
-        body: 'Questo prodotto non è inteso per diagnosticare, trattare, curare o prevenire alcuna malattia. I risultati possono variare da persona a persona e dipendono da diversi fattori, tra cui la costituzione fisica, la dieta e l\'esercizio fisico. Le testimonianze riportate sono esperienze individuali reali e non garantiscono risultati simili per tutti. Consultare sempre un medico prima di iniziare qualsiasi programma di perdita di peso o modifica del proprio stile di vita.'
+        body: 'I prodotti commercializzati dall\'azienda rientrano nella categoria benessere e cura della persona. I risultati possono variare da persona a persona e dipendono da diversi fattori individuali. Le testimonianze riportate sono esperienze individuali reali e non garantiscono risultati simili per tutti. Consultare sempre un professionista qualificato prima di iniziare qualsiasi programma di benessere.'
     },
 ]
 
@@ -67,6 +67,7 @@ export function Footer() {
                     <div className="text-center md:text-right">
                         <p><strong>Swiss Research Labs GmbH</strong></p>
                         <p>Industriestrasse 47, 6300 Zug, Svizzera</p>
+                        <p className="mt-1"><a href="mailto:info@closeragency.eu" className="hover:text-primary-main">info@closeragency.eu</a></p>
                         <p className="mt-2">© {new Date().getFullYear()} Swiss Research Labs. Tutti i diritti riservati.</p>
                     </div>
                 </div>

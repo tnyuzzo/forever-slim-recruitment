@@ -29,7 +29,7 @@ export default function FAQ() {
     },
     {
       q: '6. Che prodotti venderò?',
-      a: 'Integratori premium e protocolli di controllo del peso per il target maschile. Prodotti di altissima efficacia con recensioni fortissime; il tuo fine è aiutare i clienti ad arrivarci senza finte promesse mediche.'
+      a: 'Opererai nel settore del benessere e della cura della persona maschile (mercato health & beauty premium). Prodotti di altissima qualità con recensioni fortissime; il tuo fine è aiutare i clienti a raggiungere i loro obiettivi con un approccio trasparente e professionale.'
     },
     {
       q: '7. Cosa accade se il cliente non vuole comprare?',

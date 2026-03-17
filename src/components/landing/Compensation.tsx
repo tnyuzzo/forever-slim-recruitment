@@ -8,8 +8,7 @@ export default function Compensation() {
       subtitle: 'Impegno costante',
       hours: '5 ore/giorno, 5 giorni/settimana',
       consultations: '50 consulenze/settimana',
-      weekly: '~€580/settimana',
-      monthly: '~€2.500/mese',
+      level: 'Guadagno proporzionato alle vendite base',
       highlight: false,
     },
     {
@@ -17,8 +16,7 @@ export default function Compensation() {
       subtitle: 'Ritmo sostenuto',
       hours: '6 ore/giorno, 5-6 giorni/settimana',
       consultations: '~66 consulenze/settimana',
-      weekly: '~€780/settimana',
-      monthly: '~€3.400/mese',
+      level: 'Guadagno da performance intermedie',
       highlight: true,
     },
     {
@@ -26,8 +24,7 @@ export default function Compensation() {
       subtitle: 'Performance top',
       hours: '7-8 ore/giorno, 6 giorni/settimana',
       consultations: '~84 consulenze/settimana',
-      weekly: '~€1.170/settimana',
-      monthly: '~€5.000/mese',
+      level: 'Guadagni da Top Performer',
       highlight: false,
     },
   ]
@@ -36,7 +33,7 @@ export default function Compensation() {
     <section className="py-10 md:py-24 bg-white">
       <div className="max-w-7xl mx-auto px-4">
         <h2 className="text-2xl md:text-3xl font-bold text-gray-900 text-center mb-4">
-          Quanto puoi guadagnare. I numeri, senza giri di parole.
+          Come funziona il compenso.
         </h2>
         <p className="text-gray-600 text-center max-w-2xl mx-auto mb-8">
           Questa è una collaborazione a provvigione. Nessun fisso mensile, ma anche nessun tetto massimo.
@@ -86,12 +83,8 @@ export default function Compensation() {
                 </p>
               </div>
               <div className={`pt-4 border-t ${scenario.highlight ? 'border-white/20' : 'border-gray-200'}`}>
-                <p className="text-sm opacity-75">Guadagno stimato</p>
-                <p className={`text-2xl font-bold ${scenario.highlight ? 'text-white' : 'text-gray-900'}`}>
-                  {scenario.monthly}
-                </p>
-                <p className={`text-sm ${scenario.highlight ? 'text-white/75' : 'text-gray-500'}`}>
-                  {scenario.weekly}
+                <p className={`text-base font-semibold ${scenario.highlight ? 'text-white' : 'text-gray-900'}`}>
+                  {scenario.level}
                 </p>
               </div>
             </div>
@@ -100,8 +93,8 @@ export default function Compensation() {
 
         {/* Daily range */}
         <div className="bg-gray-50 rounded-xl p-6 mb-8 max-w-2xl mx-auto text-center">
-          <p className="text-gray-600 mb-2">Guadagno medio giornaliero osservato</p>
-          <p className="text-3xl font-bold text-gray-900">€100 — €300 <span className="text-lg font-normal text-gray-500">/giorno</span></p>
+          <p className="text-gray-600 mb-2">Il tuo guadagno cresce con te</p>
+          <p className="text-xl font-bold text-gray-900">Più consulenze chiudi, più guadagni — senza tetti massimi</p>
           <p className="text-sm text-gray-500 mt-2">A seconda di esperienza, ore dedicate e tasso di chiusura</p>
         </div>
 
