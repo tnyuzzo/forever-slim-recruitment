@@ -10,6 +10,7 @@ import { usePostHog } from 'posthog-js/react'
 import { useTrackVisitor } from '@/hooks/useTrackVisitor'
 import { getStoredUTMs } from '@/hooks/useUTMCapture'
 import { createClient } from '@/lib/supabase/client'
+import { compressImage } from '@/lib/compress-image'
 
 // --- DATA ---
 const COUNTRIES = [
@@ -157,6 +158,8 @@ export default function ApplyPage() {
     const [audioUrl, setAudioUrl] = useState<string | null>(null)
     const [photoFile, setPhotoFile] = useState<File | null>(null)
     const [photoPreview, setPhotoPreview] = useState<string | null>(null)
+    const [photoCompressing, setPhotoCompressing] = useState(false)
+    const [formError, setFormError] = useState<string | null>(null)
     const photoInputRef = useRef<HTMLInputElement>(null)
     const audioInputRef = useRef<HTMLInputElement>(null)
     const [phonePrefix, setPhonePrefix] = useState('+39')
@@ -252,19 +255,30 @@ export default function ApplyPage() {
         window.scrollTo(0, 0)
     }
 
-    const handlePhotoChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const handlePhotoChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
         const file = e.target.files?.[0]
-        if (file) {
-            if (file.size > 5 * 1024 * 1024) {
-                posthog?.capture('photo_upload_rejected', { reason: 'file_too_large', file_size_mb: +(file.size / 1024 / 1024).toFixed(1), funnel_type: 'donna' })
-                alert("La foto non può superare i 5MB.")
-                return
-            }
-            setPhotoFile(file)
-            posthog?.capture('photo_upload_selected', { file_type: file.type, file_size_mb: +(file.size / 1024 / 1024).toFixed(1), funnel_type: 'donna' })
+        if (!file) return
+        setFormError(null)
+
+        if (file.size > 15 * 1024 * 1024) {
+            posthog?.capture('photo_upload_rejected', { reason: 'file_too_large', file_size_mb: +(file.size / 1024 / 1024).toFixed(1), funnel_type: 'donna' })
+            setFormError("La foto non può superare i 15MB. Prova con una foto meno pesante.")
+            return
+        }
+
+        try {
+            setPhotoCompressing(true)
+            const compressed = await compressImage(file)
+            setPhotoFile(compressed)
+            posthog?.capture('photo_upload_selected', { file_type: compressed.type, file_size_mb: +(compressed.size / 1024 / 1024).toFixed(1), original_mb: +(file.size / 1024 / 1024).toFixed(1), funnel_type: 'donna' })
             const reader = new FileReader()
             reader.onloadend = () => setPhotoPreview(reader.result as string)
-            reader.readAsDataURL(file)
+            reader.readAsDataURL(compressed)
+        } catch {
+            posthog?.capture('photo_upload_rejected', { reason: 'compression_failed', file_type: file.type, funnel_type: 'donna' })
+            setFormError("Formato non supportato. Usa JPG, PNG o WebP.")
+        } finally {
+            setPhotoCompressing(false)
         }
     }
 
@@ -278,7 +292,7 @@ export default function ApplyPage() {
         if (file) {
             if (file.size > 10 * 1024 * 1024) {
                 posthog?.capture('audio_upload_rejected', { reason: 'file_too_large', file_size_mb: +(file.size / 1024 / 1024).toFixed(1), funnel_type: 'donna' })
-                alert("Il file audio non può superare i 10MB.")
+                setFormError("Il file audio non può superare i 10MB.")
                 return
             }
             setAudioFile(file)
@@ -303,7 +317,7 @@ export default function ApplyPage() {
             // 0. Validate photo
             if (!photoFile) {
                 posthog?.capture('form_submit_blocked', { reason: 'photo_missing', funnel_type: 'donna' })
-                alert("La foto è obbligatoria. Torna allo step 'Audio & Foto' e carica una tua foto.")
+                setFormError("La foto è obbligatoria. Torna allo step 'Audio & Foto' e carica una tua foto.")
                 setIsSubmitting(false)
                 return
             }
@@ -332,7 +346,7 @@ export default function ApplyPage() {
                 if (photoUploadError) {
                     console.error('Photo upload error:', photoUploadError)
                     posthog?.capture('photo_upload_failed', { error: photoUploadError.message, funnel_type: 'donna' })
-                    alert("Errore nel caricamento della foto. Riprova.")
+                    setFormError("Errore nel caricamento della foto. Riprova.")
                     setIsSubmitting(false)
                     return
                 }
@@ -894,8 +908,18 @@ export default function ApplyPage() {
                         {/* Foto (obbligatoria — visibile subito senza scroll) */}
                         <div className="space-y-3">
                             <label className="text-sm font-semibold text-text-main">La tua foto *</label>
-                            <p className="text-xs text-text-muted">Carica una tua foto recente e ben visibile (volto in primo piano). Formati: JPG, PNG, WebP. Max 5MB.</p>
-                            {photoPreview ? (
+                            <p className="text-xs text-text-muted">Carica una tua foto recente e ben visibile (volto in primo piano). Formati: JPG, PNG, WebP, HEIC. La foto viene ottimizzata automaticamente.</p>
+                            {formError && (
+                                <div className="bg-red-50 border border-red-200 text-red-700 text-sm font-medium px-4 py-3 rounded-xl">
+                                    {formError}
+                                </div>
+                            )}
+                            {photoCompressing ? (
+                                <div className="flex items-center justify-center gap-3 px-4 py-6 w-full bg-gray-50 border-2 border-dashed border-primary-main rounded-2xl">
+                                    <Loader2 className="w-6 h-6 text-primary-main animate-spin" />
+                                    <span className="text-sm font-medium text-text-muted">Ottimizzazione foto in corso...</span>
+                                </div>
+                            ) : photoPreview ? (
                                 <div className="flex items-center gap-4">
                                     <div className="relative">
                                         <img src={photoPreview} alt="Anteprima foto" className="w-24 h-24 rounded-2xl object-cover border-2 border-primary-main shadow-sm" />
@@ -909,7 +933,7 @@ export default function ApplyPage() {
                                 </div>
                             ) : (
                                 <>
-                                    <input ref={photoInputRef} type="file" accept="image/jpeg,image/png,image/webp" className="absolute w-0 h-0 opacity-0 overflow-hidden" onChange={handlePhotoChange} />
+                                    <input ref={photoInputRef} type="file" accept="image/jpeg,image/png,image/webp,image/heic,image/heif,.heic,.heif" className="absolute w-0 h-0 opacity-0 overflow-hidden" onChange={handlePhotoChange} />
                                     <button type="button" onClick={() => { posthog?.capture('photo_upload_clicked', { funnel_type: 'donna' }); photoInputRef.current?.click() }} className="flex items-center justify-center gap-3 px-4 py-6 w-full bg-white border-2 border-dashed border-gray-300 rounded-2xl cursor-pointer hover:bg-gray-50 hover:border-primary-main transition-colors">
                                         <Camera className="w-6 h-6 text-gray-400" />
                                         <span className="text-sm font-medium text-text-muted">Tocca per caricare la tua foto</span>
@@ -1021,6 +1045,12 @@ export default function ApplyPage() {
                                         >
                                             <ChevronLeft className="w-5 h-5" /> Indietro
                                         </button>
+                                    )}
+
+                                    {formError && step === schemas.length - 1 && (
+                                        <div className="w-full bg-red-50 border border-red-200 text-red-700 text-sm font-medium px-4 py-3 rounded-xl">
+                                            {formError}
+                                        </div>
                                     )}
 
                                     <button
