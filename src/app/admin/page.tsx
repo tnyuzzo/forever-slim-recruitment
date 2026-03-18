@@ -2,7 +2,6 @@
 
 import { useEffect, useMemo, useState, useCallback } from 'react'
 import { useRouter } from 'next/navigation'
-import Link from 'next/link'
 import { createClient } from '@/lib/supabase/client'
 import { format } from 'date-fns'
 import { Filter, Search, ChevronLeft, ChevronRight, Trash2, User } from 'lucide-react'

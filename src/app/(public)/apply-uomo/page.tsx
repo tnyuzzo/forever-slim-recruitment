@@ -3,7 +3,7 @@
 import { useState, useEffect, useRef } from 'react'
 import { useRouter } from 'next/navigation'
 import { zodResolver } from '@hookform/resolvers/zod'
-import { useForm, DefaultValues } from 'react-hook-form'
+import { useForm, DefaultValues, FieldValues, SubmitHandler } from 'react-hook-form'
 import { z } from 'zod'
 import { Check, ChevronRight, ChevronLeft, Loader2, Upload, Headphones, Camera, X } from 'lucide-react'
 import { usePostHog } from 'posthog-js/react'
@@ -135,6 +135,7 @@ const step7Schema = z.object({
 })
 
 // Combined Schema for final submit (not strictly used for step validation but good reference)
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
 const submitSchema = step0Schema.and(step1Schema).and(step2Schema).and(step3Schema).and(step4Schema).and(step5Schema).and(step6Schema).and(step7Schema)
 type CandidateFormData = z.infer<typeof submitSchema>
 
@@ -155,7 +156,7 @@ export default function ApplyPage() {
     const [step, setStep] = useState(0)
     const [isSubmitting, setIsSubmitting] = useState(false)
     const [audioFile, setAudioFile] = useState<File | null>(null)
-    const [audioUrl, setAudioUrl] = useState<string | null>(null)
+
     const [photoFile, setPhotoFile] = useState<File | null>(null)
     const [photoPreview, setPhotoPreview] = useState<string | null>(null)
     const [photoCompressing, setPhotoCompressing] = useState(false)
@@ -212,8 +213,8 @@ export default function ApplyPage() {
     const currentSchema = schemas[step]
 
     const form = useForm<CandidateFormData>({
-        // @ts-ignore - Dynamic resolver type mismatch with overall form data
-        resolver: zodResolver(currentSchema as any),
+        // @ts-expect-error - Dynamic resolver type mismatch with overall form data
+        resolver: zodResolver(currentSchema),
         mode: "onChange",
         defaultValues: {
             strong_accent: false,
@@ -225,7 +226,7 @@ export default function ApplyPage() {
         } as DefaultValues<CandidateFormData>
     })
 
-    const { register, handleSubmit, formState: { errors, isValid }, trigger, getValues, setValue } = form
+    const { register, handleSubmit, formState: { errors }, trigger, getValues, setValue } = form
 
     const handleNext = async () => {
         const isStepValid = await trigger()
@@ -301,7 +302,8 @@ export default function ApplyPage() {
         }
     }
 
-    const onSubmit = async (_stepData: CandidateFormData) => {
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
+    const onSubmit: SubmitHandler<FieldValues> = async (_stepData) => {
         if (step !== schemas.length - 1) {
             return handleNext()
         }
@@ -876,22 +878,22 @@ export default function ApplyPage() {
             case 5:
                 return (
                     <div className="space-y-8">
-                        <p className="text-text-muted">Questa è la parte più importante per noi. Vogliamo capire come ragioni e come guidi le persone verso la scelta migliore. Non usare l'intelligenza artificiale, apprezziamo la genuinità.</p>
+                        <p className="text-text-muted">Questa è la parte più importante per noi. Vogliamo capire come ragioni e come guidi le persone verso la scelta migliore. Non usare l&apos;intelligenza artificiale, apprezziamo la genuinità.</p>
 
                         <div className="space-y-4 bg-blue-100/30 p-6 rounded-2xl border border-blue-100">
-                            <h4 className="font-bold text-lg">Scenario 1: L'Obiezione</h4>
-                            <p className="text-sm italic">"Il prodotto mi piace molto e ne ho sicuramente bisogno visti i chili da scalare, ma per me sono soldi, ci devo pensare..."</p>
+                            <h4 className="font-bold text-lg">Scenario 1: L&apos;Obiezione</h4>
+                            <p className="text-sm italic">&quot;Il prodotto mi piace molto e ne ho sicuramente bisogno visti i chili da scalare, ma per me sono soldi, ci devo pensare...&quot;</p>
                             <div className="space-y-2 mt-4">
                                 <label className="text-sm font-semibold text-text-main">Ascolti queste parole dal cliente. Cosa dici esattamente per rispondergli e provare a chiuderlo senza sembrare aggressivo? *</label>
                                 <textarea {...register("roleplay_think_about_it")} rows={6} className="w-full border border-gray-300 rounded-xl px-4 py-3 bg-white focus:outline-none focus:ring-2 focus:ring-blue-600 resize-none" placeholder="Scrivi parola per parola cosa diresti..."></textarea>
-                                <p className="text-xs text-text-muted text-right">Minimo 30 caratteri. Valutiamo l'empatia e la tecnica.</p>
+                                <p className="text-xs text-text-muted text-right">Minimo 30 caratteri. Valutiamo l&apos;empatia e la tecnica.</p>
                                 {errors.roleplay_think_about_it && <span className="text-error text-xs">{errors.roleplay_think_about_it.message}</span>}
                             </div>
                         </div>
 
                         <div className="space-y-4 bg-blue-100/30 p-6 rounded-2xl border border-blue-100">
-                            <h4 className="font-bold text-lg">Scenario 2: L'Upsell Protettivo</h4>
-                            <p className="text-sm italic">Il cliente vuole acquistare solo 1 scatola per "provare". Tu sai che per avere risultati visibili gli servono almeno 3 mesi, e offrite un kit da 3 scatole con forte sconto.</p>
+                            <h4 className="font-bold text-lg">Scenario 2: L&apos;Upsell Protettivo</h4>
+                            <p className="text-sm italic">Il cliente vuole acquistare solo 1 scatola per &quot;provare&quot;. Tu sai che per avere risultati visibili gli servono almeno 3 mesi, e offrite un kit da 3 scatole con forte sconto.</p>
                             <div className="space-y-2 mt-4">
                                 <label className="text-sm font-semibold text-text-main">Cosa e come glielo dici per convincerlo a prendere il kit da 3 scatole (che conviene sia a lui che al tuo portafoglio) invece di quello da 1 scatola? *</label>
                                 <textarea {...register("roleplay_bundle3")} rows={6} className="w-full border border-gray-300 rounded-xl px-4 py-3 bg-white focus:outline-none focus:ring-2 focus:ring-blue-600 resize-none" placeholder="Scrivi la tua spiegazione/presentazione della proposta..."></textarea>
@@ -964,7 +966,7 @@ export default function ApplyPage() {
                                         </div>
                                     </button>
                                 </div>
-                                <p className="text-xs text-text-muted uppercase font-semibold tracking-wider">L'audio è facoltativo ma consigliatissimo</p>
+                                <p className="text-xs text-text-muted uppercase font-semibold tracking-wider">L&apos;audio è facoltativo ma consigliatissimo</p>
                             </div>
                         </div>
                     </div>
@@ -977,7 +979,7 @@ export default function ApplyPage() {
                         <div className="space-y-4">
                             <label className="flex items-start gap-3 p-4 border border-gray-200 rounded-xl hover:bg-gray-50 cursor-pointer">
                                 <input type="checkbox" {...register("consent_truth")} className="mt-1 w-5 h-5 text-blue-600 rounded accent-blue-600" />
-                                <span className="text-text-main text-sm">Dichiaro formalmente che tutte le informazioni fornite (incluse le prove pratiche) sono state redatte in completa autonomia, senza l'uso di Intelligenza Artificiale, e riflettono la realtà.</span>
+                                <span className="text-text-main text-sm">Dichiaro formalmente che tutte le informazioni fornite (incluse le prove pratiche) sono state redatte in completa autonomia, senza l&apos;uso di Intelligenza Artificiale, e riflettono la realtà.</span>
                             </label>
                             {errors.consent_truth && <span className="text-error text-xs font-semibold">{errors.consent_truth.message}</span>}
 
@@ -989,7 +991,7 @@ export default function ApplyPage() {
 
                             <label className="flex items-start gap-3 p-4 border border-gray-200 rounded-xl hover:bg-gray-50 cursor-pointer">
                                 <input type="checkbox" {...register("consent_whatsapp")} className="mt-1 w-5 h-5 text-blue-600 rounded accent-blue-600" />
-                                <span className="text-text-main text-sm">Acconsento a ricevere comunicazioni via WhatsApp sul numero inserito relative all'esito della selezione ed eventuale onboarding.</span>
+                                <span className="text-text-main text-sm">Acconsento a ricevere comunicazioni via WhatsApp sul numero inserito relative all&apos;esito della selezione ed eventuale onboarding.</span>
                             </label>
                         </div>
                     </div>
@@ -1028,7 +1030,7 @@ export default function ApplyPage() {
 
                     <div>
                         <h2 className="text-2xl font-bold text-text-main mb-6">{stepTitles[step]}</h2>
-                        <form onSubmit={handleSubmit(onSubmit as any)} autoComplete="off" className="space-y-8">
+                        <form onSubmit={handleSubmit(onSubmit)} autoComplete="off" className="space-y-8">
 
                             <div key={step}>{renderStepContent()}</div>
 
@@ -1052,7 +1054,7 @@ export default function ApplyPage() {
 
                                     <button
                                         type="button"
-                                        onClick={handleSubmit(onSubmit as any)}
+                                        onClick={handleSubmit(onSubmit)}
                                         disabled={isSubmitting}
                                         className="flex-1 px-6 py-4 rounded-xl bg-blue-600 hover:bg-blue-700 text-white font-semibold transition-colors flex items-center justify-center gap-2 disabled:opacity-50"
                                     >

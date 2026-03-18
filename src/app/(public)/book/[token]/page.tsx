@@ -68,6 +68,7 @@ export default function BookingPage({ params }: { params: Promise<{ token: strin
 
     useEffect(() => {
         fetchSlots()
+    // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [token])
 
     async function fetchSlots() {
@@ -89,7 +90,7 @@ export default function BookingPage({ params }: { params: Promise<{ token: strin
 
             setCandidateName(data.candidate_name)
             setSlots(data.slots || [])
-        } catch (err) {
+        } catch {
             setError('Errore nel caricamento degli slot disponibili.')
         } finally {
             setLoading(false)
@@ -116,7 +117,7 @@ export default function BookingPage({ params }: { params: Promise<{ token: strin
             } else {
                 setError(data.error || 'Errore nella conferma.')
             }
-        } catch (err) {
+        } catch {
             setError('Errore di rete. Riprova.')
         } finally {
             setConfirming(false)
@@ -210,7 +211,7 @@ export default function BookingPage({ params }: { params: Promise<{ token: strin
                     </div>
                     <p className="text-slate-500 leading-relaxed text-sm">
                         Gli orari disponibili saranno mostrati nel <strong>tuo fuso orario</strong> ({getTimezoneCity(userTz)}).
-                        Accanto vedrai anche l'ora italiana come riferimento.
+                        Accanto vedrai anche l&apos;ora italiana come riferimento.
                     </p>
                     <button
                         onClick={() => setTzConfirmed(true)}

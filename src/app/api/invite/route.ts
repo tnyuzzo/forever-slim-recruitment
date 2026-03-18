@@ -79,7 +79,7 @@ export async function POST(request: Request) {
             promises.push((async () => {
                 try {
                     const safeFirstName = escapeHtml(candidate.first_name);
-                    const emailResult = await resend.emails.send({
+                    await resend.emails.send({
                         from: 'Closer Agency <recruiting@closeragency.eu>',
                         to: candidate.email,
                         subject: `Fissa il tuo Colloquio Conoscitivo, ${candidate.first_name}!`,
@@ -110,11 +110,10 @@ export async function POST(request: Request) {
             </div>
           `,
                     });
-                    console.log('Email result:', JSON.stringify(emailResult));
                     results.email = { success: true, detail: 'Email inviata' };
-                } catch (emailErr: any) {
-                    console.error('Email error:', emailErr?.message || emailErr);
-                    const msg = emailErr?.message || String(emailErr);
+                } catch (emailErr: unknown) {
+                    const msg = emailErr instanceof Error ? emailErr.message : String(emailErr);
+                    console.error('Email error:', msg);
                     if (msg.includes('verify') || msg.includes('domain') || msg.includes('sandbox')) {
                         results.email = { success: false, detail: 'Resend in modalità sandbox: per inviare a candidati serve un dominio verificato. Email inviata solo alla mail admin.' };
                     } else {
@@ -155,19 +154,19 @@ export async function POST(request: Request) {
                     }, 10000);
 
                     const smsData = await smsRes.json();
-                    console.log('SMS result:', JSON.stringify(smsData));
-
                     if (smsData?.http_code === 200 || smsData?.response_code === 'SUCCESS') {
                         results.sms = { success: true, detail: 'SMS inviato' };
                     } else {
                         results.sms = { success: false, detail: 'ClickSend risposta: ' + (smsData?.response_msg || JSON.stringify(smsData)) };
                     }
-                } catch (smsErr: any) {
-                    console.error('SMS error:', smsErr?.message || smsErr);
-                    if (smsErr?.name === 'AbortError') {
+                } catch (smsErr: unknown) {
+                    const smsMsg = smsErr instanceof Error ? smsErr.message : String(smsErr);
+                    const isAbort = smsErr instanceof Error && smsErr.name === 'AbortError';
+                    console.error('SMS error:', smsMsg);
+                    if (isAbort) {
                         results.sms = { success: false, detail: 'Timeout invio SMS (>10s). L\'SMS potrebbe arrivare comunque.' };
                     } else {
-                        results.sms = { success: false, detail: 'Errore invio SMS: ' + (smsErr?.message || String(smsErr)) };
+                        results.sms = { success: false, detail: 'Errore invio SMS: ' + smsMsg };
                     }
                 }
             })());
@@ -183,8 +182,8 @@ export async function POST(request: Request) {
             .eq('id', candidate_id);
 
         return NextResponse.json({ success: true, bookingLink, results });
-    } catch (error: any) {
+    } catch (error: unknown) {
         console.error('Invite route error:', error);
-        return NextResponse.json({ error: 'Errore interno: ' + (error?.message || 'Sconosciuto') }, { status: 500 });
+        return NextResponse.json({ error: 'Errore interno: ' + (error instanceof Error ? error.message : 'Sconosciuto') }, { status: 500 });
     }
 }

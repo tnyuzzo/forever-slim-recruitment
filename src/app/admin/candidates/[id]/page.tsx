@@ -55,6 +55,7 @@ const SCORE_LABELS: Record<string, { label: string; max: number }> = {
 export default function CandidateDetailPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = use(params)
   const posthog = usePostHog()
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const [candidate, setCandidate] = useState<any>(null)
   const [loading, setLoading] = useState(true)
   const [inviteLoading, setInviteLoading] = useState(false)
@@ -69,6 +70,7 @@ export default function CandidateDetailPage({ params }: { params: Promise<{ id: 
   const [rejectionReason, setRejectionReason] = useState('')
 
   // Interviews
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const [interviews, setInterviews] = useState<any[]>([])
 
   // Toast
@@ -82,6 +84,7 @@ export default function CandidateDetailPage({ params }: { params: Promise<{ id: 
 
   // Edit mode
   const [isEditing, setIsEditing] = useState(false)
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const [editData, setEditData] = useState<Record<string, any>>({})
   const [editSaving, setEditSaving] = useState(false)
 
@@ -111,6 +114,7 @@ export default function CandidateDetailPage({ params }: { params: Promise<{ id: 
     fetchCandidate()
     fetchInterviews()
     fetchUserRole()
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [id])
 
   async function fetchUserRole() {
@@ -199,7 +203,8 @@ export default function CandidateDetailPage({ params }: { params: Promise<{ id: 
 
   async function rejectWithReason() {
     try {
-      const updateData: any = { status: 'rejected' }
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const updateData: Record<string, any> = { status: 'rejected' }
       if (rejectionReason.trim()) {
         updateData.ko_reason = rejectionReason
       }
@@ -398,6 +403,7 @@ export default function CandidateDetailPage({ params }: { params: Promise<{ id: 
     }
   }
 
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   function editField(key: string, value: any) {
     setEditData(prev => ({ ...prev, [key]: value }))
   }
@@ -410,6 +416,7 @@ export default function CandidateDetailPage({ params }: { params: Promise<{ id: 
 
   const whatsappLink = candidate.whatsapp ? `https://wa.me/${candidate.whatsapp.replace(/[^0-9]/g, '')}` : null
 
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   function getInterviewDate(interview: any): string {
     const dateStr = interview.scheduled_start || interview.scheduled_at
     if (!dateStr) return 'Data non definita'

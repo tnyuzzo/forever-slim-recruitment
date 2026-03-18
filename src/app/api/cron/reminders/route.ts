@@ -95,6 +95,7 @@ export async function GET(request: Request) {
         const results: { candidate: string; reminder: number; channels: string[] }[] = [];
 
         for (const interview of pendingInterviews) {
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
             const candidate = interview.candidates as any;
             if (!candidate || candidate.status !== 'invited') continue;
 
@@ -127,8 +128,7 @@ export async function GET(request: Request) {
 
             const config = REMINDER_CONFIG[reminderCount];
             const bookingLink = candidate.interview_link || `${baseUrl}/book/${interview.slot_token}`;
-            const firstName = candidate.first_name;
-            const safeFirstName = escapeHtml(firstName);
+            const firstName = candidate.first_name as string;
             const channelsSent: string[] = [];
 
             // Invio Email
@@ -217,8 +217,8 @@ export async function GET(request: Request) {
             italianHour,
             results,
         });
-    } catch (error: any) {
+    } catch (error: unknown) {
         console.error('Cron reminders error:', error);
-        return NextResponse.json({ error: 'Errore interno: ' + (error?.message || 'Sconosciuto') }, { status: 500 });
+        return NextResponse.json({ error: 'Errore interno: ' + (error instanceof Error ? error.message : 'Sconosciuto') }, { status: 500 });
     }
 }

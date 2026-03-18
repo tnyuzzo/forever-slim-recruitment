@@ -43,13 +43,14 @@ export async function POST(request: Request) {
         const payload = await request.json();
         return await handleInbound(payload);
 
-    } catch (error: any) {
+    } catch (error: unknown) {
         console.error('Inbound webhook error:', error);
-        return NextResponse.json({ error: error?.message || 'Errore sconosciuto' }, { status: 500 });
+        return NextResponse.json({ error: error instanceof Error ? error.message : 'Errore sconosciuto' }, { status: 500 });
     }
 }
 
-async function handleInbound(payload: any) {
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+async function handleInbound(payload: Record<string, any>) {
     // Il payload Resend inbound è dentro payload.data per l'evento email.received
     const data = payload.data || payload;
 

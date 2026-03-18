@@ -253,7 +253,7 @@ function italianHourToUTC(baseDate: Date, italianHour: number): Date {
     return new Date(utcGuess.getTime() - diff * 60 * 60 * 1000);
 }
 
-function generateAvailableSlots(adminSlots: any[]) {
+function generateAvailableSlots(adminSlots: { day_of_week: number; start_time: string; end_time: string }[]) {
     const slots: { date: string; time: string; datetime: string; dayName: string; italianTime: string }[] = [];
     const now = new Date();
 

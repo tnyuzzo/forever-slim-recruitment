@@ -26,6 +26,7 @@ export default function SettingsPage() {
 
   useEffect(() => {
     fetchSlots()
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
 
   async function fetchSlots() {
@@ -63,7 +64,7 @@ export default function SettingsPage() {
     setSlots(slots.filter((_, i) => i !== index))
   }
 
-  function updateSlot(index: number, field: keyof SlotRow, value: any) {
+  function updateSlot(index: number, field: keyof SlotRow, value: string | number | boolean) {
     setSlots(slots.map((s, i) => i === index ? { ...s, [field]: value } : s))
   }
 

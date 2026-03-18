@@ -1,7 +1,9 @@
+/* eslint-disable @typescript-eslint/no-require-imports */
+require('dotenv').config({ path: '.env.local' });
 const { createClient } = require('@supabase/supabase-js');
 const supabase = createClient(
-    'https://fxvnzxxioqpxrvownjag.supabase.co',
-    'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImZ4dm56eHhpb3FweHJ2b3duamFnIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc3MDAyMzMyNCwiZXhwIjoyMDg1NTk5MzI0fQ.EH_ruvNvXqJ4WfO6Rb7-E-xM1uvM0JoKixnc8u4hFdI'
+    process.env.NEXT_PUBLIC_SUPABASE_URL,
+    process.env.SUPABASE_SERVICE_ROLE_KEY
 );
 
 async function setup() {
@@ -10,7 +12,7 @@ async function setup() {
     if (!tony) { console.log('Utente non trovato!'); return; }
     console.log('User ID:', tony.id);
 
-    const { data, error } = await supabase.from('user_roles').upsert({
+    const { error } = await supabase.from('user_roles').upsert({
         user_id: tony.id,
         role: 'superadmin'
     }, { onConflict: 'user_id' });

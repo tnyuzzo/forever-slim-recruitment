@@ -16,7 +16,7 @@ export default function WarmLeads() {
                 <Flame className="w-8 h-8" />
               </div>
               <h2 className="text-3xl md:text-5xl font-black text-slate-900 leading-tight mb-6">
-                Perché lavorare con "lead caldi"
+                Perché lavorare con &quot;lead caldi&quot;
                 <span className="text-blue-600 block mt-2">cambia le regole del gioco.</span>
               </h2>
               <p className="text-lg text-slate-600 font-medium leading-relaxed">
@@ -66,7 +66,7 @@ export default function WarmLeads() {
                     <Target className="w-6 h-6" />
                   </div>
                   <div className="w-[calc(100%-5rem)] md:w-[calc(50%-3rem)] bg-white p-5 rounded-2xl shadow-sm border border-slate-100">
-                    <h4 className="font-bold text-slate-900">Il cliente vede l'annuncio</h4>
+                    <h4 className="font-bold text-slate-900">Il cliente vede l&apos;annuncio</h4>
                     <p className="text-sm text-slate-500 font-medium mt-1">Clicca e compila il questionario di idoneità</p>
                   </div>
                 </div>
@@ -77,7 +77,7 @@ export default function WarmLeads() {
                     <CalendarDays className="w-6 h-6" />
                   </div>
                   <div className="w-[calc(100%-5rem)] md:w-[calc(50%-3rem)] bg-white p-5 rounded-2xl shadow-sm border border-slate-100">
-                    <h4 className="font-bold text-slate-900">Prenota l'appuntamento</h4>
+                    <h4 className="font-bold text-slate-900">Prenota l&apos;appuntamento</h4>
                     <p className="text-sm text-slate-500 font-medium mt-1">Sceglie un giorno e orario nella tua agenda</p>
                   </div>
                 </div>

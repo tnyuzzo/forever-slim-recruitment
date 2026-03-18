@@ -213,7 +213,7 @@ export default function TeamManagement() {
         }
     }
 
-    function updateMemberSlot(userId: string, index: number, field: keyof SlotRow, value: any) {
+    function updateMemberSlot(userId: string, index: number, field: keyof SlotRow, value: string | number | boolean) {
         setMemberSlots(prev => ({
             ...prev,
             [userId]: prev[userId].map((s, i) => i === index ? { ...s, [field]: value } : s)

@@ -13,7 +13,8 @@ export async function isSuperAdmin(userId: string): Promise<boolean> {
                     return cookieStore.getAll()
                 },
                 // We only use this for checking, so setting cookies isn't strictly necessary here
-                setAll(cookiesToSet) {
+                // eslint-disable-next-line @typescript-eslint/no-unused-vars
+                setAll(_cookiesToSet) {
                     // Ignored in read-only mode
                 },
             },
@@ -40,7 +41,8 @@ export async function getUserRole(userId: string): Promise<'superadmin' | 'recru
                 getAll() {
                     return cookieStore.getAll()
                 },
-                setAll(cookiesToSet) {
+                // eslint-disable-next-line @typescript-eslint/no-unused-vars
+                setAll(_cookiesToSet) {
                 },
             },
         }

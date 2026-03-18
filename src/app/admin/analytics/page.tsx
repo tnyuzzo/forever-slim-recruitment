@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useMemo } from 'react'
 import { createClient } from '@/lib/supabase/client'
-import { BarChart3, TrendingUp, Users, Filter, ChevronDown, ChevronRight } from 'lucide-react'
+import { BarChart3, TrendingUp, ChevronDown, ChevronRight } from 'lucide-react'
 
 type Candidate = {
   id: string
@@ -30,11 +30,6 @@ type GroupedRow = {
   avgScore: number
   highPriority: number
   children?: GroupedRow[]
-}
-
-const FUNNEL_COLORS = {
-  donna: { bg: 'bg-pink-100', text: 'text-pink-700', bar: 'bg-pink-500' },
-  uomo: { bg: 'bg-blue-100', text: 'text-blue-700', bar: 'bg-blue-500' },
 }
 
 const STATUS_LABELS: Record<string, string> = {
@@ -69,6 +64,7 @@ export default function AnalyticsPage() {
       setLoading(false)
     }
     fetchCandidates()
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
 
   const filtered = useMemo(() => {

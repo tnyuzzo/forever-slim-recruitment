@@ -48,27 +48,23 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
     router.push('/admin/login')
   }
 
-  const NavLinks = () => (
-    <>
-      {visibleNavigation.map((item) => {
-        const isActive = pathname === item.href
-        return (
-          <Link
-            key={item.name}
-            href={item.href}
-            onClick={() => setIsMobileMenuOpen(false)}
-            className={`flex items-center gap-3 px-4 py-3 rounded-xl transition-colors font-medium ${isActive
-              ? 'bg-primary-light text-primary-hover'
-              : 'text-text-muted hover:bg-gray-50 hover:text-text-main'
-              }`}
-          >
-            <item.icon className="w-5 h-5" />
-            {item.name}
-          </Link>
-        )
-      })}
-    </>
-  )
+  const navLinks = visibleNavigation.map((item) => {
+    const isActive = pathname === item.href
+    return (
+      <Link
+        key={item.name}
+        href={item.href}
+        onClick={() => setIsMobileMenuOpen(false)}
+        className={`flex items-center gap-3 px-4 py-3 rounded-xl transition-colors font-medium ${isActive
+          ? 'bg-primary-light text-primary-hover'
+          : 'text-text-muted hover:bg-gray-50 hover:text-text-main'
+          }`}
+      >
+        <item.icon className="w-5 h-5" />
+        {item.name}
+      </Link>
+    )
+  })
 
   return (
     <div className="min-h-screen bg-bg-alt flex flex-col md:flex-row">
@@ -94,7 +90,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
         </div>
 
         <div className="flex-1 p-4 space-y-2 mt-16 md:mt-0 overflow-y-auto">
-          <NavLinks />
+          {navLinks}
         </div>
 
         {/* User Info & Logout */}

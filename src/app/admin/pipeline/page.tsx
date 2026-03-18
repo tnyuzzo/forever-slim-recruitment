@@ -38,11 +38,13 @@ export default function PipelinePage() {
   const [loading, setLoading] = useState(true)
   const [draggedId, setDraggedId] = useState<string | null>(null)
   const [dragOverColumn, setDragOverColumn] = useState<string | null>(null)
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const [interviewMap, setInterviewMap] = useState<Record<string, any>>({})
   const supabase = createClient()
 
   useEffect(() => {
     fetchCandidates()
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
 
   async function fetchCandidates() {
@@ -67,6 +69,7 @@ export default function PipelinePage() {
             .order('created_at', { ascending: false })
 
           if (interviewData) {
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
             const map: Record<string, any> = {}
             for (const iv of interviewData) {
               if (!map[iv.candidate_id]) {
@@ -99,6 +102,7 @@ export default function PipelinePage() {
       console.error('Error updating status:', error)
       fetchCandidates() // Revert on error
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [supabase])
 
   const handleDragStart = (e: React.DragEvent, candidateId: string) => {

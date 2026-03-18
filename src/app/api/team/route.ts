@@ -88,15 +88,12 @@ export async function POST(req: NextRequest) {
         let actionLink: string
         const isExistingUser = !!existingUser
 
-        console.log(`[team-invite] email=${email} role=${role} exists=${isExistingUser}`)
-
         if (existingUser) {
             // ── Existing user: confirm email + generate magic link ──
             targetUserId = existingUser.id
 
             // Ensure email is confirmed (zombie users from failed inviteUserByEmail)
             if (!existingUser.email_confirmed_at) {
-                console.log('[team-invite] Confirming email for zombie user:', email)
                 const { error: confirmErr } = await supabaseAdmin.auth.admin.updateUserById(targetUserId, {
                     email_confirm: true
                 })
@@ -118,7 +115,6 @@ export async function POST(req: NextRequest) {
             }
 
             actionLink = linkData.properties.action_link
-            console.log('[team-invite] Magic link generated OK, length:', actionLink?.length)
         } else {
             // ── New user: generate invite link (creates user + link in one call) ──
             const { data: linkData, error: linkError } = await supabaseAdmin.auth.admin.generateLink({
@@ -137,7 +133,6 @@ export async function POST(req: NextRequest) {
 
             targetUserId = linkData.user.id
             actionLink = linkData.properties.action_link
-            console.log('[team-invite] Invite link generated OK, userId:', targetUserId, 'linkLength:', actionLink?.length)
         }
 
         if (!actionLink) {
@@ -154,8 +149,6 @@ export async function POST(req: NextRequest) {
         }
 
         // ── Step 2 & 3: Assign role + Send email in parallel ──
-        console.log('[team-invite] Sending via Resend to:', email)
-
         const [roleResult, emailResult] = await Promise.allSettled([
             supabaseAdmin.from('user_roles').upsert({
                 user_id: targetUserId,
@@ -188,7 +181,7 @@ export async function POST(req: NextRequest) {
             })
         }
 
-        const { data: emailData, error: emailError } = emailResult.value
+        const { error: emailError } = emailResult.value
 
         if (emailError) {
             console.error('[team-invite] Resend FAILED:', JSON.stringify(emailError))
@@ -201,8 +194,6 @@ export async function POST(req: NextRequest) {
             })
         }
 
-        console.log('[team-invite] Resend SUCCESS. ID:', emailData?.id)
-
         return NextResponse.json({
             success: true,
             message: isExistingUser
@@ -213,9 +204,9 @@ export async function POST(req: NextRequest) {
             isExistingUser
         })
 
-    } catch (err: any) {
+    } catch (err: unknown) {
         console.error('[team-invite] UNEXPECTED ERROR:', err)
-        return NextResponse.json({ error: 'Errore server: ' + err.message }, { status: 500 })
+        return NextResponse.json({ error: 'Errore server: ' + (err instanceof Error ? err.message : 'Sconosciuto') }, { status: 500 })
     }
 }
 
@@ -254,8 +245,8 @@ export async function GET() {
         })
 
         return NextResponse.json({ members: teamMembers })
-    } catch (err: any) {
-        return NextResponse.json({ error: 'Errore server: ' + err.message }, { status: 500 })
+    } catch (err: unknown) {
+        return NextResponse.json({ error: 'Errore server: ' + (err instanceof Error ? err.message : 'Sconosciuto') }, { status: 500 })
     }
 }
 
@@ -295,7 +286,7 @@ export async function DELETE(req: NextRequest) {
         }
 
         return NextResponse.json({ success: true, message: 'Membro rimosso dal team.' })
-    } catch (err: any) {
-        return NextResponse.json({ error: 'Errore server: ' + err.message }, { status: 500 })
+    } catch (err: unknown) {
+        return NextResponse.json({ error: 'Errore server: ' + (err instanceof Error ? err.message : 'Sconosciuto') }, { status: 500 })
     }
 }

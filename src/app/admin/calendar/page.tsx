@@ -136,6 +136,7 @@ export default function CalendarPage() {
   useEffect(() => {
     setBrowserTz(detectTimezone())
     fetchUserRole()
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
 
   async function fetchUserRole() {
@@ -159,10 +160,10 @@ export default function CalendarPage() {
 
     if (!allSlots) return
 
-    const grouped = teamData.members.map((m: any) => ({
+    const grouped = teamData.members.map((m: { email: string; user_id: string }) => ({
       email: m.email,
-      slots: allSlots.filter((s: any) => s.recruiter_id === m.user_id),
-    })).filter((g: any) => g.slots.length > 0)
+      slots: allSlots.filter((s: { recruiter_id: string | null }) => s.recruiter_id === m.user_id),
+    })).filter((g: { slots: unknown[] }) => g.slots.length > 0)
 
     setTeamAvailability(grouped)
   }
@@ -181,6 +182,7 @@ export default function CalendarPage() {
 
   useEffect(() => {
     fetchInterviews(visibleRange.start, visibleRange.end)
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [visibleRange])
 
   async function fetchInterviews(rangeStart: string, rangeEnd: string) {

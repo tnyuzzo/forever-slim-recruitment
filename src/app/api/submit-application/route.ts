@@ -72,7 +72,7 @@ export async function POST(req: NextRequest) {
       )
     }
 
-    const { email, first_name, last_name } = parsed.data
+    const { email } = parsed.data
 
     const user_agent = req.headers.get('user-agent') ?? null
 
