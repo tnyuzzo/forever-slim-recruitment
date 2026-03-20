@@ -19,6 +19,25 @@ type Candidate = {
   campaign_id: string | null
   adset_id: string | null
   ad_id: string | null
+  birth_date: string | null
+}
+
+const AGE_BRACKETS = ['<25', '25-29', '30-34', '35-39', '40-44', '45-49', '50-54', '55-59', '60+'] as const
+
+function getAgeBracket(birthDate: string): string {
+  const bd = new Date(birthDate)
+  const today = new Date()
+  let age = today.getFullYear() - bd.getFullYear()
+  if (today.getMonth() < bd.getMonth() || (today.getMonth() === bd.getMonth() && today.getDate() < bd.getDate())) age--
+  if (age < 25) return '<25'
+  if (age < 30) return '25-29'
+  if (age < 35) return '30-34'
+  if (age < 40) return '35-39'
+  if (age < 45) return '40-44'
+  if (age < 50) return '45-49'
+  if (age < 55) return '50-54'
+  if (age < 60) return '55-59'
+  return '60+'
 }
 
 type GroupedRow = {
@@ -55,7 +74,7 @@ export default function AnalyticsPage() {
     const fetchCandidates = async () => {
       const { data } = await supabase
         .from('candidates')
-        .select('id, created_at, funnel, status, score_total, priority, utm_source, utm_medium, utm_campaign, utm_content, utm_term, campaign_id, adset_id, ad_id')
+        .select('id, created_at, funnel, status, score_total, priority, utm_source, utm_medium, utm_campaign, utm_content, utm_term, campaign_id, adset_id, ad_id, birth_date')
         .not('email', 'eq', 'rejected@temp.com')
         .not('email', 'ilike', '%test%')
         .order('created_at', { ascending: false })
@@ -154,6 +173,35 @@ export default function AnalyticsPage() {
       else map[s].donna++ // default to donna if no funnel
     }
     return map
+  }, [filtered])
+
+  const ageByCreative = useMemo(() => {
+    const withAge = filtered.filter(c => c.birth_date && c.utm_content)
+    const map = new Map<string, { total: number; avgAge: number; brackets: Record<string, number> }>()
+
+    for (const c of withAge) {
+      const key = c.utm_content!
+      const bracket = getAgeBracket(c.birth_date!)
+      const bd = new Date(c.birth_date!)
+      const today = new Date()
+      let age = today.getFullYear() - bd.getFullYear()
+      if (today.getMonth() < bd.getMonth() || (today.getMonth() === bd.getMonth() && today.getDate() < bd.getDate())) age--
+
+      if (!map.has(key)) map.set(key, { total: 0, avgAge: 0, brackets: {} })
+      const entry = map.get(key)!
+      entry.total++
+      entry.avgAge += age
+      entry.brackets[bracket] = (entry.brackets[bracket] || 0) + 1
+    }
+
+    return Array.from(map.entries())
+      .map(([creative, data]) => ({
+        creative,
+        total: data.total,
+        avgAge: Math.round(data.avgAge / data.total),
+        brackets: data.brackets,
+      }))
+      .sort((a, b) => b.total - a.total)
   }, [filtered])
 
   const maxTotal = Math.max(...grouped.map(g => g.total), 1)
@@ -270,6 +318,68 @@ export default function AnalyticsPage() {
           ))}
         </div>
       </div>
+
+      {/* Età × Creatività */}
+      {ageByCreative.length > 0 && (
+        <div className="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden">
+          <div className="px-5 py-4 border-b border-gray-100">
+            <h3 className="text-sm font-bold text-text-main">Età × Creatività Ad</h3>
+            <p className="text-xs text-text-muted mt-0.5">Distribuzione fasce d&apos;età per contenuto dell&apos;ad</p>
+          </div>
+          <div className="overflow-x-auto">
+            <table className="w-full">
+              <thead>
+                <tr className="bg-gray-50 border-b border-gray-100">
+                  <th className="text-left px-5 py-3 text-xs font-bold text-text-muted uppercase tracking-wider">Creatività</th>
+                  <th className="text-center px-2 py-3 text-xs font-bold text-text-muted uppercase w-12">Lead</th>
+                  <th className="text-center px-2 py-3 text-xs font-bold text-text-muted uppercase w-12">Avg</th>
+                  {AGE_BRACKETS.map(b => (
+                    <th key={b} className="text-center px-2 py-3 text-xs font-bold text-text-muted uppercase w-12">{b}</th>
+                  ))}
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-gray-100">
+                {ageByCreative.map((row) => (
+                  <tr key={row.creative} className="hover:bg-gray-50">
+                    <td className="px-5 py-3">
+                      <span className="text-sm font-medium text-text-main truncate max-w-[250px] block" title={row.creative}>
+                        {row.creative}
+                      </span>
+                    </td>
+                    <td className="text-center px-2 py-3">
+                      <span className="text-sm font-black text-text-main">{row.total}</span>
+                    </td>
+                    <td className="text-center px-2 py-3">
+                      <span className="text-sm font-medium text-text-muted">{row.avgAge}</span>
+                    </td>
+                    {AGE_BRACKETS.map(b => {
+                      const count = row.brackets[b] || 0
+                      const pct = row.total > 0 ? count / row.total : 0
+                      return (
+                        <td key={b} className="text-center px-2 py-3">
+                          {count > 0 ? (
+                            <span
+                              className="inline-block min-w-[24px] px-1.5 py-0.5 rounded-full text-xs font-bold"
+                              style={{
+                                backgroundColor: `rgba(217, 70, 168, ${0.15 + pct * 0.6})`,
+                                color: pct > 0.3 ? 'white' : '#D946A8',
+                              }}
+                            >
+                              {count}
+                            </span>
+                          ) : (
+                            <span className="text-xs text-gray-300">—</span>
+                          )}
+                        </td>
+                      )
+                    })}
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        </div>
+      )}
 
       {/* Main Table */}
       <div className="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden">
