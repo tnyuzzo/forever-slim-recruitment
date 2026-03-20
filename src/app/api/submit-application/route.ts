@@ -207,6 +207,27 @@ export async function POST(req: NextRequest) {
 
     // after(): esegue dopo la response ma mantiene la Lambda attiva
     after(async () => {
+      // PostHog: application_submitted server-side (backup per ad blocker)
+      try {
+        const { capturePostHogEvent } = await import('@/lib/posthog-server')
+        capturePostHogEvent({
+          event: 'application_submitted',
+          distinct_id: fbp || candidate_id,
+          properties: {
+            candidate_id,
+            funnel_type: body.funnel ?? 'donna',
+            utm_source: body.utm_source ?? undefined,
+            utm_medium: body.utm_medium ?? undefined,
+            utm_campaign: body.utm_campaign ?? undefined,
+            utm_content: body.utm_content ?? undefined,
+            country: body.country ?? 'it',
+            $lib: 'server',
+          },
+        })
+      } catch (e) {
+        console.error('[submit-application] posthog error:', e)
+      }
+
       try {
         const fbRes = await fetch(`${baseUrl}/api/fb-event`, {
           method: 'POST',

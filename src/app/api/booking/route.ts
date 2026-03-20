@@ -153,6 +153,24 @@ export async function POST(request: Request) {
 
         // after(): esegue dopo la response ma mantiene la Lambda attiva
         after(async () => {
+            // PostHog: Schedule event server-side
+            if (data.candidate_id) {
+                const { capturePostHogEvent } = await import('@/lib/posthog-server');
+                capturePostHogEvent({
+                    event: 'booking_scheduled',
+                    distinct_id: candidate?.fbp || data.candidate_id,
+                    properties: {
+                        candidate_id: data.candidate_id,
+                        utm_source: candidate?.utm_source ?? undefined,
+                        utm_medium: candidate?.utm_medium ?? undefined,
+                        utm_campaign: candidate?.utm_campaign ?? undefined,
+                        utm_content: candidate?.utm_content ?? undefined,
+                        funnel_type: candidate?.funnel ?? undefined,
+                        country: candidate?.country ?? undefined,
+                    },
+                });
+            }
+
             // FB CAPI Schedule event
             if (fb_schedule_event_id && data.candidate_id) {
                 try {

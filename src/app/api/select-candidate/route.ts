@@ -31,7 +31,7 @@ export async function POST(req: NextRequest) {
       })
       .eq('id', candidate_id)
       .is('fb_complete_event_id', null)
-      .select('id, email, whatsapp, first_name, last_name, fbp, fbc, ip_address, user_agent, country')
+      .select('id, email, whatsapp, first_name, last_name, fbp, fbc, ip_address, user_agent, country, utm_source, utm_medium, utm_campaign, utm_content, funnel')
       .single()
 
     if (error || !updated) {
@@ -42,6 +42,26 @@ export async function POST(req: NextRequest) {
     const baseUrl = (process.env.NEXT_PUBLIC_SITE_URL || 'https://closeragency.eu').trim()
 
     after(async () => {
+      // PostHog: CompleteRegistration event server-side
+      try {
+        const { capturePostHogEvent } = await import('@/lib/posthog-server')
+        capturePostHogEvent({
+          event: 'candidate_hired',
+          distinct_id: updated.fbp || candidate_id,
+          properties: {
+            candidate_id,
+            utm_source: updated.utm_source ?? undefined,
+            utm_medium: updated.utm_medium ?? undefined,
+            utm_campaign: updated.utm_campaign ?? undefined,
+            utm_content: updated.utm_content ?? undefined,
+            funnel_type: updated.funnel ?? undefined,
+            country: updated.country ?? undefined,
+          },
+        })
+      } catch (e) {
+        console.error('[select-candidate] posthog error:', e)
+      }
+
       try {
         const fbRes = await fetch(`${baseUrl}/api/fb-event`, {
           method: 'POST',
