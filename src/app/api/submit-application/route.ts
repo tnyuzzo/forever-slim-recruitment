@@ -210,6 +210,20 @@ export async function POST(req: NextRequest) {
       // PostHog: application_submitted server-side (backup per ad blocker)
       try {
         const { capturePostHogEvent } = await import('@/lib/posthog-server')
+        // Calcola fascia d'età da birth_date
+        let age_bracket: string | undefined
+        if (body.birth_date) {
+          const age = Math.floor((Date.now() - new Date(body.birth_date).getTime()) / (365.25 * 24 * 60 * 60 * 1000))
+          if (age < 25) age_bracket = '<25'
+          else if (age < 30) age_bracket = '25-29'
+          else if (age < 35) age_bracket = '30-34'
+          else if (age < 40) age_bracket = '35-39'
+          else if (age < 45) age_bracket = '40-44'
+          else if (age < 50) age_bracket = '45-49'
+          else if (age < 55) age_bracket = '50-54'
+          else if (age < 60) age_bracket = '55-59'
+          else age_bracket = '60+'
+        }
         capturePostHogEvent({
           event: 'application_submitted',
           distinct_id: fbp || candidate_id,
@@ -221,6 +235,7 @@ export async function POST(req: NextRequest) {
             utm_campaign: body.utm_campaign ?? undefined,
             utm_content: body.utm_content ?? undefined,
             country: body.country ?? 'it',
+            age_bracket,
             $lib: 'server',
           },
         })
