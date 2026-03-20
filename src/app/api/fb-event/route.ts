@@ -1,5 +1,31 @@
 import { NextRequest, NextResponse } from 'next/server'
 
+/** Mappa nome paese (italiano) → codice ISO 3166-1 alpha-2 lowercase (richiesto da Facebook CAPI) */
+const COUNTRY_TO_ISO: Record<string, string> = {
+  'italia': 'it', 'albania': 'al', 'argentina': 'ar', 'australia': 'au', 'austria': 'at',
+  'belgio': 'be', 'bosnia ed erzegovina': 'ba', 'brasile': 'br', 'bulgaria': 'bg',
+  'canada': 'ca', 'cile': 'cl', 'cina': 'cn', 'colombia': 'co', 'croazia': 'hr',
+  'danimarca': 'dk', 'ecuador': 'ec', 'egitto': 'eg', 'estonia': 'ee', 'filippine': 'ph',
+  'finlandia': 'fi', 'francia': 'fr', 'germania': 'de', 'giappone': 'jp', 'grecia': 'gr',
+  'india': 'in', 'irlanda': 'ie', 'kosovo': 'xk', 'lettonia': 'lv', 'lituania': 'lt',
+  'lussemburgo': 'lu', 'macedonia del nord': 'mk', 'malta': 'mt', 'marocco': 'ma',
+  'messico': 'mx', 'moldova': 'md', 'montenegro': 'me', 'nigeria': 'ng', 'norvegia': 'no',
+  'paesi bassi': 'nl', 'pakistan': 'pk', 'perù': 'pe', 'polonia': 'pl', 'portogallo': 'pt',
+  'regno unito': 'gb', 'repubblica ceca': 'cz', 'romania': 'ro', 'russia': 'ru',
+  'senegal': 'sn', 'serbia': 'rs', 'slovacchia': 'sk', 'slovenia': 'si', 'spagna': 'es',
+  'sri lanka': 'lk', 'stati uniti': 'us', 'svezia': 'se', 'svizzera': 'ch', 'tunisia': 'tn',
+  'turchia': 'tr', 'ucraina': 'ua', 'ungheria': 'hu', 'venezuela': 've',
+}
+
+function countryToIso(country: string): string {
+  const iso = COUNTRY_TO_ISO[country.toLowerCase().trim()]
+  if (!iso) {
+    console.warn(`[fb-event] Country non mappato: "${country}" — uso lowercase`)
+    return country.toLowerCase().trim()
+  }
+  return iso
+}
+
 async function sha256(value: string): Promise<string> {
   const encoder = new TextEncoder()
   const data = encoder.encode(value.toLowerCase().trim())
@@ -49,7 +75,7 @@ export async function POST(req: NextRequest) {
     if (phone) userData.ph = [await sha256(phone.replace(/[\s+\-()]/g, ''))]
     if (firstName) userData.fn = [await sha256(firstName)]
     if (lastName) userData.ln = [await sha256(lastName)]
-    if (country) userData.country = [await sha256(country)]
+    if (country) userData.country = [await sha256(countryToIso(country))]
     if (external_id) userData.external_id = [await sha256(String(external_id))]
     if (fbp) userData.fbp = fbp
     if (fbc) userData.fbc = fbc
