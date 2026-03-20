@@ -1,7 +1,7 @@
 'use client'
 
 import { useState, useEffect } from 'react'
-import Link from 'next/link'
+import AttributionLink from '@/components/AttributionLink'
 
 export default function StickyCTA() {
   const [isVisible, setIsVisible] = useState(false)
@@ -25,12 +25,12 @@ export default function StickyCTA() {
       `}
     >
       <div className="bg-white border-t border-gray-200 px-4 py-3 shadow-2xl">
-        <Link
+        <AttributionLink
           href="/apply"
           className="block w-full py-4 bg-[#D946A8] hover:bg-[#C026A0] text-white font-semibold text-center rounded-xl transition-colors"
         >
           CANDIDATI ORA →
-        </Link>
+        </AttributionLink>
       </div>
     </div>
   )

@@ -1,6 +1,6 @@
 'use client'
 
-import Link from 'next/link'
+import AttributionLink from '@/components/AttributionLink'
 import { Clock } from 'lucide-react'
 
 export default function FinalCTA() {
@@ -17,12 +17,12 @@ export default function FinalCTA() {
           La candidatura richiede 3 minuti. Il processo è rispettoso. E se non dovesse essere il momento giusto, puoi sempre ripresentarti in futuro.
         </p>
 
-        <Link
+        <AttributionLink
           href="/apply"
           className="inline-flex items-center justify-center px-10 py-5 bg-white text-[#D946A8] font-bold text-xl rounded-xl hover:bg-gray-50 transition-all duration-200 shadow-xl"
         >
           INVIA LA TUA CANDIDATURA →
-        </Link>
+        </AttributionLink>
 
         <p className="mt-6 text-white/70 text-sm flex items-center justify-center gap-2">
           <Clock className="w-4 h-4" />

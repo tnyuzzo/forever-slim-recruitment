@@ -7,7 +7,6 @@ import { useForm, DefaultValues, FieldValues, SubmitHandler } from 'react-hook-f
 import { z } from 'zod'
 import { Check, ChevronRight, ChevronLeft, Loader2, Upload, Headphones, Camera, X } from 'lucide-react'
 import { usePostHog } from 'posthog-js/react'
-import { useTrackVisitor } from '@/hooks/useTrackVisitor'
 import { getStoredUTMs } from '@/hooks/useUTMCapture'
 import { createClient } from '@/lib/supabase/client'
 import { compressImage } from '@/lib/compress-image'
@@ -150,7 +149,6 @@ const stepTitles = [
 ]
 
 export default function ApplyPage() {
-    useTrackVisitor()
     const posthog = usePostHog()
     const router = useRouter()
     const [step, setStep] = useState(0)

@@ -1,7 +1,14 @@
+import TrackVisitor from '@/components/TrackVisitor'
+
 export default function PublicLayout({
   children,
 }: {
   children: React.ReactNode
 }) {
-  return <>{children}</>
+  return (
+    <>
+      <TrackVisitor />
+      {children}
+    </>
+  )
 }

@@ -1,8 +1,8 @@
 'use client'
 
-import Link from 'next/link'
 import Image from 'next/image'
 import { Check, Clock } from 'lucide-react'
+import AttributionLink from '@/components/AttributionLink'
 
 export default function Hero() {
   return (
@@ -93,12 +93,12 @@ export default function Hero() {
 
             {/* CTA */}
             <div className="pt-4">
-              <Link
+              <AttributionLink
                 href="/apply"
                 className="inline-flex items-center justify-center w-full md:w-auto px-8 py-4 bg-[#D946A8] hover:bg-[#C026A0] text-white font-semibold text-lg rounded-xl transition-all duration-200 shadow-lg shadow-[#D946A8]/25 hover:shadow-xl hover:shadow-[#D946A8]/30"
               >
                 CANDIDATI IN 3 MINUTI →
-              </Link>
+              </AttributionLink>
               <p className="mt-3 text-sm text-gray-500 flex items-center gap-2">
                 <Clock className="w-4 h-4" />
                 7 step rapidi • Risposta entro 48h • Selezione riservata
