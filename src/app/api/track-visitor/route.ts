@@ -7,6 +7,54 @@ const supabase = createClient(
   process.env.SUPABASE_SERVICE_ROLE_KEY!
 )
 
+async function sendCAPIPageView(
+  page_url: string | null,
+  ip_address: string | null,
+  user_agent: string | null,
+  fbp: string | null,
+  fbc: string | null,
+) {
+  const pixelId = process.env.FB_PIXEL_ID
+  const accessToken = process.env.FB_ACCESS_TOKEN
+  if (!pixelId || !accessToken) return
+
+  const userData: Record<string, string> = {}
+  if (fbp) userData.fbp = fbp
+  if (fbc) userData.fbc = fbc
+  if (ip_address) userData.client_ip_address = ip_address
+  if (user_agent) userData.client_user_agent = user_agent
+
+  const payload = {
+    data: [
+      {
+        event_name: 'PageView',
+        event_time: Math.floor(Date.now() / 1000),
+        event_id: crypto.randomUUID(),
+        event_source_url: page_url ?? 'https://closeragency.eu',
+        action_source: 'website',
+        user_data: userData,
+      },
+    ],
+  }
+
+  try {
+    const res = await fetch(
+      `https://graph.facebook.com/v19.0/${pixelId}/events?access_token=${accessToken}`,
+      {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload),
+      }
+    )
+    if (!res.ok) {
+      const data = await res.json()
+      console.error('[track-visitor] CAPI PageView error:', data)
+    }
+  } catch (e) {
+    console.error('[track-visitor] CAPI PageView error:', e)
+  }
+}
+
 export async function POST(req: NextRequest) {
   try {
     const body = await req.json()
@@ -28,20 +76,27 @@ export async function POST(req: NextRequest) {
       attribution[key] = params.get(key) ?? null
     }
 
-    // Fire-and-forget: non blocca la risposta
+    const user_agent = body.user_agent ?? null
+    const page_url = body.page_url ?? null
+    const fbp = body.fbp ?? null
+    const fbc = body.fbc ?? null
+
+    // Fire-and-forget: Supabase insert + CAPI PageView
     void supabase
       .from('page_visitors')
       .insert({
         session_id,
         ip_address,
-        user_agent: body.user_agent ?? null,
-        page_url: body.page_url ?? null,
+        user_agent,
+        page_url,
         referrer: body.referrer ?? null,
-        fbp: body.fbp ?? null,
-        fbc: body.fbc ?? null,
+        fbp,
+        fbc,
         ...attribution,
       })
       .then(() => {})
+
+    void sendCAPIPageView(page_url, ip_address, user_agent, fbp, fbc)
 
     const res = NextResponse.json({ ok: true })
 
