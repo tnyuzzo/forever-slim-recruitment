@@ -87,7 +87,7 @@ export default function RootLayout({
             {children}
           </main>
         </PostHogProvider>
-        <Script id="fbp-script" strategy="afterInteractive">{fbpScript}</Script>
+        <Script id="fbp-script" strategy="beforeInteractive">{fbpScript}</Script>
       </body>
     </html>
   )

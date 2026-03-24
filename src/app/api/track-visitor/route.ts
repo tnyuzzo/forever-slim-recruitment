@@ -14,8 +14,8 @@ async function sendCAPIPageView(
   fbp: string | null,
   fbc: string | null,
 ) {
-  const pixelId = process.env.FB_PIXEL_ID
-  const accessToken = process.env.FB_ACCESS_TOKEN
+  const pixelId = process.env.FB_PIXEL_ID?.trim()
+  const accessToken = process.env.FB_ACCESS_TOKEN?.trim()
   if (!pixelId || !accessToken) return
 
   const userData: Record<string, string> = {}
