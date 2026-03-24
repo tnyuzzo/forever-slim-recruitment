@@ -37,12 +37,12 @@ async function sha256(value: string): Promise<string> {
 export async function POST(req: NextRequest) {
   // Autenticazione interna: solo API Routes server-side possono chiamare questo endpoint
   const authHeader = req.headers.get('authorization')
-  if (authHeader !== `Bearer ${process.env.SUPABASE_SERVICE_ROLE_KEY}`) {
+  if (authHeader !== `Bearer ${process.env.SUPABASE_SERVICE_ROLE_KEY?.trim()}`) {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
   }
 
-  const pixelId = process.env.FB_PIXEL_ID
-  const accessToken = process.env.FB_ACCESS_TOKEN
+  const pixelId = process.env.FB_PIXEL_ID?.trim()
+  const accessToken = process.env.FB_ACCESS_TOKEN?.trim()
   if (!pixelId || !accessToken) {
     console.warn('[fb-event] FB_PIXEL_ID o FB_ACCESS_TOKEN non configurati — skip')
     return NextResponse.json({ skipped: true })

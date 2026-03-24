@@ -178,7 +178,7 @@ export async function POST(request: Request) {
                         method: 'POST',
                         headers: {
                             'Content-Type': 'application/json',
-                            Authorization: `Bearer ${process.env.SUPABASE_SERVICE_ROLE_KEY}`,
+                            Authorization: `Bearer ${process.env.SUPABASE_SERVICE_ROLE_KEY?.trim()}`,
                         },
                         body: JSON.stringify({
                             event_name: 'Schedule',

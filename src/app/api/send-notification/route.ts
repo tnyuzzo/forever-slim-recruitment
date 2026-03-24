@@ -11,7 +11,7 @@ export async function POST(request: Request) {
     try {
         // Auth: solo chiamate interne server-side con Bearer token
         const authHeader = request.headers.get('authorization');
-        if (authHeader !== `Bearer ${process.env.SUPABASE_SERVICE_ROLE_KEY}`) {
+        if (authHeader !== `Bearer ${process.env.SUPABASE_SERVICE_ROLE_KEY?.trim()}`) {
             return NextResponse.json({ error: 'Non autorizzato' }, { status: 401 });
         }
 
